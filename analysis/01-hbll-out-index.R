@@ -34,8 +34,10 @@ fit_nb2 <- sdmTMB(
   extra_time = 2013L,
   control = sdmTMBcontrol(newton_loops = 1L)
 )
-sanity(fit_nb2, gradient_thresh = 0.001)
-max(fit_nb2$gradients)
+saveRDS(fit_nb2, file = "data/generated/hbll-out-sdmTMB.rds")
+fit_nb2 <- readRDS("data/generated/hbll-out-sdmTMB.rds")
+
+sanity(fit_nb2)
 plot_anisotropy(fit_nb2)
 fit_nb2
 fit_nb2$sd_report
@@ -73,6 +75,7 @@ ggplot(ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
 
 ind_save <- dplyr::filter(ind, !is.na(survey_abbrev))
 saveRDS(ind_save, file = "data/generated/geostat-ind-hbll-out.rds")
+ind_save <- readRDS("data/generated/geostat-ind-hbll-out.rds")
 
 ggplot(ind_save, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
   geom_pointrange() +

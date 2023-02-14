@@ -87,3 +87,4 @@ ggplot(ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
 ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
   geom_pointrange() +
   coord_cartesian(ylim = c(0, NA))
+
