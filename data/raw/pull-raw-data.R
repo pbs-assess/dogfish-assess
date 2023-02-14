@@ -21,6 +21,10 @@ commercial_samples <- get_commercial_samples(
   unsorted_only = FALSE,
   return_all_lengths = FALSE
 )
+# privacy (and extra) removals:
+commercial_samples$vessel_id <- NULL
+commercial_samples$dna_sample_type <- NULL
+commercial_samples$dna_container_id <- NULL
 
 catch <- get_catch(spp)
 
