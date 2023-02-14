@@ -5,3 +5,12 @@
 *.o
 *.so
 lw_gfplot.cpp
+*.rds
+*.rda
+*.png
+*.pdf
+*.docx
+*.log
+*.aux
+*.jpg
+*.jpeg
