@@ -1,3 +1,6 @@
+
+devtools::install_github('pbs-assess/gfdata')
+
 library(gfdata)
 
 spp <- "044"
