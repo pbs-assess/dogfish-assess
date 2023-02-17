@@ -28,9 +28,9 @@ plot(mesh)
 mesh$mesh$n
 
 #models
-fit_iphc_nb2 <- sdmTMB(
+fit_iphc_tw <-  sdmTMB(
   cpue ~ 1 + poly(depth_m_log, 2L),
-  family = nbinom2(link = "log"),
+  family = tweedie(link = "log"),
   data = d,
   mesh = mesh,
   time = "year",
@@ -39,11 +39,24 @@ fit_iphc_nb2 <- sdmTMB(
   silent = FALSE,
   anisotropy = TRUE,
   control = sdmTMBcontrol(newton_loops = 1L)
-)
-saveRDS(fit_iphc_nb2, file = "data/generated/iphc-nb2-sdmTMB.rds")
-fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB.rds")
+  )
 
-fit_iphc_tw <- update(fit_iphc_nb2, family = tweedie())
+saveRDS(fit_iphc_tw, file = "data/generated/iphc-tw-sdmTMB.rds")
+
+# fit_iphc_nb2 <- sdmTMB(
+#   cpue ~ 1 + poly(depth_m_log, 2L),
+#   family = nbinom2(link = "log"),
+#   data = d,
+#   mesh = mesh,
+#   time = "year",
+#   spatiotemporal = "rw",
+#   spatial = "on",
+#   silent = FALSE,
+#   anisotropy = TRUE,
+#   control = sdmTMBcontrol(newton_loops = 1L)
+# )
+# saveRDS(fit_iphc_nb2, file = "data/generated/iphc-nb2-sdmTMB.rds")
+# fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB.rds")
 
 sanity(fit_iphc_tw)
 sanity(fit_iphc_nb2)
@@ -61,7 +74,7 @@ AIC(fit_iphc_tw, fit_iphc_nb2)
 
 
 #grid if IPHC main fixed survey locations
-s <- readRDS("data/IPHC_coastdata.rds") %>% #outside only, downloaded from website, expansion set and SOG removed
+s <- readRDS("data/raw/IPHC_coastdata.rds") %>% #outside only, downloaded from website, expansion set and SOG removed
   dplyr::filter(iphc.reg.area == "2B") %>% distinct(station, .keep_all = TRUE)
 grid <- s %>% dplyr::select(beginlon, beginlat) %>% distinct(.keep_all = TRUE)
 g <- add_utm_columns(grid, ll_names = c("beginlon", "beginlat"), utm_crs = 32609)
@@ -73,6 +86,7 @@ ggplot(g, aes(X, Y), fill = depth_m, colour = depth_m) +
   coord_fixed() +
   scale_fill_viridis_c(trans = "sqrt", direction = -1) +
   scale_colour_viridis_c(trans = "sqrt", direction = -1)
+
 
 year <- sort(union(unique(d$year), fit_ins_nb2$extra_time))
 grid <- purrr::map_dfr(year, function(.x) {dplyr::mutate(g, year = .x)})
