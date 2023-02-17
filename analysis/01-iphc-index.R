@@ -37,7 +37,7 @@ fit_iphc_tw <-  sdmTMB(
   spatiotemporal = "rw",
   spatial = "on",
   silent = FALSE,
-  anisotropy = TRUE,
+  #anisotropy = TRUE,
   control = sdmTMBcontrol(newton_loops = 1L)
   )
 
@@ -76,35 +76,30 @@ AIC(fit_iphc_tw, fit_iphc_nb2)
 #grid if IPHC main fixed survey locations
 s <- readRDS("data/raw/IPHC_coastdata.rds") %>% #outside only, downloaded from website, expansion set and SOG removed
   dplyr::filter(iphc.reg.area == "2B") %>% distinct(station, .keep_all = TRUE)
-grid <- s %>% dplyr::select(beginlon, beginlat) %>% distinct(.keep_all = TRUE)
-g <- add_utm_columns(grid, ll_names = c("beginlon", "beginlat"), utm_crs = 32609)
-plot(g$beginlon, g$beginlat)
+g <- s %>% dplyr::select(beginlon, beginlat, depth_m) %>% distinct(.keep_all = TRUE)
+grid <- add_utm_columns(g, ll_names = c("beginlon", "beginlat"), utm_crs = 32609)
 
-
-ggplot(g, aes(X, Y), fill = depth_m, colour = depth_m) +
+ggplot(grid, aes(X, Y), fill = depth_m_log, colour = depth_m_log) +
   geom_tile(width = 2, height = 2) +
   coord_fixed() +
   scale_fill_viridis_c(trans = "sqrt", direction = -1) +
   scale_colour_viridis_c(trans = "sqrt", direction = -1)
 
 
-year <- sort(union(unique(d$year), fit_ins_nb2$extra_time))
-grid <- purrr::map_dfr(year, function(.x) {dplyr::mutate(g, year = .x)})
+year <- unique(d$year)
+grid2 <- purrr::map_dfr(year, function(.x) {dplyr::mutate(grid, year = .x)})
 
-p_ins_tw <- predict(fit_iphc_tw, newdata = grid, return_tmb_object = TRUE)
+p_ins_tw <- predict(fit_iphc_tw, newdata = grid2, return_tmb_object = TRUE)
 ind_ins <- get_index(p_ins_tw, bias_correct = TRUE)
-survs <- select(d, year, survey_abbrev) |> distinct()
-ind_ins <- left_join(ind_ins, survs, by = join_by(year))
 
-ggplot(ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
+ggplot(ind_ins, aes(year, est, ymin = lwr, ymax = upr)) +
   geom_pointrange() +
   coord_cartesian(ylim = c(0, NA))
 
-ind_ins_save <- dplyr::filter(ind_ins, !is.na(survey_abbrev))
 saveRDS(ind_ins_save, file = "data/generated/geostat-ind-iphc.rds")
 ind_ins_save <- readRDS("data/generated/geostat-ind-iphc.rds")
 
-ggplot(ind_ins_save, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
+ggplot(ind_ins_save, aes(year, est, ymin = lwr, ymax = upr)) +
   geom_pointrange() +
   coord_cartesian(ylim = c(0, NA))
 
