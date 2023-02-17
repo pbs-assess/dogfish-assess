@@ -42,7 +42,7 @@ fit_iphc_nb2 <- sdmTMB(
   spatiotemporal = "ar1",
   spatial = "on",
   silent = FALSE,
-  anisotropy = TRUE,
+  #anisotropy = TRUE,
   control = sdmTMBcontrol(newton_loops = 1L)
 )
 saveRDS(fit_iphc_nb2, file = "data/generated/iphc-nb2-sdmTMB.rds")
