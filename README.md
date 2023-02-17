@@ -10,6 +10,9 @@
 ```r
 install.packages("remotes")
 install.packages("tidyverse")
+install.packages("cowplot")
+install.packages("RColorBrewer")
+
 install.packages("MSEtool")
 install.packages("DLMtool")
 install.packages("SAMtool")
