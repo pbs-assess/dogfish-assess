@@ -1,3 +1,7 @@
+# This script will only work with access to the DFO PBS databases
+# Relevant output is cached and pushed to the GitHub repo
+
+# remotes::install_github('pbs-assess/gfdata')
 library(gfdata)
 
 spp <- "044"
