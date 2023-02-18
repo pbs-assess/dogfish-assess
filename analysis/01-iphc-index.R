@@ -15,7 +15,7 @@ library(sf)
 iphc_stations <- readRDS("data/raw/Map select_standardgrid.rds")
 iphc_coast <- readRDS("data/raw/Non-Pacific halibut data_raw.rds")
 iphc_latlongs <- readRDS("data/raw/Set and Pacific halibut data_raw.rds") %>%
-  dplyr::select(IPHC.Reg.Area, Date, Eff, Ineffcde, BeginLat, BeginLon, AvgDepth..fm., Stlkey  )
+  dplyr::select(IPHC.Reg.Area, Date, Eff, Ineffcde, BeginLat, BeginLon, AvgDepth..fm., Stlkey)
 
 glimpse(iphc_latlongs)
 glimpse(iphc_coast)
@@ -30,12 +30,15 @@ iphc_coast3 <- iphc_coast2 %>%
   filter(purpose == "Standard Grid") %>%
   mutate(startlonfix = ifelse(beginlon > 0, beginlon * -1, beginlon)) %>%
   filter(iphc.reg.area == "2B") %>%
-  mutate(depth_m = 1.8288*avgdepth..fm.) %>%
-         mutate(depth_m_log = log(depth_m)) %>%
-  dplyr::select(depth_m_log, year, beginlat, beginlon, station,
-    iphc.reg.area, number.observed, hooksobserved, date) %>%
+  mutate(depth_m = 1.8288 * avgdepth..fm.) %>%
+  mutate(depth_m_log = log(depth_m)) %>%
+  dplyr::select(
+    depth_m_log, year, beginlat, beginlon, station,
+    iphc.reg.area, number.observed, hooksobserved, date
+  ) %>%
   mutate(hooksobserved2 = as.numeric(hooksobserved)) %>%
   drop_na(hooksobserved2)
+
 iphc_coast4 <- add_utm_columns(iphc_coast3,
   ll_names = c("beginlon", "beginlat"),
   utm_names = c("UTM.lon.m", "UTM.lat.m"),
@@ -43,70 +46,53 @@ iphc_coast4 <- add_utm_columns(iphc_coast3,
 ) %>%
   inner_join(iphc_coast3) %>%
   rename(latitude = beginlat, longitude = beginlon) %>%
-  mutate(cpue = number.observed/hooksobserved2) %>%
+  mutate(cpue = number.observed / hooksobserved2) %>%
   mutate(dmy = lubridate::dmy(date)) %>%
   mutate(julian = lubridate::yday(dmy)) %>%
   drop_na(julian) %>%
   mutate(station = as.integer(station)) %>%
   mutate(UTM.lat = UTM.lat.m, UTM.lon = UTM.lon.m) |>
+  mutate(UTM.lat.m = UTM.lat.m * 1000, UTM.lon.m = UTM.lon.m * 1000) |>
   distinct(.keep_all = TRUE)
 
-filter(iphc_coast4, station == 2099 & year == 2019) #check no duplications
+filter(iphc_coast4, station == 2099 & year == 2019) # check no duplications
 
 d <- iphc_coast4 |>
   select(-date) |>
   rename(date = dmy)
 
 # get rid of SOG points the expansion set in 2018
-shelf_noSOG <- st_read("data", "Shelf_polygon_noSOG") %>%
-  st_transform(crs = "+proj=utm +zone=9 +datum=WGS84 +units=m +no_defs")
-ggplot() +
-  geom_point(data = iphc_coast4, aes(UTM.lon * 1000, UTM.lat * 1000), size = 1.5) +
-  geom_sf(data = shelf, colour = "grey70", fill = "grey90")
+shelf <- st_read("data/raw", "Shelf_polygon_noSOG") %>%
+  st_transform(crs = "EPSG:32609")
 
 iphc_coast4sf <- st_as_sf(iphc_coast4,
-                          coords = c("longitude", "latitude"),
-                          crs = "+proj=longlat + datum=WGS84"
-) %>%
-  inner_join(iphc_coast3)
-
-x <- st_transform(iphc_coast4sf, crs = "+proj=utm +zone=9 +datum=WGS84 +units=m +no_defs")
-iphc_coast_trimmed <- st_intersection(x, st_geometry(shelf))
-
-ggplot() +
-  geom_sf(data = shelf, colour = "grey70", fill = "grey90") +
-  geom_sf(data = iphc_coast_trimmed)
-
-glimpse(iphc_coast_trimmed)
-glimpse(x)
-x <- iphc_coast4sf %>% st_drop_geometry() %>% filter(iphc.reg.area %in% c("2A", "2C", "3A", "3B")) %>%
-  dplyr::select("depth_m_log", "year","station", "iphc.reg.area",  "number.observed", "hooksobserved",
-                "date","hooksobserved2",  "UTM.lon.m" ,  "UTM.lat.m" ,    "cpue",           "julian" ,
-                "UTM.lat",    "UTM.lon",       "beginlat",      "beginlon"  )
-
-iphc_coast_trimmed2 <- iphc_coast_trimmed %>% st_drop_geometry() %>%
-  dplyr::select(-dmy)
-
-iphc_coast_trimmed2 <- rbind(
-  iphc_coast_trimmed2, x
+  coords = c("UTM.lon.m", "UTM.lat.m"),
+  crs = "EPSG:32609"
 )
 
+iphc_nosog <- st_intersection(iphc_coast4sf, st_geometry(shelf)) %>%
+  st_drop_geometry() %>%
+  dplyr::select(-dmy)
+
 # stations with only one survey
-test <- iphc_coast_trimmed2 %>%
+surveyed1 <- iphc_nosog %>%
   group_by(station) %>%
   mutate(count = n()) %>%
-  filter(count == 1) #took out all stations with only one survey
+  filter(count == 1)
 
-x <- ggplot(data = filter(iphc_coast_trimmed2, iphc.reg.area == "2B") , aes(UTM.lon , UTM.lat), size = 1.5, col = "blue") + geom_point()
-x + geom_point(data = filter(test, iphc.reg.area == "2B"), aes(UTM.lon.m, UTM.lat.m, col = 'red'))
+iphc_coast_trimmed3 <- filter(iphc_nosog, !(station %in% surveyed1$station))
 
-iphc_coast_trimmed3 <- filter(iphc_coast_trimmed2, !(station %in% test$station))
-saveRDS(iphc_coast_trimmed3, "output/IPHC_coastdata.rds")
-iphc_coast_trimmed3 <- readRDS("output/IPHC_coastdata.rds")
+x <- ggplot(data = filter(iphc_coast_trimmed3, iphc.reg.area == "2B"),
+            aes(UTM.lon, UTM.lat), size = 1.5, col = "blue") +
+  geom_point()
+x + geom_point(data = filter(surveyed1, iphc.reg.area == "2B"), aes(UTM.lon, UTM.lat, col = "red"))
+
+saveRDS(iphc_coast_trimmed3, "generated/IPHC_coastdata_nosog.rds")
+iphc_bccoast <- readRDS("generated/IPHC_coastdata_nosog.rds")
 
 
 # h <- readxl::read_excel("data/raw/iphc-2021-fiss-hadj.xlsx") |>
-  # dplyr::filter(`IPHC Reg Area` %in% "2B")
+# dplyr::filter(`IPHC Reg Area` %in% "2B")
 # saveRDS(h, file = "data/raw/iphc-2021-fiss-hadj.rds")
 
 h <- readRDS("data/raw/iphc-2021-fiss-hadj.rds") |>
@@ -119,7 +105,8 @@ h <- h[h$hookobserved > 0, ]
 prop_bait_hooks <- h$bait / h$hookobserved
 range(prop_bait_hooks)
 hook_adjust_factor <- -log(prop_bait_hooks) / (1 - prop_bait_hooks)
-plot(hook_adjust_factor, h$hadj);abline(0, 1)
+plot(hook_adjust_factor, h$hadj)
+abline(0, 1)
 range(hook_adjust_factor)
 h$hook_adjust_factor <- hook_adjust_factor
 h$date <- lubridate::as_date(h$date)
@@ -182,7 +169,7 @@ d[is.na(d$offset), ]
 fit_iphc_nb2 <- sdmTMB(
   number_observed ~ 0 + poly(depth_m_log, 2L),
   family = nbinom2(link = "log"),
-  time_varying = ~ 1,
+  time_varying = ~1,
   data = d,
   mesh = mesh,
   time = "year",
@@ -207,7 +194,8 @@ s <- d %>%
   dplyr::filter(iphc_reg_area == "2B") %>%
   distinct(station, .keep_all = TRUE)
 
-grid <- s %>% dplyr::select(longitude, latitude, depth_m_log) %>%
+grid <- s %>%
+  dplyr::select(longitude, latitude, depth_m_log) %>%
   distinct(.keep_all = TRUE)
 
 g <- add_utm_columns(grid, ll_names = c("longitude", "latitude"), utm_crs = 32609)
@@ -232,7 +220,8 @@ ind <- readRDS("data/generated/geostat-ind-iphc.rds")
 obs <- group_by(d, year) |>
   summarise(n_hooksobserved = mean(hooksobserved2))
 
-ind |> left_join(obs) |>
+ind |>
+  left_join(obs) |>
   ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = n_hooksobserved)) +
   geom_pointrange() +
   coord_cartesian(ylim = c(0, NA)) +
