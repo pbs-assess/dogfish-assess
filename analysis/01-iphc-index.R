@@ -116,7 +116,7 @@ range(d$number_observed)
 range(d$depth_m_log)
 # d$offset <- log(d$hooksobserved)
 
-mesh <- make_mesh(d, c("X", "Y"), cutoff = 15)
+mesh <- make_mesh(d, c("X", "Y"), cutoff = 20)
 plot(mesh)
 mesh$mesh$n
 
@@ -182,6 +182,12 @@ ind |> left_join(obs) |>
   geom_vline(xintercept = 2020, lty = 2) +
   geom_vline(xintercept = 2000, lty = 2) +
   scale_colour_viridis_c()
+
+ind |>
+  ggplot(aes(year, est, ymin = lwr, ymax = upr)) +
+  geom_ribbon(alpha = 0.4) +
+  geom_line() +
+  coord_cartesian(ylim = c(0, NA))
 
 mean(ind$est[ind$year %in% c(1998:2002)]) / min(ind$est)
 plot(obs$n_hooksobserved, ind$est)
