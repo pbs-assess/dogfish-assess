@@ -57,10 +57,6 @@ iphc_coast4 <- add_utm_columns(iphc_coast3,
 
 filter(iphc_coast4, station == 2099 & year == 2019) # check no duplications
 
-d <- iphc_coast4 |>
-  select(-date) |>
-  rename(date = dmy)
-
 # get rid of SOG points the expansion set in 2018
 shelf <- st_read("data/raw", "Shelf_polygon_noSOG") %>%
   st_transform(crs = "EPSG:32609")
@@ -87,8 +83,9 @@ x <- ggplot(data = filter(iphc_coast_trimmed3, iphc.reg.area == "2B"),
   geom_point()
 x + geom_point(data = filter(surveyed1, iphc.reg.area == "2B"), aes(UTM.lon, UTM.lat, col = "red"))
 
-saveRDS(iphc_coast_trimmed3, "generated/IPHC_coastdata_nosog.rds")
-iphc_bccoast <- readRDS("generated/IPHC_coastdata_nosog.rds")
+saveRDS(iphc_coast_trimmed3, "data/generated/IPHC_coastdata_nosog.rds")
+
+d <- readRDS("data/generated/IPHC_coastdata_nosog.rds")
 
 
 # h <- readxl::read_excel("data/raw/iphc-2021-fiss-hadj.xlsx") |>
