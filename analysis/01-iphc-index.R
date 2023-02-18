@@ -111,7 +111,11 @@ stopifnot(sum(is.na(d$number_observed)) == 0L)
 stopifnot(sum(is.na(d$hooksobserved2)) == 0L)
 
 d <- filter(d, year <= 2021) # hook adj. not ready for 2022
+d <- filter(d, !is.na(purpose)) # a few in 2021!?
 stopifnot(sum(is.na(d$hook_adjust_factor)) == 0L)
+
+
+d[is.na(d$hook_adjust_factor), ]
 range(d$number_observed)
 range(d$depth_m_log)
 # d$offset <- log(d$hooksobserved)
