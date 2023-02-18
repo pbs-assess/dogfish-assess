@@ -145,24 +145,25 @@ fit_iphc_nb2$sd_report
 plot_anisotropy(fit_iphc_nb2)
 
 # grid of IPHC main fixed survey locations
-s <- readRDS("data/raw/IPHC_coastdata.rds") %>%
+s <- d %>%
   # outside only, downloaded from website, expansion set and SOG removed
-  dplyr::filter(iphc.reg.area == "2B") %>%
+  dplyr::filter(iphc_reg_area == "2B") %>%
   distinct(station, .keep_all = TRUE)
 
-grid <- s %>% dplyr::select(beginlon, beginlat, depth_m_log) %>%
+grid <- s %>% dplyr::select(longitude, latitude, depth_m_log) %>%
   distinct(.keep_all = TRUE)
-s$hooksobserved <- as.numeric(s$hooksobserved)
 
-g <- add_utm_columns(grid, ll_names = c("beginlon", "beginlat"), utm_crs = 32609)
-plot(g$beginlon, g$beginlat)
+g <- add_utm_columns(grid, ll_names = c("longitude", "latitude"), utm_crs = 32609)
+plot(g$X, g$Y)
+nrow(g)
+nrow(distinct(g))
 
 ggplot(g, aes(X, Y, colour = depth_m_log)) +
   geom_point() +
   coord_fixed() +
   scale_colour_viridis_c(trans = "sqrt", direction = -1)
 
-years <- sort(union(unique(d$year), fit_iphc_nb2$extra_time))
+years <- sort(unique(d$year))
 grid <- sdmTMB::replicate_df(g, "year", years)
 
 p <- predict(fit_iphc_nb2, newdata = grid, return_tmb_object = TRUE)
@@ -172,7 +173,7 @@ saveRDS(ind, file = "data/generated/geostat-ind-iphc.rds")
 ind <- readRDS("data/generated/geostat-ind-iphc.rds")
 
 obs <- group_by(d, year) |>
-  summarise(n_hooksobserved = mean(hooksobserved))
+  summarise(n_hooksobserved = mean(hooksobserved2))
 
 ind |> left_join(obs) |>
   ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = n_hooksobserved)) +
