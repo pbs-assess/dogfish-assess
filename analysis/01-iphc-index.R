@@ -183,4 +183,5 @@ ind |> left_join(obs) |>
   geom_vline(xintercept = 2000, lty = 2) +
   scale_colour_viridis_c()
 
+mean(ind$est[ind$year %in% c(1998:2002)]) / min(ind$est)
 plot(obs$n_hooksobserved, ind$est)
