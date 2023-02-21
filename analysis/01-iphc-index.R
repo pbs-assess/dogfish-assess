@@ -107,6 +107,7 @@ abline(0, 1)
 range(hook_adjust_factor)
 h$hook_adjust_factor <- hook_adjust_factor
 h$date <- lubridate::as_date(h$date)
+d$date <- lubridate::dmy(d$date)
 
 d <- left_join(d, select(h, -hookobserved), by = join_by(year, station, date)) |>
   filter(iphc.reg.area %in% "2B")
@@ -117,13 +118,12 @@ d$X <- d$Y <- NULL
 d <- sdmTMB::add_utm_columns(d, ll_names = c("longitude", "latitude"), utm_crs = 32609)
 
 nrow(d)
-# 8 dogfish caught
+# say 8 dogfish were caught
 # all hooks were used but 1
 # 100 hooks looked at
 # so, it's an underestimate of dogfish
 # need to inflate catch of dogfish by 'h'
 # 8 * h / 100 is the CPUE
-# (8 * h)/100
 # log(100) is the offset term
 # log((8 * h)/100) = b0 + b1*x ...
 # log(8 * h) - log(100) = b0 + b1*x ...
@@ -150,18 +150,16 @@ d <- filter(d, year <= 2021) # hook adj. not ready for 2022
 d <- filter(d, !is.na(purpose)) # a few in 2021!?
 stopifnot(sum(is.na(d$hook_adjust_factor)) == 0L)
 
-
-d[is.na(d$hook_adjust_factor), ]
 range(d$number_observed)
 range(d$depth_m_log)
 # d$offset <- log(d$hooksobserved)
 
-mesh <- make_mesh(d, c("X", "Y"), cutoff = 20)
+mesh <- make_mesh(d, c("X", "Y"), cutoff = 15)
 plot(mesh)
 mesh$mesh$n
 
 d$offset <- log(d$hooksobserved2 / d$hook_adjust_factor)
-d[is.na(d$offset), ]
+stopifnot(sum(is.na(d$offset)) == 0L)
 
 fit_iphc_nb2 <- sdmTMB(
   number_observed ~ 0 + poly(depth_m_log, 2L),
@@ -180,10 +178,19 @@ fit_iphc_nb2 <- sdmTMB(
 saveRDS(fit_iphc_nb2, file = "data/generated/iphc-nb2-sdmTMB.rds")
 fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB.rds")
 
+# fit_rw <- update(fit_iphc_nb2, spatiotemporal = "rw", time_varying = NULL,
+#   formula. = number_observed ~ 1 + poly(depth_m_log, 2L))
+
 fit_iphc_nb2
+fit_iphc_nb2$sd_report
 sanity(fit_iphc_nb2)
 fit_iphc_nb2$sd_report
 plot_anisotropy(fit_iphc_nb2)
+tidy(fit_iphc_nb2, conf.int = TRUE)
+tidy(fit_iphc_nb2, effects = "ran_pars", conf.int = TRUE)
+
+# fit_rw
+# sanity(fit_rw)
 
 # grid of IPHC main fixed survey locations
 s <- d %>%
@@ -208,6 +215,9 @@ ggplot(g, aes(X, Y, colour = depth_m_log)) +
 years <- sort(unique(d$year))
 grid <- sdmTMB::replicate_df(g, "year", years)
 
+# p_rw <- predict(fit_rw, newdata = grid, return_tmb_object = TRUE)
+# ind_rw <- get_index(p_rw, bias_correct = TRUE)
+
 p <- predict(fit_iphc_nb2, newdata = grid, return_tmb_object = TRUE)
 ind <- get_index(p, bias_correct = TRUE)
 
@@ -226,11 +236,57 @@ ind |>
   geom_vline(xintercept = 2000, lty = 2) +
   scale_colour_viridis_c()
 
+# ind_rw |>
+#   left_join(obs) |>
+#   ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = n_hooksobserved)) +
+#   geom_pointrange() +
+#   coord_cartesian(ylim = c(0, NA)) +
+#   geom_vline(xintercept = 2020, lty = 2) +
+#   geom_vline(xintercept = 2000, lty = 2) +
+#   scale_colour_viridis_c()
+
+
 ind |>
   ggplot(aes(year, est, ymin = lwr, ymax = upr)) +
   geom_ribbon(alpha = 0.4) +
   geom_line() +
   coord_cartesian(ylim = c(0, NA))
 
-mean(ind$est[ind$year %in% c(1998:2002)]) / min(ind$est)
+# mean(ind$est[ind$year %in% c(1998:2002)]) / min(ind$est)
 plot(obs$n_hooksobserved, ind$est)
+
+group_by(d, year) |>
+  summarise(m = mean(cpue)) |>
+  ggplot(aes(year, m)) + geom_line()
+
+# grid_wcvi <- filter(grid, Y <= 5600)
+# ggplot(grid_wcvi, aes(X, Y, colour = depth_m_log)) +
+#   geom_point() +
+#   coord_fixed() +
+#   scale_colour_viridis_c(trans = "sqrt", direction = -1)
+#
+# p_wcvi <- predict(fit_iphc_nb2, newdata = grid_wcvi, return_tmb_object = TRUE)
+# ind_wcvi <- get_index(p_wcvi, bias_correct = TRUE)
+#
+# saveRDS(ind_wcvi, file = "data/generated/geostat-ind-iphc-wcvi.rds")
+# ind_wcvi <- readRDS("data/generated/geostat-ind-iphc-wcvi.rds")
+#
+#
+# grid_north <- filter(grid, Y > 5600)
+# ggplot(grid_north, aes(X, Y, colour = depth_m_log)) +
+#   geom_point() +
+#   coord_fixed() +
+#   scale_colour_viridis_c(trans = "sqrt", direction = -1)
+#
+# p_north <- predict(fit_iphc_nb2, newdata = grid_north, return_tmb_object = TRUE)
+# ind_north <- get_index(p_north, bias_correct = TRUE)
+#
+# saveRDS(ind_north, file = "data/generated/geostat-ind-iphc-north.rds")
+# ind_north <- readRDS("data/generated/geostat-ind-iphc-north.rds")
+#
+# ind_north |>
+#   mutate(type = "north") |>
+#   bind_rows(mutate(ind_wcvi, type = "wcvi")) |>
+#   ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = type, fill = type)) +
+#   geom_ribbon(alpha = 0.3) +
+#   coord_cartesian(ylim = c(0, NA))
