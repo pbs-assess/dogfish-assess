@@ -27,12 +27,28 @@ hookll <- readRDS("data/raw/HBLL_OUT_hookinfo.rds")
 hll <- hookll %>%
   rowwise() %>%
   mutate(hooksfishing = sum(count_target_species + count_non_target_species +
-    count_empty_hooks + count_bait_only + count_empty_hooks -
+    count_empty_hooks + count_bait_only -
     count_bent_broken))
 
 ggplot(hll, aes(count_bait_only)) +
   geom_histogram() +
   facet_wrap(~year)
+
+ggplot(hll, aes(hooksfishing)) +
+  geom_histogram() +
+  facet_wrap(~year)
+
+ggplot(
+  filter(hll, year %in% c(2006, 2012, 2022)),
+  aes(hooksfishing, group = as.factor(year), col = as.factor(year))
+) +
+  geom_density()
+
+ggplot(
+  filter(hll, year %in% c(2006, 2012, 2022)),
+  aes(count_bait_only, group = as.factor(year), col = as.factor(year))
+) +
+  geom_density()
 
 hll$count_bait_only[hll$count_bait_only == 0] <- 1
 hll <- hll[hll$hooksfishing > 0, ]
@@ -63,7 +79,6 @@ fit_nb2 <- sdmTMB(
   data = d,
   mesh = mesh,
   offset = "offset", # hook competition offset
-  # offset = "log_hook_count",
   time = "year",
   spatiotemporal = "rw",
   spatial = "on",
@@ -101,23 +116,24 @@ ggplot(g, aes(X, Y, fill = depth_m, colour = depth_m)) +
 
 yrs <- sort(union(unique(d$year), fit_nb2$extra_time))
 grid <- sdmTMB::replicate_df(g, time_name = "year", time_values = yrs)
+# grid <- purrr::map_dfr(yrs, ~ tibble(g, year = .x))
 
 p_nb2 <- predict(fit_nb2, newdata = grid, return_tmb_object = TRUE)
 ind <- get_index(p_nb2, bias_correct = TRUE)
 survs <- select(d, year, survey_abbrev) |> distinct()
 ind <- left_join(ind, survs, by = join_by(year))
+# ind <- left_join(ind, survs, by = "year")
 
 ggplot() +
   geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
   coord_cartesian(ylim = c(0, NA))
 
 ind_save <- dplyr::filter(ind, !is.na(survey_abbrev))
-saveRDS(ind_save, file = "data/generated/geostat-ind-hbll-out.rds")
-ind_save <- readRDS("data/generated/geostat-ind-hbll-out.rds")
 saveRDS(ind_save, file = "data/generated/geostat-ind-hbll-out_hk.rds")
 ind_save_hk <- readRDS("data/generated/geostat-ind-hbll-out_hk.rds")
+# ind_save_nohk <- readRDS("data/generated/geostat-ind-hbll-out.rds")
 
-x <- ggplot(ind_save_hk, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
-  geom_pointrange() +
-  coord_cartesian(ylim = c(0, NA))
-x + geom_pointrange(data = ind_save, aes(year, est, ymin = lwr, ymax = upr), colour = "black")
+# x <- ggplot(ind_save_hk, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
+#   geom_pointrange() +
+#   coord_cartesian(ylim = c(0, NA))
+# x + geom_pointrange(data = ind_save_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "black")
