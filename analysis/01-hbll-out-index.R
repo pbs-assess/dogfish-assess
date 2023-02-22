@@ -18,7 +18,6 @@ sum(is.na(d$depth_m))
 d <- dplyr::filter(d, !is.na(depth_m))
 d$log_hook_count <- log(d$hook_count)
 
-
 # hook competition
 # hookll <- gfdata::get_ll_hook_data(species = "north pacific spiny dogfish", ssid = c(22, 36)) %>%
 #   dplyr::select(fishing_event_id, year, count_bait_only, count_empty_hooks, count_bent_broken, count_non_target_species, count_target_species)
@@ -102,14 +101,11 @@ ggplot(g, aes(X, Y, fill = depth_m, colour = depth_m)) +
 
 yrs <- sort(union(unique(d$year), fit_nb2$extra_time))
 grid <- sdmTMB::replicate_df(g, time_name = "year", time_values = yrs)
-grid <- purrr::map_dfr(yrs, ~ tibble(g, year = .x))
-
 
 p_nb2 <- predict(fit_nb2, newdata = grid, return_tmb_object = TRUE)
 ind <- get_index(p_nb2, bias_correct = TRUE)
 survs <- select(d, year, survey_abbrev) |> distinct()
 ind <- left_join(ind, survs, by = join_by(year))
-ind <- left_join(ind, survs, by = c("year" = "year"))
 
 ggplot() +
   geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
