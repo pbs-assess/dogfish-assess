@@ -111,7 +111,6 @@ d$date <- lubridate::dmy(d$date)
 
 d <- left_join(d, select(h, -hookobserved), by = join_by(year, station, date)) |>
   filter(iphc.reg.area %in% "2B")
-
 names(d) <- tolower(names(d))
 names(d) <- gsub("\\.", "_", names(d))
 d$X <- d$Y <- NULL
@@ -152,13 +151,13 @@ stopifnot(sum(is.na(d$hook_adjust_factor)) == 0L)
 
 range(d$number_observed)
 range(d$depth_m_log)
-# d$offset <- log(d$hooksobserved)
 
 mesh <- make_mesh(d, c("X", "Y"), cutoff = 15)
 plot(mesh)
 mesh$mesh$n
 
-d$offset <- log(d$hooksobserved2 / d$hook_adjust_factor)
+#d$offset <- log(d$hooksobserved2)
+d$offset <- log(d$hooksobserved2 / d$hook_adjust_factor) #hook comp
 stopifnot(sum(is.na(d$offset)) == 0L)
 
 fit_iphc_nb2 <- sdmTMB(
@@ -223,6 +222,11 @@ ind <- get_index(p, bias_correct = TRUE)
 
 saveRDS(ind, file = "data/generated/geostat-ind-iphc.rds")
 ind <- readRDS("data/generated/geostat-ind-iphc.rds")
+#ind_withouthk <- readRDS("data/generated/geostat-ind-iphc_withouthk.rds")
+
+# hk <- ggplot(ind, aes(year, log(est)), colour = "black") +
+#   geom_line()
+# hk + geom_line(data = ind_withouthk, aes(year, log(est)), col = "red")
 
 obs <- group_by(d, year) |>
   summarise(n_hooksobserved = mean(hooksobserved2))
