@@ -129,9 +129,11 @@ ggplot() +
   coord_cartesian(ylim = c(0, NA))
 
 ind_save <- dplyr::filter(ind, !is.na(survey_abbrev))
-saveRDS(ind_save, file = "data/generated/geostat-ind-hbll-out_hk.rds")
-ind_save_hk <- readRDS("data/generated/geostat-ind-hbll-out_hk.rds")
-# ind_save_nohk <- readRDS("data/generated/geostat-ind-hbll-out.rds")
+
+saveRDS(ind_save, file = "data/generated/geostat-ind-hbll-out.rds")
+ind_save <- readRDS("data/generated/geostat-ind-hbll-out.rds")
+#saveRDS(ind_save, file = "data/generated/geostat-ind-hbll-out-hook-compet.rds")
+#ind_save_hk <- readRDS("data/generated/geostat-ind-hbll-out-hook-compet.rds")
 
 # x <- ggplot(ind_save_hk, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
 #   geom_pointrange() +
