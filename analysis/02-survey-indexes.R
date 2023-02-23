@@ -17,3 +17,5 @@ bind_rows(
   ylab("Relative abundance or biomass") +
   xlab("Year") +
   gfplot::theme_pbs()
+
+ggsave("figs/outside-indexes.png", width = 5.5, height = 8.0)
