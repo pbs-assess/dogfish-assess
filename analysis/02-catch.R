@@ -2,6 +2,7 @@ library(dplyr)
 library(gfplot)
 library(ggplot2)
 source("analysis/utils.R")
+dir.create("figs", showWarnings = FALSE)
 
 # modern catches ------------------------------------------------------
 
@@ -128,6 +129,7 @@ catch_plot <- function(x, column) {
     scale_fill_manual(values = cols) +
     ylim(0, 2.5e04)
 }
+ggsave("figs/reconstructed-catch.png", width = 8, height = 8)
 
 land <- catch_plot(d, landed_kg/1000) + ggtitle("Landings")
 discard <- catch_plot(d, discarded_kg/1000) + ggtitle("Discards")
