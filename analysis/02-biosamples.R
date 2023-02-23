@@ -3,7 +3,7 @@ library(dplyr)
 library(ggplot2)
 
 d <- readRDS("data/raw/survey-samples.rds")
-d <- mutate(d, species_common_name = "north pacific spiny dogfish") # some missing!?
+d <- mutate(d, species_common_name = "north pacific spiny dogfish") # some missing!?, there are NAs at the bottom of the dataset for ALL columns
 dc <- readRDS("data/raw/commercial-samples.rds")
 
 # Length composition --------------------------------------------------
