@@ -20,7 +20,8 @@ library(ggplot2)
 # saveRDS(sets_tl, "data/raw/sets_trawl.rds")
 
 d <- readRDS("data/raw/samples_trawl.rds")
-dsets <- readRDS("data/raw/sets_trawl.rds")
+dsets <- readRDS("data/raw/sets_trawl.rds") %>%
+  select(year, fishing_event_id, survey_abbrev, catch_weight, longitude, latitude)
 
 unique(d$sex) # 2 is female, 1 is male
 
@@ -31,7 +32,7 @@ dsamps <- d %>%
   dplyr::select(sampsyn, fishing_event_id, year)
 
 join <- dsamps %>%
-  right_join(select(dsets, year, fishing_event_id, survey_abbrev, catch_weight))
+  right_join(select(dsets, year, fishing_event_id, survey_abbrev, catch_weight, longitude, latitude))
 
 join %>% count(sampsyn)
 
@@ -43,30 +44,12 @@ join %>%
   group_by(survey_abbrev, sampsyn) %>%
   summarize(total_weight = sum(catch_weight))
 
+ggplot(join, aes(longitude, latitude, col = sampsyn)) +
+  geom_point() +
+  facet_wrap(~year)
+
 
 # Exploratory plots of sex and length -------------------------------------------------------
-d %>%
-  left_join(dsets) %>%
-  group_by(year, sex, survey_abbrev, fishing_event_id, latitude, longitude) %>%
-  filter(sex == 1) %>%
-  summarize(count = n()) %>%
-  ggplot() +
-  geom_jitter(
-    aes(longitude, latitude, colour = log(count), size = log(count))
-  ) +
-  facet_wrap(~ sex + year)
-
-d %>%
-  left_join(dsets) %>%
-  group_by(year, sex, survey_abbrev, fishing_event_id, latitude, longitude) %>%
-  filter(sex == 2) %>%
-  summarize(count = n()) %>%
-  ggplot() +
-  geom_jitter(
-    aes(longitude, latitude, colour = log(count), size = log(count))
-  ) +
-  facet_wrap(~ sex + year)
-
 years <- data.frame(year = c(seq(2003, 2021, 1)), group = c(1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10))
 d %>%
   left_join(years) %>%
@@ -145,10 +128,52 @@ ggplot(
 
 # # 1. Use a log-log linear relationship to calculate length/weigh --------
 # pull out outliers
+dm <- d %>%
+  filter(sex == 1) %>%
+  select(sex, weight, length) %>%
+  drop_na()
+m <- lm(log(weight) ~ log(length), data = dm)
+new_x <- data.frame(length = dm$length)
+
+# predicting using model new data
+dm$y_hat_new <- predict(m, new_x) # data must be in data.frame
+dm <- dm %>% mutate(resid = (log(weight) - y_hat_new)^2)
+pp <- ggplot(dm, aes(log(length), log(weight))) +
+  geom_point()
+pp + geom_point(data = filter(dm, resid > 0.39), aes(log(length), log(weight), col = "red"))
+m_remove <- dm %>% filter(resid > 0.39)
+
+# pull out outliers - female
+df <- d %>%
+  filter(sex == 2) %>%
+  select(sex, weight, length) %>%
+  drop_na()
+f <- lm(log(weight) ~ log(length), data = df)
+new_x <- data.frame(length = df$length)
+
+# predicting using model new data
+df$y_hat_new <- predict(f, new_x) # data must be in data.frame
+df <- df %>% mutate(resid = (log(weight) - y_hat_new)^2)
+pp <- ggplot(df, aes(log(length), log(weight))) +
+  geom_point()
+pp + geom_point(data = filter(df, resid > 0.39), aes(log(length), log(weight), col = "red"))
+
+f_remove <- df %>% filter(resid > 0.39)
+remove <- rbind(f_remove, m_remove)
+d2 <- d %>% anti_join(remove)
+
+
+#Count the number of species that are not sexed for each survey
+unique(d$sex)
+d %>%
+  group_by(year) %>%
+  filter(sex == 0) %>%
+  tally()
+
 
 # calculate length/weight relationship
 f <- fit_length_weight(
-  d,
+  d2,
   sex = ("female"),
   min_samples = 50L,
   method = c("tmb"), # method = c("tmb", "rlm", "lm"),
@@ -157,7 +182,7 @@ f <- fit_length_weight(
 )
 
 m <- fit_length_weight(
-  d,
+  d2,
   sex = ("male"),
   min_samples = 50L,
   method = c("tmb"), # method = c("tmb", "rlm", "lm"),
@@ -166,7 +191,7 @@ m <- fit_length_weight(
 )
 
 
-ggplot(d, aes(length, weight)) +
+ggplot(d2, aes(length, weight)) +
   geom_jitter() +
   facet_wrap(~sex)
 range(f$predictions)
@@ -176,13 +201,13 @@ y <- m$data
 plot_length_weight(object_female = f, object_male = m)
 
 
-trawl_f <- filter(d, sex == 2)
+trawl_f <- filter(d2, sex == 2)
 trawl_f$weight_predicted <- exp(f$pars$log_a +
   f$pars$b * log(trawl_f$length)) * 1000
 range(trawl_f$weight_predicted)
 plot(density(trawl_f$weight_predicted))
 
-trawl_m <- filter(d, sex == 1)
+trawl_m <- filter(d2, sex == 1)
 trawl_m$weight_predicted <- exp(m$pars$log_a +
   m$pars$b * log(trawl_m$length)) * 1000
 range(trawl_m$weight_predicted)
@@ -199,7 +224,7 @@ weighttw <- predicted_weight_tw %>% select(
 )
 
 
-# # 2. Calculate the weight of the sample catch that is m & f, per --------
+# 2. Calculate the weight of the sample catch that is m & f, per --------
 
 weighttw2 <- weighttw %>% mutate(weight_complete = ifelse(is.na(weight) == TRUE,
   weight_predicted,
@@ -215,29 +240,42 @@ sexratio <- weighttw2 %>%
     ratio = round((ratioweight / totalweight), 2)
   ) %>%
   distinct(.keep_all = TRUE) %>%
-  dplyr::select(year, fishing_event_id, sex, ratio)
+  dplyr::select(year, fishing_event_id, sex, ratio) %>%
+  ungroup()
 
 
 
 # 3. Apply the m/f ratio to the set catch weight. -----------------------
 
-dsets <- readRDS("data/raw/sets_trawl.rds")
-sexratio
+sexratio2 <- sexratio %>%
+  dplyr::select(-sex) %>%
+  distinct(year, fishing_event_id)
 
-dsets
+sex <- c(1, 2)
+sexratio3 <- purrr::map_dfr(sex, ~ tibble(sexratio2, sex = .x))
+sexratio4 <- sexratio3 %>% left_join(sexratio)
+
+dsets_samps <- left_join(dsets, sexratio4, by = c(
+  "year" = "year", "fishing_event_id" = "fishing_event_id"
+))
+glimpse(dsets_samps)
 
 
+dsets_samps %>%
+  filter(sex == 2 | is.na(sex) == TRUE) %>%
+  ggplot(aes(longitude, latitude, col = ratio)) +
+  geom_point() +
+  facet_wrap(~year)
 
-# come back to this
-# count the number of species that are not sexed for each survey
-num_samples <- trawl_samples %>% count(survey_abbrev, fishing_event_id, year)
-trawl_samples %>%
-  count(survey_abbrev, fishing_event_id, year) %>%
-  distinct()
-num_nosex <- trawl_samples %>%
-  group_by(survey_abbrev, year) %>%
-  filter(sex == 0) %>%
-  tally()
-no_sex_prop <- inner_join(num_samples, num_nosex, by = c("survey_abbrev" = "survey_abbrev", "year" = "year"))
-names(no_sex_prop) <- c("survey_abbrev", "year", "total_samples", "num_nosex")
-no_sex_prop$prop_nosex <- no_sex_prop$num_nosex / no_sex_prop$total_samples * 100
+dsets_samps %>%
+  filter(sex == 2) %>%
+  ggplot(aes(longitude, latitude, col = ratio)) +
+  geom_point() +
+  facet_wrap(~year)
+
+dsets_samps %>%
+  filter(sex == 1) %>%
+  ggplot(aes(longitude, latitude, col = ratio)) +
+  geom_point() +
+  facet_wrap(~year)
+
