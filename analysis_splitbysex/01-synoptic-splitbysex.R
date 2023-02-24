@@ -163,7 +163,7 @@ remove <- rbind(f_remove, m_remove)
 d2 <- d %>% anti_join(remove)
 
 
-#Count the number of species that are not sexed for each survey
+#FYI - Count the number of species that are not sexed for each survey
 unique(d$sex)
 d %>%
   group_by(year) %>%
@@ -194,29 +194,19 @@ m <- fit_length_weight(
 ggplot(d2, aes(length, weight)) +
   geom_jitter() +
   facet_wrap(~sex)
-range(f$predictions)
-fdata <- f$data
-range(m$predictions)
-y <- m$data
+
 plot_length_weight(object_female = f, object_male = m)
 
 
 trawl_f <- filter(d2, sex == 2)
 trawl_f$weight_predicted <- exp(f$pars$log_a +
   f$pars$b * log(trawl_f$length)) * 1000
-range(trawl_f$weight_predicted)
-plot(density(trawl_f$weight_predicted))
 
 trawl_m <- filter(d2, sex == 1)
 trawl_m$weight_predicted <- exp(m$pars$log_a +
   m$pars$b * log(trawl_m$length)) * 1000
-range(trawl_m$weight_predicted)
-plot(density(trawl_m$weight_predicted))
-ggplot(trawl_m, aes(length, weight_predicted)) +
-  geom_jitter()
 
 predicted_weight_tw <- rbind(trawl_m, trawl_f)
-glimpse(predicted_weight_tw)
 
 weighttw <- predicted_weight_tw %>% select(
   year, fishing_event_id,
@@ -259,7 +249,7 @@ dsets_samps <- left_join(dsets, sexratio4, by = c(
   "year" = "year", "fishing_event_id" = "fishing_event_id"
 ))
 glimpse(dsets_samps)
-
+saveRDS(dsets_samps, "data/generated/trawlsamples_splitbysex.rds")
 
 dsets_samps %>%
   filter(sex == 2 | is.na(sex) == TRUE) %>%
@@ -278,4 +268,8 @@ dsets_samps %>%
   ggplot(aes(longitude, latitude, col = ratio)) +
   geom_point() +
   facet_wrap(~year)
+
+
+# create index from males and females -------------------------------------
+
 
