@@ -19,8 +19,10 @@ library(ggplot2)
 # saveRDS(samps_tl, "data/raw/samples_trawl.rds")
 # saveRDS(sets_tl, "data/raw/sets_trawl.rds")
 
-d <- readRDS("data/raw/samples_trawl.rds")
-dsets <- readRDS("data/raw/sets_trawl.rds") %>%
+d <- readRDS("data/raw/survey-samples.rds") %>%
+  filter(survey_abbrev %in% c("SYN HS", "SYN QCS", "SYN WCVI", "SYN WCHG"))
+dsets <- readRDS("data/raw/survey-sets.rds") %>%
+  filter(survey_abbrev %in% c("SYN HS", "SYN QCS", "SYN WCVI", "SYN WCHG")) %>%
   select(year, fishing_event_id, survey_abbrev, catch_weight, longitude, latitude)
 
 unique(d$sex) # 2 is female, 1 is male
@@ -32,7 +34,8 @@ dsamps <- d %>%
   dplyr::select(sampsyn, fishing_event_id, year)
 
 join <- dsamps %>%
-  right_join(select(dsets, year, fishing_event_id, survey_abbrev, catch_weight, longitude, latitude))
+  right_join(select(dsets, year, fishing_event_id, survey_abbrev, catch_weight, longitude, latitude)) %>%
+  filter(catch_weight >0 )
 
 join %>% count(sampsyn)
 
@@ -44,8 +47,8 @@ join %>%
   group_by(survey_abbrev, sampsyn) %>%
   summarize(total_weight = sum(catch_weight))
 
-ggplot(join, aes(longitude, latitude, col = sampsyn)) +
-  geom_point() +
+join %>% filter(catch_weight > 10) %>% ggplot() +
+geom_point(aes(longitude, latitude, col = sampsyn, size = catch_weight)) +
   facet_wrap(~year)
 
 
