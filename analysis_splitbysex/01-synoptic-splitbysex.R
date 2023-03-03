@@ -371,16 +371,16 @@ dm <- filter(d, sex == "M")
 #     )
 #   ) %>% filter(!is.na(catch_weight))
 
-
+# female model
 mesh1 <- make_mesh(df, c("X", "Y"), cutoff = 15)
 plot(mesh1)
 mesh1$mesh$n
 
-ffit <- sdmTMB(
+fit1 <- sdmTMB(
   catch_weight ~ 1 + poly(log(depth_m), 2L),
   family = delta_gamma(),
   data = df,
-  mesh = mesh,
+  mesh = mesh1,
   offset = "log_area_swept",
   time = "year",
   spatiotemporal = "rw",
@@ -390,15 +390,16 @@ ffit <- sdmTMB(
   control = sdmTMBcontrol(newton_loops = 1L)
 )
 
-# saveRDS(ffit, file = "data/generated/synoptic-sdmTMB-female.rds")
+saveRDS(fit1, file = "data/generated/synoptic-sdmTMB-female.rds")
 # saveRDS(ffit, file = "data/generated/synoptic-sdmTMB-female-trim.rds")
 
-mesh <- make_mesh(dm, c("X", "Y"), cutoff = 15)
-mfit <- sdmTMB(
+# male model
+mesh2 <- make_mesh(dm, c("X", "Y"), cutoff = 15)
+fit2 <- sdmTMB(
   catch_weight ~ 1 + poly(log(depth_m), 2L),
   family = delta_gamma(),
   data = dm,
-  mesh = mesh,
+  mesh = mesh2,
   offset = "log_area_swept",
   time = "year",
   spatiotemporal = "rw",
@@ -408,11 +409,11 @@ mfit <- sdmTMB(
   control = sdmTMBcontrol(newton_loops = 1L)
 )
 
-# saveRDS(mfit, file = "data/generated/synoptic-sdmTMB-male.rds")
-# saveRDS(mfit, file = "data/generated/synoptic-sdmTMB-male-trim.rds")
+saveRDS(fit2, file = "data/generated/synoptic-sdmTMB-male.rds")
+# saveRDS(fit2, file = "data/generated/synoptic-sdmTMB-male-trim.rds")
 
-# ffit <- readRDS("data/generated/synoptic-sdmTMB-female.rds")
-# mfit <- readRDS("data/generated/synoptic-sdmTMB-male.rds")
+ffit <- readRDS("data/generated/synoptic-sdmTMB-female.rds")
+mfit <- readRDS("data/generated/synoptic-sdmTMB-male.rds")
 # ffit <- readRDS("data/generated/synoptic-sdmTMB-female-trim.rds")
 # mfit <- readRDS("data/generated/synoptic-sdmTMB-male-trim.rds")
 
