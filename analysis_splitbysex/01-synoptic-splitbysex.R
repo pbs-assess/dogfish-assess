@@ -5,6 +5,11 @@ library(gfdata)
 library(sdmTMB)
 library(gfplot)
 
+
+file <- "data/generated/trawl_sets_splitbysex.rds"
+
+if(!file.exists(file)) {
+
 # load data ---------------------------------------------------------------
 # survey_samples <- get_survey_samples(species = "north pacific spiny dogfish")
 # survey_sets <- get_survey_sets(species = "north pacific spiny dogfish")
@@ -229,7 +234,7 @@ annratio <- weighttw2 %>%
   rename(mean_ratio = ratio)
 
 ggplot(annratio, aes(year, mean_ratio)) + geom_path(aes(colour = sex)) +
-  facet_wrap(~survey_abbrev) + ggsidekick::theme_sleek()
+  facet_wrap(~survey_abbrev) + gfplot::theme_pbs()
 
 
 
@@ -297,21 +302,29 @@ dat <- left_join(dsets_samps, annratio) %>%
          total_weight = catch_weight,
          catch_weight = total_weight * ratio_filled
   )
-library(ggsidekick)
+
+dat %>%
+  filter(sex == "F") %>%
+  ggplot(aes(longitude, latitude,
+             size = catch_weight, alpha = catch_weight, colour = catch_weight)) +
+  geom_point() +
+  scale_colour_viridis_c(trans = sqrt, option = "B")+
+  facet_wrap(~year)
 
 dat %>%
   filter(sex == "M") %>%
-  ggplot(aes(longitude, latitude, size = catch_weight, alpha = catch_weight, colour = catch_weight)) +
+  ggplot(aes(longitude, latitude,
+             size = catch_weight, alpha = catch_weight, colour = catch_weight)) +
   geom_point() +
-  scale_colour_viridis_c(trans = fourth_root_power_trans(), option = "B")+
+  scale_colour_viridis_c(trans = sqrt, option = "B")+
   facet_wrap(~year)
 
 glimpse(dat)
-saveRDS(dat, "data/generated/trawlsamples_splitbysex.rds")
-
+saveRDS(dat, "data/generated/trawl_sets_splitbysex.rds")
+}
 
 # create index from males and females -------------------------------------
-d <- readRDS("data/generated/trawlsamples_splitbysex.rds")
+d <- readRDS("data/generated/trawl_sets_splitbysex.rds")
 
 d <- sdmTMB::add_utm_columns(d, utm_crs = 32609)
 
@@ -359,9 +372,9 @@ dm <- filter(d, sex == "M")
 #   ) %>% filter(!is.na(catch_weight))
 
 
-mesh <- make_mesh(df, c("X", "Y"), cutoff = 15)
-plot(mesh)
-mesh$mesh$n
+mesh1 <- make_mesh(df, c("X", "Y"), cutoff = 15)
+plot(mesh1)
+mesh1$mesh$n
 
 ffit <- sdmTMB(
   catch_weight ~ 1 + poly(log(depth_m), 2L),
@@ -398,15 +411,19 @@ mfit <- sdmTMB(
 # saveRDS(mfit, file = "data/generated/synoptic-sdmTMB-male.rds")
 # saveRDS(mfit, file = "data/generated/synoptic-sdmTMB-male-trim.rds")
 
-# fit <- readRDS("data/generated/synoptic-sdmTMB-female.rds")
-# fit <- readRDS("data/generated/synoptic-sdmTMB-male.rds")
-# fit <- readRDS("data/generated/synoptic-sdmTMB-female-trim.rds")
-# fit <- readRDS("data/generated/synoptic-sdmTMB-male-trim.rds")
+# ffit <- readRDS("data/generated/synoptic-sdmTMB-female.rds")
+# mfit <- readRDS("data/generated/synoptic-sdmTMB-male.rds")
+# ffit <- readRDS("data/generated/synoptic-sdmTMB-female-trim.rds")
+# mfit <- readRDS("data/generated/synoptic-sdmTMB-male-trim.rds")
 
-sanity(fit)
-plot_anisotropy(fit)
-fit
-fit$sd_report
+sanity(ffit)
+sanity(mfit)
+plot_anisotropy(ffit)
+plot_anisotropy(mfit)
+ffit
+mfit
+ffit$sd_report
+mfit$sd_report
 
 g <- gfplot::synoptic_grid |> dplyr::select(-survey_domain_year)
 g <- rename(g, depth_m = depth)
@@ -415,11 +432,14 @@ g <- rename(g, depth_m = depth)
 yrs <- sort(unique(fit$data$year))
 grid <- sdmTMB::replicate_df(g, time_name = "year", time_values = yrs)
 
-p <- predict(fit, newdata = grid, return_tmb_object = TRUE)
-ind <- get_index(p, bias_correct = TRUE)
+fp <- predict(ffit, newdata = grid, return_tmb_object = TRUE)
+ind_f <- get_index(fp, bias_correct = TRUE)
 
-# saveRDS(ind, file = "data/generated/geostat-ind-female.rds")
-# saveRDS(ind, file = "data/generated/geostat-ind-male.rds")
+mp <- predict(mfit, newdata = grid, return_tmb_object = TRUE)
+ind_m <- get_index(mp, bias_correct = TRUE)
+
+saveRDS(ind_f, file = "data/generated/geostat-ind-female.rds")
+saveRDS(ind_m, file = "data/generated/geostat-ind-male.rds")
 # saveRDS(ind, file = "data/generated/geostat-ind-male-trim.rds")
 # saveRDS(ind, file = "data/generated/geostat-ind-female-trim.rds")
 
