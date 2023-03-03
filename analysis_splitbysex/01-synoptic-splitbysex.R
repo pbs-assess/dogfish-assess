@@ -1,29 +1,21 @@
 # split trawl by sex
 
+library(tidyverse)
 library(gfdata)
 library(sdmTMB)
 library(gfplot)
-library(dplyr)
-library(ggplot2)
-
 
 # load data ---------------------------------------------------------------
-# data_survey_samples <- get_survey_samples(species = "north pacific spiny dogfish")
-# data_surveysets <- get_survey_sets(species = "north pacific spiny dogfish")
+# survey_samples <- get_survey_samples(species = "north pacific spiny dogfish")
+# survey_sets <- get_survey_sets(species = "north pacific spiny dogfish")
 #
-# sets_tl <- filter(data_surveysets, survey_abbrev %in% c("SYN HS", "SYN QCS", "SYN WCVI", "SYN WCHG")) %>%
-#   mutate(geartype = "trawl")
-# samps_tl <- filter(data_survey_samples, survey_abbrev %in% c("SYN HS", "SYN QCS", "SYN WCVI", "SYN WCHG")) %>%
-#   mutate(geartype = "trawl") %>%
-#   filter(!is.na(species_common_name) == TRUE)
-# saveRDS(samps_tl, "data/raw/samples_trawl.rds")
-# saveRDS(sets_tl, "data/raw/sets_trawl.rds")
+# saveRDS(survey_samples, "data/raw/survey-samples.rds")
+# saveRDS(survey_sets, "data/raw/survey-sets.rds")
 
 d <- readRDS("data/raw/survey-samples.rds") %>%
   filter(survey_abbrev %in% c("SYN HS", "SYN QCS", "SYN WCVI", "SYN WCHG"))
 dsets <- readRDS("data/raw/survey-sets.rds") %>%
-  filter(survey_abbrev %in% c("SYN HS", "SYN QCS", "SYN WCVI", "SYN WCHG")) %>%
-  select(year, fishing_event_id, survey_abbrev, catch_weight, longitude, latitude)
+  filter(survey_abbrev %in% c("SYN HS", "SYN QCS", "SYN WCVI", "SYN WCHG"))
 
 unique(d$sex) # 2 is female, 1 is male
 
@@ -34,8 +26,9 @@ dsamps <- d %>%
   dplyr::select(sampsyn, fishing_event_id, year)
 
 join <- dsamps %>%
-  right_join(select(dsets, year, fishing_event_id, survey_abbrev, catch_weight, longitude, latitude)) %>%
-  filter(catch_weight >0 )
+  right_join(select(dsets, year, fishing_event_id, survey_abbrev, catch_weight, longitude, latitude),
+             multiple = "all") %>%
+  filter(catch_weight >0)
 
 join %>% count(sampsyn)
 
@@ -53,16 +46,16 @@ geom_point(aes(longitude, latitude, col = sampsyn, size = catch_weight)) +
 
 
 # Exploratory plots of sex and length -------------------------------------------------------
-years <- data.frame(year = c(seq(2003, 2021, 1)), group = c(1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10))
+years <- data.frame(year = c(seq(2003, 2022, 1)), group = c(1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10))
 d %>%
   left_join(years) %>%
-  mutate(sex = ifelse(sex == 1, "M", "F")) %>%
+  mutate(sex = ifelse(sex == 1, "M", ifelse(sex == 2, "F", NA))) %>%
   ggplot(aes(length, fill = as.factor(sex))) +
   geom_histogram(alpha = 0.5, binwidth = 1) +
   facet_grid(rows = vars(group), cols = vars(sex), scales = "free_y") +
   scale_x_continuous(breaks = c(25, 50, 75, 100, 125), labels = c(25, 50, 75, 100, 125)) +
-  scale_colour_manual(values = c("grey50", "grey50")) +
-  scale_fill_manual(values = c("red", "grey50")) +
+  # scale_colour_manual(values = c("grey50", "grey50")) +
+  scale_fill_manual(values = c("red", "blue", "grey50")) +
   theme(
     plot.background = element_rect(fill = "NA", colour = "NA"),
     # text = element_text(family= "Gill Sans MT"),
@@ -84,15 +77,15 @@ d %>%
 
 # plot of length weight histogram by sex and survey and year.
 # Many early surveys are missing weight but not length
-ggplot(data = d, aes(length, weight, colour = sex, group = sex)) +
-  geom_bar(stat = "identity", width = 1) +
+ggplot(data = d, aes(weight, colour = sex, group = sex, fill = sex)) +
+  geom_histogram() +
   scale_y_continuous(expand = c(0, 0)) +
-  facet_wrap(~ survey_abbrev + year, nrow = 3)
+  facet_grid(year~survey_abbrev)
 
 ggplot(data = d, aes(length, colour = sex, group = sex, fill = sex)) +
   geom_histogram() +
   scale_y_continuous(expand = c(0, 0)) +
-  facet_wrap(~ survey_abbrev + year, nrow = 3)
+  facet_grid(year~survey_abbrev)
 
 ggplot(
   data = d,
@@ -168,7 +161,7 @@ d2 <- d %>% anti_join(remove)
 
 #FYI - Count the number of species that are not sexed for each survey
 unique(d$sex)
-d %>%
+d2 %>%
   group_by(year) %>%
   filter(sex == 0) %>%
   tally()
@@ -195,7 +188,7 @@ m <- fit_length_weight(
 
 
 ggplot(d2, aes(length, weight)) +
-  geom_jitter() +
+  geom_point(alpha = 0.2) +
   facet_wrap(~sex)
 
 plot_length_weight(object_female = f, object_male = m)
@@ -212,7 +205,7 @@ trawl_m$weight_predicted <- exp(m$pars$log_a +
 predicted_weight_tw <- rbind(trawl_m, trawl_f)
 
 weighttw <- predicted_weight_tw %>% select(
-  year, fishing_event_id,
+  year, fishing_event_id, survey_abbrev,
   length, weight, weight_predicted, sex
 )
 
@@ -224,6 +217,22 @@ weighttw2 <- weighttw %>% mutate(weight_complete = ifelse(is.na(weight) == TRUE,
   weight
 ))
 
+annratio <- weighttw2 %>%
+  group_by(year, survey_abbrev) %>%
+  mutate(totalweight = sum(weight_complete)) %>%
+  group_by(year, survey_abbrev, sex) %>%
+  summarize(
+    ratioweight = sum(weight_complete),
+    ratio = round((ratioweight / totalweight), 2)
+  ) %>% distinct() %>%
+  mutate(sex = ifelse(sex == 1, "M", "F"))%>%
+  rename(mean_ratio = ratio)
+
+ggplot(annratio, aes(year, mean_ratio)) + geom_path(aes(colour = sex)) +
+  facet_wrap(~survey_abbrev) + ggsidekick::theme_sleek()
+
+
+
 sexratio <- weighttw2 %>%
   group_by(year, fishing_event_id) %>%
   mutate(totalweight = sum(weight_complete)) %>%
@@ -233,6 +242,7 @@ sexratio <- weighttw2 %>%
     ratio = round((ratioweight / totalweight), 2)
   ) %>%
   distinct(.keep_all = TRUE) %>%
+  mutate(sex = ifelse(sex == 1, "M", "F"))%>%
   dplyr::select(year, fishing_event_id, sex, ratio) %>%
   ungroup()
 
@@ -240,39 +250,199 @@ sexratio <- weighttw2 %>%
 
 # 3. Apply the m/f ratio to the set catch weight. -----------------------
 
-sexratio2 <- sexratio %>%
-  dplyr::select(-sex) %>%
+allsets <- dsets %>%
+  dplyr::select(year, fishing_event_id) %>%
   distinct(year, fishing_event_id)
 
-sex <- c(1, 2)
-sexratio3 <- purrr::map_dfr(sex, ~ tibble(sexratio2, sex = .x))
+sex <- c("M", "F")
+sexratio3 <- purrr::map_dfr(sex, ~ tibble(allsets, sex = .x))
 sexratio4 <- sexratio3 %>% left_join(sexratio)
+
+sexratio %>% group_by(sex) %>% summarise(ratio = mean(ratio, na.rm = TRUE))
+sexratio4 %>% filter(sex == "M") %>% summarise(ratio = mean(ratio, na.rm = TRUE))
+sexratio4 %>% filter(sex == "F") %>% summarise(ratio = mean(ratio, na.rm = TRUE))
+
+
+sr1 <- sexratio4 %>% filter(sex == "M")
+sr2 <- sexratio4 %>% filter(sex == "F")
+
+ggplot(sr1, aes(ratio)) +
+  geom_histogram() +
+  geom_histogram(data = sr2, fill = "red", alpha = 0.5)
+
 
 dsets_samps <- left_join(dsets, sexratio4, by = c(
   "year" = "year", "fishing_event_id" = "fishing_event_id"
 ))
-glimpse(dsets_samps)
-saveRDS(dsets_samps, "data/generated/trawlsamples_splitbysex.rds")
 
-dsets_samps %>%
-  filter(sex == 2 | is.na(sex) == TRUE) %>%
-  ggplot(aes(longitude, latitude, col = ratio)) +
+dat <- left_join(dsets_samps, annratio) %>%
+  mutate(ratio_filled = ifelse(is.na(ratio), mean_ratio, ratio),
+         total_weight = catch_weight,
+         catch_weight = total_weight * ratio_filled
+  )
+
+dat %>%
+  filter(sex == "M") %>%
+  ggplot(aes(longitude, latitude, col = catch_weight)) +
   geom_point() +
   facet_wrap(~year)
+# it seems some years WCHG has no samples
+# check catches involved... they are all pretty small, so will apply a 0.5 ratio to these nas
+# dat %>% View() #
 
-dsets_samps %>%
-  filter(sex == 2) %>%
-  ggplot(aes(longitude, latitude, col = ratio)) +
+
+dat <- left_join(dsets_samps, annratio) %>%
+  mutate(mean_ratio = ifelse(is.na(mean_ratio), 0.5, mean_ratio),
+         ratio_filled = ifelse(is.na(ratio), mean_ratio, ratio),
+         total_weight = catch_weight,
+         catch_weight = total_weight * ratio_filled
+  )
+library(ggsidekick)
+
+dat %>%
+  filter(sex == "M") %>%
+  ggplot(aes(longitude, latitude, size = catch_weight, alpha = catch_weight, colour = catch_weight)) +
   geom_point() +
+  scale_colour_viridis_c(trans = fourth_root_power_trans(), option = "B")+
   facet_wrap(~year)
 
-dsets_samps %>%
-  filter(sex == 1) %>%
-  ggplot(aes(longitude, latitude, col = ratio)) +
-  geom_point() +
-  facet_wrap(~year)
+glimpse(dat)
+saveRDS(dat, "data/generated/trawlsamples_splitbysex.rds")
 
 
 # create index from males and females -------------------------------------
+d <- readRDS("data/generated/trawlsamples_splitbysex.rds")
+
+d <- sdmTMB::add_utm_columns(d, utm_crs = 32609)
+
+# used old version of gfdata...
+d$area_swept1 <- d$doorspread_m * d$tow_length_m
+d$area_swept2 <- d$doorspread_m * (d$speed_mpm * d$duration_min)
+d$area_swept <- ifelse(!is.na(d$area_swept1), d$area_swept1, d$area_swept2)
 
 
+table(d$year[is.na(d$doorspread_m)])
+table(d$year[is.na(d$tow_length_m)])
+table(d$year[is.na(d$tow_length_m)])
+d$survey_abbrev[is.na(d$doorspread_m)]
+
+d <- dplyr::filter(d, !is.na(area_swept))
+
+ggplot(d, aes(X, Y, size = density_kgpm2)) +
+  geom_point(pch = 21, alpha = 0.3) +
+  facet_wrap(vars(year)) +
+  coord_fixed()
+
+sum(is.na(d$depth_m))
+table(d$year[is.na(d$depth_m)])
+d <- dplyr::filter(d, !is.na(depth_m))
+d$log_area_swept <- log(d$area_swept)
+
+
+df <- filter(d, sex == "F")
+dm <- filter(d, sex == "M")
+
+
+## test a version where mean sex ratios not applied to the unsampled sets, instead they are excluded
+# df <- filter(d, sex == "F") %>%
+#   mutate(catch_weight = ifelse(is.na(ratio),
+#                                ifelse(total_weight == 0, 0, NA),
+#                                total_weight * ratio
+#                                )
+#          ) %>% filter(!is.na(catch_weight))
+#
+# dm <- filter(d, sex == "M") %>%
+#   mutate(catch_weight = ifelse(is.na(ratio),
+#                           ifelse(total_weight == 0, 0, NA),
+#                           total_weight * ratio
+#     )
+#   ) %>% filter(!is.na(catch_weight))
+
+
+mesh <- make_mesh(df, c("X", "Y"), cutoff = 15)
+plot(mesh)
+mesh$mesh$n
+
+ffit <- sdmTMB(
+  catch_weight ~ 1 + poly(log(depth_m), 2L),
+  family = delta_gamma(),
+  data = df,
+  mesh = mesh,
+  offset = "log_area_swept",
+  time = "year",
+  spatiotemporal = "rw",
+  spatial = "on",
+  silent = FALSE,
+  anisotropy = TRUE,
+  control = sdmTMBcontrol(newton_loops = 1L)
+)
+
+# saveRDS(ffit, file = "data/generated/synoptic-sdmTMB-female.rds")
+# saveRDS(ffit, file = "data/generated/synoptic-sdmTMB-female-trim.rds")
+
+mesh <- make_mesh(dm, c("X", "Y"), cutoff = 15)
+mfit <- sdmTMB(
+  catch_weight ~ 1 + poly(log(depth_m), 2L),
+  family = delta_gamma(),
+  data = dm,
+  mesh = mesh,
+  offset = "log_area_swept",
+  time = "year",
+  spatiotemporal = "rw",
+  spatial = "on",
+  silent = FALSE,
+  anisotropy = TRUE,
+  control = sdmTMBcontrol(newton_loops = 1L)
+)
+
+# saveRDS(mfit, file = "data/generated/synoptic-sdmTMB-male.rds")
+# saveRDS(mfit, file = "data/generated/synoptic-sdmTMB-male-trim.rds")
+
+# fit <- readRDS("data/generated/synoptic-sdmTMB-female.rds")
+# fit <- readRDS("data/generated/synoptic-sdmTMB-male.rds")
+# fit <- readRDS("data/generated/synoptic-sdmTMB-female-trim.rds")
+# fit <- readRDS("data/generated/synoptic-sdmTMB-male-trim.rds")
+
+sanity(fit)
+plot_anisotropy(fit)
+fit
+fit$sd_report
+
+g <- gfplot::synoptic_grid |> dplyr::select(-survey_domain_year)
+g <- rename(g, depth_m = depth)
+# g <- add_utm_columns(g, utm_crs = 32609)
+
+yrs <- sort(unique(fit$data$year))
+grid <- sdmTMB::replicate_df(g, time_name = "year", time_values = yrs)
+
+p <- predict(fit, newdata = grid, return_tmb_object = TRUE)
+ind <- get_index(p, bias_correct = TRUE)
+
+# saveRDS(ind, file = "data/generated/geostat-ind-female.rds")
+# saveRDS(ind, file = "data/generated/geostat-ind-male.rds")
+# saveRDS(ind, file = "data/generated/geostat-ind-male-trim.rds")
+# saveRDS(ind, file = "data/generated/geostat-ind-female-trim.rds")
+
+ind_f <- readRDS("data/generated/geostat-ind-female.rds")
+ind_m <- readRDS("data/generated/geostat-ind-male.rds")
+ind_ft <- readRDS("data/generated/geostat-ind-female-trim.rds")
+ind_mt <- readRDS("data/generated/geostat-ind-male-trim.rds")
+ind_all <- readRDS("data/generated/geostat-ind-synoptic.rds")
+
+bind_rows(
+  mutate(ind_all, Index = "Total"),
+  # mutate(ind_ft, Index = "Female trimmed"),
+  # mutate(ind_mt, Index = "Male trimmed"),
+  mutate(ind_f, Index = "Female"),
+  mutate(ind_m, Index = "Male")
+) |>
+  ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = Index)) +
+  geom_pointrange(position=position_dodge(width=1)) +
+  # scale_colour_manual(values = c("red", "darkred", "blue", "navyblue", "darkgrey")) +
+  scale_colour_manual(values = c("red",  "blue", "darkgrey")) +
+  coord_cartesian(ylim = c(0, NA)) +
+  ylab("Relative biomass") +
+  xlab("Year") +
+  gfplot::theme_pbs()
+
+ggsave("figs/sex-specific-indexes.png", width = 8, height = 5.0)
