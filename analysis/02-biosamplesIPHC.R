@@ -1,10 +1,29 @@
 library(dplyr)
 library(gfiphc)
+library(PBSdata)
+library(ggplot2)
+library(sf)
 
 d <- read.csv("data/raw/IPHC_dogfish_lengths2021.csv") %>%
   filter(reg_area == "2B", sex %in% c("F", "M")
   )
 glimpse(d)
+
+
+#get the lat and longs of the stations
+iphc_coast <- readRDS("data/raw/Non-Pacific halibut data_raw.rds")
+glimpse(iphc_coast)
+names(iphc_coast) <- tolower(names(iphc_coast))
+iphc_latlongs <- readRDS("data/raw/Set and Pacific halibut data_raw.rds") %>%
+  dplyr::select(IPHC.Reg.Area, Date, Eff, Ineffcde, BeginLat, BeginLon, AvgDepth..fm., Stlkey)
+glimpse(iphc_latlongs)
+names(iphc_latlongs) <- tolower(names(iphc_latlongs))
+
+d2 <- d %>%
+  left_join(dplyr::select(iphc_coast, year, station, stlkey)) %>%
+  left_join(dplyr::select(iphc_latlongs, stlkey, beginlat, beginlon )) %>%
+  drop_na(stlkey)
+glimpse(d2)
 
 unique(d$reg_area)
 unique(d$sex)
@@ -49,5 +68,46 @@ g <- d_coord %>%
   theme(legend.position = "bottom")
 ggsave("figs/biosample-iphc-latitude.png", width = 6, height = 3, dpi = 150)
 
+# commercial groundfish fishing areas shapefile ---------------------------
+#BC
+map_data <- rnaturalearth::ne_countries(scale = "large", returnclass = "sf")
+bc_coast <- st_crop(
+  map_data,
+  c(xmin = -134, ymin = 46, xmax = -120, ymax = 57)
+)
+bc_coast_proj <- sf::st_transform(bc_coast, crs = 32609)
+
+data(major) #from PBSdata
+
+gmas_PIDs <- data.frame(PID = c(1, seq(3,9, 1)), GMAs = c("5E", "5D", "5C", "5B", "5A",
+                                                          "3D", "3C", "4B"))
+gma <- major %>%
+  left_join(gmas_PIDs) %>%
+  st_as_sf(coords = c("X", "Y"), crs = 4326) %>%
+  st_transform(crs = 32609) %>%
+  group_by(GMAs) %>%
+  summarise(geometry = st_combine(geometry)) %>%
+  st_cast("POLYGON")
+
+ggplot() +
+  geom_sf(data = gma, aes(fill = as.factor(GMAs))) +
+  geom_sf(data = bc_coast_proj, aes(fill  = "grey50"))
+
+d_sp <- d2 %>%
+  st_as_sf(coords = c("beginlon", "beginlat"), crs = 4326) %>%
+  st_transform(crs = 32609)
+
+ggplot() +
+  geom_sf(data = gma, aes(fill = as.factor(GMAs))) +
+  geom_sf(data = bc_coast_proj, aes(fill  = "grey50")) +
+  geom_sf(data = d_sp, col = "red")
+
+d_mfa <- st_intersection(d_sp, gma) %>%
+  st_drop_geometry()
+
+ggplot() +
+  geom_density(data = d_mfa, aes(length, group = sex, col = sex)) +
+  facet_wrap(~GMAs) +
+  theme_classic()
 
 
