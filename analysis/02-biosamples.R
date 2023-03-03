@@ -108,3 +108,48 @@ g4 <- dc |> filter(grepl("5[ABCDE]+", major_stat_area_name)) |>
 cowplot::plot_grid(g1, g2, g3, g4, ncol = 1L)
 
 ggsave("figs/biosample-available.png", width = 11, height = 10, dpi = 150)
+
+# Synoptic trawl length composition by sex and area
+# Some evidence that sex ratio changes by area (see 5E)
+# but survey catches primarily small females
+g <- d %>%
+  filter(survey_abbrev %in% c("SYN WCHG", "SYN HS", "SYN QCS", "SYN WCVI")) %>%
+  filter(sex %in% c(1, 2)) %>%
+  mutate(area = substr(major_stat_area_name, 1, 2),
+         sex = ifelse(sex == 2, "Female", "Male")) %>%
+  ggplot(aes(length, linetype = sex)) +
+  geom_freqpoly(binwidth = 4) +
+  facet_wrap(vars(area), scales = "free_y") +
+  ggtitle("Synoptic trawl") +
+  labs(x = "Length (cm)", y = "Frequency", linetype = "Sex") +
+  theme(legend.position = "bottom")
+ggsave("figs/biosample-synoptic-trawl-area.png", width = 6, height = 5, dpi = 150)
+
+# Fishery length by sex and area
+# Midwater trawl seems to behave similarly to synoptic trawl
+g <- dc %>%
+  filter(gear_desc == "MIDWATER TRAWL") %>%
+  filter(sex %in% c(1, 2)) %>%
+  mutate(area = substr(major_stat_area_name, 1, 2),
+         sex = ifelse(sex == 2, "Female", "Male")) %>%
+  ggplot(aes(length, linetype = sex)) +
+  geom_freqpoly(binwidth = 4) +
+  facet_wrap(vars(area), scales = "free_y") +
+  ggtitle("MIDWATER TRAWL") +
+  labs(x = "Length (cm)", y = "Frequency", linetype = "Sex") +
+  theme(legend.position = "bottom")
+ggsave("figs/biosample-midwater-trawl-area.png", width = 6, height = 3, dpi = 150)
+
+# Bottom trawl catches the big females
+g <- dc %>%
+  filter(gear_desc == "BOTTOM TRAWL") %>%
+  filter(sex %in% c(1, 2)) %>%
+  mutate(area = substr(major_stat_area_name, 1, 2),
+         sex = ifelse(sex == 2, "Female", "Male")) %>%
+  ggplot(aes(length, linetype = sex)) +
+  geom_freqpoly(binwidth = 4) +
+  facet_wrap(vars(area), scales = "free_y") +
+  ggtitle("BOTTOM TRAWL") +
+  labs(x = "Length (cm)", y = "Frequency", linetype = "Sex") +
+  theme(legend.position = "bottom")
+ggsave("figs/biosample-bottom-trawl-area.png", width = 6, height = 5, dpi = 150)
