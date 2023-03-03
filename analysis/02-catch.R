@@ -10,7 +10,7 @@ if (Sys.info()[["user"]] == "seananderson") {
   d <- readRDS("data/raw/catch.rds")
   table(d$major_stat_area_name)
   # d_4b5abcde <- tidy_catch_dogfish(d, areas = c("5[CDE]+", "5[AB]+", "4B"))
-  d_4b5abcde <- tidy_catch_dogfish(d, areas = c("5[ABCDE]+", "4B"))
+  d_4b5abcde <- tidy_catch_dogfish(d, areas = c("5[ABCDE3CD]+", "4B"))
   saveRDS(d_4b5abcde, file = "data/generated/catch-4B5ABCDE-summarized.rds")
 }
 
