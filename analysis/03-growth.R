@@ -18,7 +18,7 @@ g <- ggplot(dat, aes(Age, length, colour = sex)) +
   facet_wrap(vars(Area)) +
   expand_limits(y = 0) +
   labs(x = "Age", y = "Length (cm)", colour = "Sex")
-ggsave("length-age-area.png", g, height = 4, width = 6)
+ggsave("figs/length-age-area.png", g, height = 4, width = 6)
 
 # By Year
 g <- ggplot(dat, aes(Age, length, colour = sex)) +
@@ -27,7 +27,7 @@ g <- ggplot(dat, aes(Age, length, colour = sex)) +
   facet_wrap(vars(`Sample year`)) +
   expand_limits(y = 0) +
   labs(x = "Age", y = "Length (cm)", colour = "Sex")
-ggsave("length-age-year.png", g, height = 4, width = 6)
+ggsave("figs/length-age-year.png", g, height = 4, width = 6)
 
 # Samples by area and year
 dat %>%
@@ -64,7 +64,7 @@ g <- gfplot::plot_growth(object_f = vb_f,
                          jitter = TRUE) +
   facet_wrap(vars(sex)) +
   guides(col = "none", lty = "none")
-ggsave("length-age-vb.png", g, height = 3, width = 6)
+ggsave("figs/length-age-vb.png", g, height = 3, width = 6)
 
 #### Plot residual by area
 dat <- dat %>%
@@ -82,7 +82,7 @@ g <- dat %>%
   facet_wrap(vars(Area)) +
   geom_hline(yintercept = 0, linetype = 2) +
   labs(x = "Age", y = "Residual", colour = "Sex")
-ggsave("length-age-residual-area.png", g, height = 4, width = 6)
+ggsave("figs/length-age-residual-area.png", g, height = 4, width = 6)
 
 
 ###### Tried Schnute function but AIC does not support additional inflection parameter
