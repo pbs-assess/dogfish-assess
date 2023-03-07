@@ -17,6 +17,8 @@ install.packages("MSEtool")
 install.packages("DLMtool")
 install.packages("SAMtool")
 install.packages("sdmTMB", dependencies = TRUE)
+
+install.packages("r4ss")
 ```
 
 ### Required non-CRAN packages
@@ -28,3 +30,7 @@ remotes::install_github("pbs-assess/ggmse")
 remotes::install_github("pbs-assess/csasdown")
 remotes::install_github("pbs-assess/rosettafish")
 ```
+
+### Stock Synthesis executable
+
+Available at <https://github.com/nmfs-stock-synthesis/stock-synthesis/releases/tag/v3.30.20>

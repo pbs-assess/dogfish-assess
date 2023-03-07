@@ -24,6 +24,8 @@ replist <- r4ss::SS_output(here::here(paste0("ss3/", ssdir)),
                            #verbose = FALSE,
                            #printstats = FALSE,
                            hidewarn = TRUE)
+#saveRDS(replist, file = paste0("ss3/r4ss_", ssdir, ".rds"))
+
 r4ss::SS_plots(replist,
                verbose = FALSE)
 
