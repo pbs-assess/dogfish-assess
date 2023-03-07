@@ -44,6 +44,12 @@ d %>%
   geom_boxplot(aes(as.factor(year), length, col = sex)) +
   facet_wrap(~sex)
 
+# Annual length comp
+d %>%
+  drop_na(length) %>%
+  ggplot() +
+  geom_freqpoly(aes(length, group = sex, col = sex)) +
+  facet_wrap(vars(year))
 
 ## Get coordinates of each IPHC station to coordinates,
 ## Plot length comp by latitude band (48-50 = WCVI, 50-52 = Central Coast, 52-56 = North Coast)
