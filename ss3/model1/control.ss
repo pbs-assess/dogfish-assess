@@ -102,6 +102,9 @@
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_1_BottomTrawl
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_2_MidwaterTrawl
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_3_HookLine
+ 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_7_Trawl_3565
+ 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_8_LL_3565
+ 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_9_Trawl_6695
 #  fraction female, by GP
  0 1 0.5 0 0 0 -50 0 0 0 0 0 0 0 # FracFemale_GP_1
 #  M2 parameter for each predator fleet
@@ -117,8 +120,8 @@
 1  # 0/1 to use steepness in initial equ recruitment calculation
 0  #  future feature:  0/1 to make realized sigmaR a function of SR curvature
 #_          LO            HI          INIT         PRIOR         PR_SD       PR_type      PHASE    env-var    use_dev   dev_mnyr   dev_mxyr     dev_PH      Block    Blk_Fxn #  parm_name
-             3            12       6.77797             0             0             0          1          0          0          0          0          0          0          0 # SR_LN(R0)
-           0.2             1          0.67             0             0             0        -50          0          0          0          0          0          0          0 # SR_BH_steep
+             3            20       9.16561             0             0             0          1          0          0          0          0          0          0          0 # SR_LN(R0)
+           0.2             1           0.3             0             0             0        -50          0          0          0          0          0          0          0 # SR_BH_steep
            0.2             1           0.4             0             0             0        -50          0          0          0          0          0          0          0 # SR_sigmaR
             -1             1             0             0             0             0        -50          0          0          0          0          0          0          0 # SR_regime
             -1             1             0             0             0             0        -50          0          0          0          0          0          0          0 # SR_autocorr
@@ -132,8 +135,8 @@
 #_Cond -4 #_recdev_early_phase
 #_Cond -4 #_forecast_recruitment phase (incl. late recr) (0 value resets to maxphase+1)
 #_Cond 1 #_lambda for Fcast_recr_like occurring before endyr+1
-#_Cond 954 #_last_yr_nobias_adj_in_MPD; begin of ramp
-#_Cond 1884 #_first_yr_fullbias_adj_in_MPD; begin of plateau
+#_Cond 937 #_last_yr_nobias_adj_in_MPD; begin of ramp
+#_Cond 1867 #_first_yr_fullbias_adj_in_MPD; begin of plateau
 #_Cond 2022 #_last_yr_fullbias_adj_in_MPD
 #_Cond 2023 #_end_yr_for_ramp_in_MPD (can be in forecast to shape ramp, but SS3 sets bias_adj to 0.0 for fcast yrs)
 #_Cond 1 #_max_bias_adj_in_MPD (typical ~0.8; -3 sets all years to 0.0; -2 sets all non-forecast yrs w/ estimated recdevs to 1.0; -1 sets biasadj=1.0 for all yrs w/ recdevs)
@@ -162,11 +165,14 @@
 #_ LO HI INIT PRIOR PR_SD  PR_type  PHASE
 #
 # F rates by fleet x season
-# Yr:  1954 1955 1956 1957 1958 1959 1960 1961 1962 1963 1964 1965 1966 1967 1968 1969 1970 1971 1972 1973 1974 1975 1976 1977 1978 1979 1980 1981 1982 1983 1984 1985 1986 1987 1988 1989 1990 1991 1992 1993 1994 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023
-# seas:  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-# BottomTrawl 0.00487078 0.0227572 0.00919947 0.00449821 0.00586255 0.11788 0.308799 0.161896 0 0 0 0.00141447 0 0 1.38572e-05 0 0 0 0 0.372965 0.000191394 0.00072374 0.00163545 0.00324275 0.0248983 0.0507521 0.242916 0.0372774 0.191874 0.016414 0.084525 0.033687 0.0730512 0.0448812 0.0509378 0.0174826 0.018137 0.0180805 0.0185925 0 0.00939211 0.00602749 0.704944 0.483482 0.767916 0.387735 0.671825 0.437043 0.648497 0.455932 0.642245 0.456799 0.48872 0.316182 0.225492 0.545443 0.32354 0.35552 0.198107 0.23669 0.103077 0.118606 0.0921544 0.106543 0.104552 0.0909226 0.0578426 0.0873983 0.037854 0.037854
-# MidwaterTrawl 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.000258919 0.000161568 2.34453e-06 0 0 0 0 0 0 0 0 0 0.000571943 0 0 0 7.48128e-05 0.00155415 0 1.8271e-05 4.05582e-05 1.25233e-05 2.93903e-05 3.49049e-06 0.00194776 7.91208e-05 0.00344712 0.000464366 0.0029159 0.00327569 0.000597786 0.00387214 0.00051854 0.000854111 0.00479848 0.00652137 0.00398502 0.00389963 0.00100421 0.000255993 0.000516932 0.00781385 0.00874002 0.00631758 0.00157098 0.00157098
-# HookLine 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.0203822 0.0842515 0.018691 0.0677419 0.0683194 0.0652099 0.37246 0.0039612 0.0176115 0.0123224 0.00341212 0.325637 0.117961 0.00990474 0.00180847 0.0060076 0.0189063 0.157175 0.0103649 0.0739179 0.0912312 0.273051 0.16137 0.495913 1.18746 1.19147 0.717021 0.629503 0.639953 0.529048 0.516278 0.688522 0.142692 0.344174 0.0666547 0.0594036 0.0359338 0.00218272 0.0157165 0.0020739 0.0039031 0.0123627 0.00581105 0.00530291 0.00530291
+# Yr:  1937 1938 1939 1940 1941 1942 1943 1944 1945 1946 1947 1948 1949 1950 1951 1952 1953 1954 1955 1956 1957 1958 1959 1960 1961 1962 1963 1964 1965 1966 1967 1968 1969 1970 1971 1972 1973 1974 1975 1976 1977 1978 1979 1980 1981 1982 1983 1984 1985 1986 1987 1988 1989 1990 1991 1992 1993 1994 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023
+# seas:  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+# BottomTrawl 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.123147 0.0755935 0.108129 0.0500531 0.0811943 0.0499588 0.0697743 0.0449207 0.0581407 0.0393321 0.0407282 0.0251488 0.0172366 0.0399091 0.0225498 0.0240795 0.0132032 0.0156071 0.00679781 0.00786852 0.00616148 0.00718546 0.00710108 0.00620958 0.00396948 0.00602263 0.00262469 0.00262469
+# MidwaterTrawl 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.88341e-06 4.1093e-06 1.25055e-06 2.89738e-06 3.39843e-07 0.000187005 7.47482e-06 0.000320049 4.24185e-05 0.000262352 0.00028994 5.21972e-05 0.00033235 4.36869e-05 7.0906e-05 0.000392814 0.000526489 0.000318072 0.000308596 7.89374e-05 2.00282e-05 4.02844e-05 0.000605776 0.000673388 0.000484374 0.00012026 0.00012026
+# HookLine 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.000125059 0 0 0 0 0.0010318 0.00573208 0.00426019 0.0159525 0.00394152 0.0108045 0.0221487 0.00977324 0.0625707 0.0249868 0.233687 0.401819 0.196082 0.237288 0.300546 0.282044 0.0579165 0.161079 0.202016 0.281043 0.116695 0.198492 0.286129 0.553893 0.513822 0.481964 0.674292 0.704244 0.676965 0.309542 0.0357862 0.0279399 0.0256675 0.0319902 0.00641979 0.015355 0.00297884 0.00270692 0.00168198 0.000105082 0.000777792 0.000105115 0.000202129 0.000653362 0.000312657 0.000290681 0.000290681
+# Trawl_3565 0.00978207 0.00054996 0.0131653 0.0252912 0.0613801 0.180229 0.215978 0.952106 1.10936 0.649432 0.972964 0.91506 1.28143 0.119207 0.246425 0.135053 0.141795 0.0566912 0.0727241 0.053675 0.0986311 0.0429154 0.0935322 0.0596781 0.233129 0.00786637 0.0040339 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+# LL_3565 0.0120458 0.000677533 0.0162286 0.0312276 0.0760721 0.225767 0.275524 1.28649 1.69154 1.10763 1.82729 1.91299 2.99996 0.290469 0.578622 0.306091 0.308678 0.118273 0.145286 0.102991 0.182569 0.0768082 0.162296 0.100752 0.386382 0.0127968 0.00639234 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+# Trawl_6695 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.0265446 0.0345834 0.00966889 0.00755284 0.0189541 0.0265281 0.00477025 0.0958066 0.00933257 0.122219 0.000255472 0.110718 0.130003 0.146296 0.400517 0.164971 0.28386 0.153009 0.157574 0.299049 0.267921 0.225139 0.312592 0.2291 0.323784 0.315723 0.276163 0.195554 0.186847 0.133715 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 #
 #_Q_setup for fleets with cpue or survey data
 #_1:  fleet number
@@ -183,9 +189,9 @@
 #
 #_Q_parms(if_any);Qunits_are_ln(q)
 #_          LO            HI          INIT         PRIOR         PR_SD       PR_type      PHASE    env-var    use_dev   dev_mnyr   dev_mxyr     dev_PH      Block    Blk_Fxn  #  parm_name
-           -10            10      -2.79548             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_IPHC(4)
-            -5             5      -1.63004             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_HBLL(5)
-            -5             5      -7.82061             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_SYN(6)
+           -10            10       -5.1281             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_IPHC(4)
+            -5             5      -4.02718             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_HBLL(5)
+            -5             5      -10.4101             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_SYN(6)
 #_no timevary Q parameters
 #
 #_size_selex_patterns
@@ -214,6 +220,9 @@
  24 0 3 0 # 4 IPHC
  15 0 0 4 # 5 HBLL
  24 0 3 0 # 6 SYN
+ 15 0 0 1 # 7 Trawl_3565
+ 15 0 0 3 # 8 LL_3565
+ 15 0 0 1 # 9 Trawl_6695
 #
 #_age_selex_patterns
 #Pattern:_0; parm=0; selex=1.0 for ages 0 to maxage
@@ -240,75 +249,84 @@
  10 0 0 0 # 4 IPHC
  10 0 0 0 # 5 HBLL
  10 0 0 0 # 6 SYN
+ 10 0 0 0 # 7 Trawl_3565
+ 10 0 0 0 # 8 LL_3565
+ 10 0 0 0 # 9 Trawl_6695
 #
 #_          LO            HI          INIT         PRIOR         PR_SD       PR_type      PHASE    env-var    use_dev   dev_mnyr   dev_mxyr     dev_PH      Block    Blk_Fxn  #  parm_name
 # 1   BottomTrawl LenSelex
-            -1           120       119.348             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_peak_BottomTrawl(1)
-           -10            50            50             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_BottomTrawl(1)
-           -10            10       6.28328             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_BottomTrawl(1)
-             0             0             0             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_descend_se_BottomTrawl(1)
+            14           120           120             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_peak_BottomTrawl(1)
+           -10            50           -10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_BottomTrawl(1)
+           -10            10        6.2266             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_BottomTrawl(1)
+           -10            10             0             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_descend_se_BottomTrawl(1)
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_start_logit_BottomTrawl(1)
-          -999           999            10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_BottomTrawl(1)
-          -100             0      -29.1562             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_BottomTrawl(1)
-           -10            10      -0.50151             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_BottomTrawl(1)
-           -10            10      0.132231             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_BottomTrawl(1)
-         -1009           100      -13.4394             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Final_BottomTrawl(1)
-             0             1     0.0571262             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_BottomTrawl(1)
+          -999           999             5             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_BottomTrawl(1)
+          -100             0      -26.6751             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_BottomTrawl(1)
+           -10            10     -0.358849             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_BottomTrawl(1)
+           -10            10       -1.7671             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_BottomTrawl(1)
+          -999           100          -999             0             0             0        -50          0          0          0          0          0          0          0  #  SzSel_Male_Final_BottomTrawl(1)
+             0             1     0.0511047             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_BottomTrawl(1)
 # 2   MidwaterTrawl LenSelex
-            -1           120       59.2541             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_peak_MidwaterTrawl(2)
+            14           120       59.3269             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_peak_MidwaterTrawl(2)
            -10            50           -10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_MidwaterTrawl(2)
-           -10            10       5.25276             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_MidwaterTrawl(2)
-           -10            10       5.32708             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_descend_se_MidwaterTrawl(2)
+           -10            10       5.26216             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_MidwaterTrawl(2)
+           -10            10       5.35528             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_descend_se_MidwaterTrawl(2)
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_start_logit_MidwaterTrawl(2)
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_MidwaterTrawl(2)
-          -100           100       23.0172             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_MidwaterTrawl(2)
-           -10            10       9.96935             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_MidwaterTrawl(2)
-           -10            10      -1.23973             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_MidwaterTrawl(2)
-          -999            70             0             0             0             0        -50          0          0          0          0          0          0          0  #  SzSel_Male_Final_MidwaterTrawl(2)
-             0             1      0.745148             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_MidwaterTrawl(2)
+          -100           100       23.2128             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_MidwaterTrawl(2)
+           -10            10       9.95621             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_MidwaterTrawl(2)
+           -10            10      -1.29589             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_MidwaterTrawl(2)
+          -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  SzSel_Male_Final_MidwaterTrawl(2)
+             0             1      0.747595             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_MidwaterTrawl(2)
 # 3   HookLine LenSelex
-            -1           120        106.35             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_peak_HookLine(3)
-           -10            50            50             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_HookLine(3)
-           -10            10       4.01196             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_HookLine(3)
-             0             0             0             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_descend_se_HookLine(3)
+            14           120       106.791             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_peak_HookLine(3)
+           -10            50           -10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_HookLine(3)
+           -10            10       4.02673             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_HookLine(3)
+           -10            10             0             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_descend_se_HookLine(3)
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_start_logit_HookLine(3)
-          -999           999            10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_HookLine(3)
-          -100             0      -24.4129             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_HookLine(3)
-           -10            10      -9.99058             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_HookLine(3)
-           -10            10        2.4981             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_HookLine(3)
-         -1009           100      -6.78036             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Final_HookLine(3)
-             0             1    0.00180432             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_HookLine(3)
+          -999           999             5             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_HookLine(3)
+          -100             0      -22.4719             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_HookLine(3)
+           -10            10      -2.56037             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_HookLine(3)
+           -10            10       5.07239             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_HookLine(3)
+          -999           100          -999             0             0             0        -50          0          0          0          0          0          0          0  #  SzSel_Male_Final_HookLine(3)
+             0             1    0.00118937             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_HookLine(3)
 # 4   IPHC LenSelex
-            -1           120         90.69             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_peak_IPHC(4)
-           -10            50            50             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_IPHC(4)
-           -10            10       6.03683             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_IPHC(4)
-             0             0             0             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_descend_se_IPHC(4)
+            14           120       93.9103             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_peak_IPHC(4)
+           -10            50           -10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_IPHC(4)
+           -10            10       6.17768             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_IPHC(4)
+           -10            10      -6.07498             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_descend_se_IPHC(4)
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_start_logit_IPHC(4)
-          -999           999            10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_IPHC(4)
-          -100             0       -26.323             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_IPHC(4)
-           -10            10      -1.75305             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_IPHC(4)
-           -10            10       1.79547             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_IPHC(4)
-         -1009           100       59.3618             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Final_IPHC(4)
-             0             1      0.194126             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_IPHC(4)
+          -999           999          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_IPHC(4)
+          -100             0      -27.3733             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_IPHC(4)
+           -10            10      -2.04601             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_IPHC(4)
+           -10            10       9.65958             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_IPHC(4)
+          -999           100          -999             0             0             0        -50          0          0          0          0          0          0          0  #  SzSel_Male_Final_IPHC(4)
+             0             1      0.331736             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_IPHC(4)
 # 5   HBLL LenSelex
 # 6   SYN LenSelex
-            -1           120       70.7492             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_peak_SYN(6)
+            14           120       69.3508             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_peak_SYN(6)
            -10            50           -10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_SYN(6)
-           -10            10         5.364             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_SYN(6)
-           -10            10     -0.614548             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_descend_se_SYN(6)
+           -10            10       5.28293             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_SYN(6)
+           -10            10       9.99979             0             0             0          3          0          0          0          0          0          0          0  #  Size_DblN_descend_se_SYN(6)
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_start_logit_SYN(6)
-          -999           999            10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_SYN(6)
-          -100           100       10.6443             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_SYN(6)
-           -10            10        1.0445             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_SYN(6)
-           -10            10       4.46946             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_SYN(6)
-         -1009           100       -14.751             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Final_SYN(6)
-             0             1      0.815875             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_SYN(6)
+          -999           999          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_SYN(6)
+          -100           100       12.0158             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_SYN(6)
+           -10            10       1.09169             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_SYN(6)
+           -10            10      -6.12597             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_SYN(6)
+          -999           100          -999             0             0             0        -50          0          0          0          0          0          0          0  #  SzSel_Male_Final_SYN(6)
+             0             1      0.929375             0             0             0          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_SYN(6)
+# 7   Trawl_3565 LenSelex
+# 8   LL_3565 LenSelex
+# 9   Trawl_6695 LenSelex
 # 1   BottomTrawl AgeSelex
 # 2   MidwaterTrawl AgeSelex
 # 3   HookLine AgeSelex
 # 4   IPHC AgeSelex
 # 5   HBLL AgeSelex
 # 6   SYN AgeSelex
+# 7   Trawl_3565 AgeSelex
+# 8   LL_3565 AgeSelex
+# 9   Trawl_6695 AgeSelex
 #_No_Dirichlet parameters
 #_no timevary selex parameters
 #
@@ -348,18 +366,27 @@
 #  1 #_CPUE/survey:_4
 #  1 #_CPUE/survey:_5
 #  1 #_CPUE/survey:_6
+#  0 #_CPUE/survey:_7
+#  0 #_CPUE/survey:_8
+#  0 #_CPUE/survey:_9
 #  1 #_lencomp:_1
 #  1 #_lencomp:_2
 #  1 #_lencomp:_3
 #  1 #_lencomp:_4
 #  0 #_lencomp:_5
 #  1 #_lencomp:_6
+#  0 #_lencomp:_7
+#  0 #_lencomp:_8
+#  0 #_lencomp:_9
 #  1 #_init_equ_catch1
 #  1 #_init_equ_catch2
 #  1 #_init_equ_catch3
 #  1 #_init_equ_catch4
 #  1 #_init_equ_catch5
 #  1 #_init_equ_catch6
+#  1 #_init_equ_catch7
+#  1 #_init_equ_catch8
+#  1 #_init_equ_catch9
 #  1 #_recruitments
 #  1 #_parameter-priors
 #  1 #_parameter-dev-vectors
