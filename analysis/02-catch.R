@@ -136,4 +136,4 @@ discard <- catch_plot(d, discarded_kg/1000) + ggtitle("Discards")
 catch <- catch_plot(d, landed_kg/1000 + discarded_kg/1000) + ggtitle("Catch")
 cowplot::plot_grid(plotlist = list(land, discard, catch), ncol = 1L)
 
-saveRDS(catch, file = "data/generated/catch.rds")
+saveRDS(d, file = "data/generated/catch.rds")
