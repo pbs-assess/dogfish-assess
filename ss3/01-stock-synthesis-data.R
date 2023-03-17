@@ -8,27 +8,51 @@ fleet_index <- c("Bottom trawl" = 1,
                  "IPHC" = 4,
                  "HBLL" = 5,
                  "SYN" = 6,
-                 "Syn" = 6)
+                 "Syn" = 6,
+                 "Trawl_3565" = 7,
+                 "LL_3565" = 8,
+                 "Trawl" = 9) # Trawl_6695
+
+# trawl_1935 is the proportion of 1935-1963 catch assigned to bottom trawl (remaining goes to hook and line)
+ss3_catch <- function(csv = TRUE, trawl_1935 = 0.5) {
+  catch <- readRDS("data/generated/catch.rds") %>%
+    filter(area != "4B") %>%
+    mutate(catch = 1e-3 * (landed_kg + discarded_kg)) %>%
+    reshape2::acast(list("year", "gear"), value.var = "catch")
 
 
-ss3_catch <- function(csv = TRUE) {
-  catch <- readRDS("data/generated/catch-4B5ABCDE3CD-summarized.rds") %>%
+  catch <- readRDS("data/generated/catch.rds") %>%
     filter(area != "4B",
-           gear %in% c("Bottom trawl", "Midwater trawl", "Hook and line")) %>%
+           gear %in% c("Bottom trawl", "Midwater trawl", "Hook and line", "Trawl", "Trawl + hook and line")) %>%
     group_by(year, gear) %>%
     summarise(landing = 1e-3 * sum(landed_kg),
               discard = 1e-3 * sum(discarded_kg)) %>%
     reshape2::melt(id.vars = c("year", "gear"))
 
-  #g <- ggplot(catch, aes(year, value, shape = variable, linetype = variable)) +
-  #  facet_grid(vars(gear), vars(variable)) +
-  #  geom_point() +
-  #  geom_line()
+  g <- ggplot(catch, aes(year, value, shape = variable, linetype = variable)) +
+    facet_grid(vars(gear), vars(variable)) +
+    geom_point() +
+    geom_line()
 
   ### Combine discard and landings for now
   catch_combine <- catch %>%
     group_by(year, gear) %>%
-    summarise(value = sum(value)) %>%
+    summarise(value = sum(value))
+
+  split_1935 <- function(catch, trawl_1935 = 0.5) {
+
+    catch_ex1935 <- filter(catch_combine, gear != "Trawl + hook and line")
+    catch_1935 <- filter(catch_combine, gear == "Trawl + hook and line") %>%
+      mutate(`Trawl_3565` = value * trawl_1935,
+             `LL_3565` = value * (1 - trawl_1935)) %>%
+      select(year, Trawl_3565, LL_3565) %>%
+      reshape2::melt(id.vars = "year") %>%
+      rename(gear = variable)
+    rbind(catch_1935, catch_ex1935)
+  }
+
+  out <- catch_combine %>%
+    split_1935(trawl_1935 = trawl_1935) %>%
     mutate(fleet = fleet_index[match(gear, names(fleet_index))],
            se = 0.01,
            season = 1) %>%
@@ -37,9 +61,8 @@ ss3_catch <- function(csv = TRUE) {
     select(year, season, fleet, value, se) %>%
     arrange(fleet, year)
 
-  if (csv) write.csv(catch_combine, file = "data/ss3/ss3-catch.csv", row.names = FALSE)
-
-  invisible(catch_combine)
+  if (csv) write.csv(out, file = "data/ss3/ss3-catch.csv", row.names = FALSE)
+  invisible(out)
 }
 ss3_catch()
 
@@ -100,14 +123,30 @@ ss3_length <- function(csv = TRUE, bin_size = 4) {
     select(year, length, sex, survey_abbrev, specimen_id, age, usability_code)
 
   # Plot by sampling desc
-  #g <- dc %>%
-  #  filter(!grepl("4B", major_stat_area_name)) |>
-  #  #filter(sampling_desc %in% "UNSORTED") |>
-  #  filter(gear_desc %in% c("BOTTOM TRAWL", "LONGLINE", "MIDWATER TRAWL")) %>%
-  #  filter(sex %in% c(1, 2)) %>%
-  #  ggplot(aes(length, ..ndensity.., group = sex, colour = factor(sex))) +
-  #  facet_grid(vars(sampling_desc), vars(gear_desc)) +
-  #  geom_freqpoly()
+  g <- dc %>%
+    filter(!grepl("4B", major_stat_area_name)) |>
+    #filter(sampling_desc %in% "UNSORTED") |>
+    filter(gear_desc %in% c("BOTTOM TRAWL", "LONGLINE", "MIDWATER TRAWL")) %>%
+    filter(sex %in% c(1, 2)) %>%
+    ggplot(aes(length, #..ndensity..,
+               group = sex, colour = factor(sex))) +
+    facet_grid(vars(sampling_desc), vars(gear_desc), scales = "free_y") +
+    geom_freqpoly()
+
+  g <- dc %>%
+    filter(!grepl("4B", major_stat_area_name)) |>
+    #filter(sampling_desc %in% "UNSORTED") |>
+    filter(gear_desc %in% c("BOTTOM TRAWL", "LONGLINE", "MIDWATER TRAWL")) %>%
+    filter(sex %in% c(1, 2)) %>%
+    group_by(year, gear_desc, sampling_desc, sex) %>%
+    summarise(n = n()) %>%
+    ggplot(aes(year, n,
+               group = sex, colour = factor(sex))) +
+    facet_grid(vars(sampling_desc), vars(gear_desc), scales = "free_y") +
+    geom_line() +
+    geom_point()
+
+
 
   lengths_all <- rbind(lengths_survey, lengths_iphc, lengths_comm) %>%
     mutate(species_common_name = unique(dc$species_common_name)) %>%
