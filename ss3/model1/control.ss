@@ -82,7 +82,7 @@
  -14.7 3 -14.7 0 0 0 -50 0 0 0 0 0 0 0 # Eggs_intercept_Fem_GP_1
  -3 3 0.214 0 0 0 -50 0 0 0 0 0 0 0 # Eggs_slope_len_Fem_GP_1
 # Sex: 2  BioPattern: 1  NatMort
- 0.01 0.1 0.07 0 0 0 -50 0 0 0 0 0 0 0 # NatM_uniform_Mal_GP_1
+ 0.01 0.1 0.077 0 0 0 -50 0 0 0 0 0 0 0 # NatM_uniform_Mal_GP_1
 # Sex: 2  BioPattern: 1  Growth
  1 55 50.7 0 0 0 -50 0 0 0 0 0 0 0 # L_at_Amin_Mal_GP_1
  30 100 83.7 0 0 0 -50 0 0 0 0 0 0 0 # L_at_Amax_Mal_GP_1
