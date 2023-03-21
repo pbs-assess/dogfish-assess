@@ -46,3 +46,16 @@ MSEtool:::compareC_overallmulti(replist, multiHist_agg)
 
 MSEtool:::compareRecmulti(replist, multiHist)
 MSEtool:::compareRecmulti(replist, multiHist_agg)
+
+# Selectivity in projection
+np <- 2
+g <- lapply(1:np, function(p, y) {
+  V <- multiHist[[p]][[1]]@SampPars$Fleet$V_real[1, , y]
+  data.frame(Age = 1:length(V) - 1,
+             Selectivity = V,
+             Sex = ifelse(p == 1, "Female", "Male"))
+}, y = 136) %>%
+  bind_rows() %>%
+  ggplot(aes(Age, Selectivity, linetype = Sex)) +
+  geom_line()
+ggsave("figs/om/sel_proj.png", g, height = 2, width = 4)
