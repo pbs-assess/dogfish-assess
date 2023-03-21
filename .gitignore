@@ -5,6 +5,7 @@
 *.o
 *.so
 lw_gfplot.cpp
+vb_gfplot.cpp
 *.rds
 *.rda
 *.png
@@ -15,3 +16,4 @@ lw_gfplot.cpp
 *.jpg
 *.jpeg
 *.xlsx
+*.ini
