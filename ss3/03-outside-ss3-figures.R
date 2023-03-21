@@ -1,8 +1,13 @@
 
+library(tidyverse)
+
+source("ss3/ss3_functions.R")
 
 # Compare SS models
 ss_home <- here::here("ss3")
+
 mods <- c("model1", "model1a_dwLen", "model4_estH", "model4a_estH_dwLen", "model4b_estH_dwLen_lowM")
+model_name <- c("(1) h=0.3, M=0.07", "(2) Downweight len", "(3) Estimate h", "(4) Estimate h + dwLen", "(5) Est h + dwLen + M=0.06")
 
 multi_rep <- lapply(mods, function(x) {
   r4ss::SS_output(file.path(ss_home, x),
@@ -11,6 +16,7 @@ multi_rep <- lapply(mods, function(x) {
                   hidewarn = TRUE)
 })
 
+### Tables
 likelihoods <- lapply(1:length(mods), function(i) {
   x <- multi_rep[[i]][["likelihoods_used"]] %>%
     mutate(name = rownames(.)) %>%
@@ -20,15 +26,36 @@ likelihoods <- lapply(1:length(mods), function(i) {
 }) %>%
   Reduce(dplyr::left_join, .)
 
-# Plot comparisons
+# Parameters R0, steepness, reference points
+pars_fn <- function(replist, OM_name) {
+
+  x <- replist$parameters %>%
+    filter(Label %in% c("SR_LN(R0)", "SR_BH_steep", "NatM_uniform_Fem_GP_1", "NatM_uniform_Mal_GP_1")) %>%
+    select(Label, Value) %>%
+    #mutate(Value = round(Value, 3)) %>%
+    rename(Parameter = Label)
+
+  y <- replist$derived_quants %>%
+    filter(Label %in% c("SSB_2023", "F_2022", "annF_MSY", "SSB_unfished", "SSB_MSY")) %>%
+    select(Label, Value) %>%
+    #mutate(Value = round(Value, 3)) %>%
+    rename(Parameter = Label)
+
+  out <- rbind(x, y)
+  names(out)[2] <- OM_name
+
+  return(out)
+}
+pars_report <- Map(pars_fn, multi_rep, model_name) %>%
+  Reduce(left_join, .)
+readr::write_excel_csv(pars_report, file = "ss3/tables/")
+
+### r4ss Plot comparisons
 multi_rep %>%
   r4ss::SSsummarize() %>%
   r4ss::SSplotComparisons(legendlabels = mods)
 
-
-# Custom ggplots
-source("ss3/ss3_functions.R")
-model_name <- c("(1) h=0.3, M=0.07", "(2) Downweight len", "(3) Estimate h", "(4) Estimate h + dwLen", "(5) Est h + dwLen + M=0.06")
+### Custom ggplots
 
 # Plot index
 g <- Map(SS3_index, multi_rep, model_name, figure = FALSE) %>%
@@ -198,16 +225,4 @@ ggsave("figs/ss3/yieldcurve_F.png", g, height = 5, width = 5)
 g <- SS3_yieldcurve(multi_rep, model_name, xvar = "SB0")
 ggsave("figs/ss3/yieldcurve_depletion.png", g, height = 5, width = 6)
 
-# Parameters R0 and steepness
-pars_fn <- function(replist, OM_name) {
-  x <- replist$parameters %>%
-    filter(Label %in% c("SR_LN(R0)", "SR_BH_steep")) %>%
-    select(Label, Value) %>%
-    mutate(Value = round(Value, 2)) %>%
-    rename(Parameter = Label)
-  names(x)[2] <- OM_name
-  return(x)
-}
-pars_srr <- Map(pars_fn, multi_rep, model_name) %>%
-  Reduce(left_join, .)
 
