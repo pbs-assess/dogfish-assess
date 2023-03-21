@@ -2,7 +2,7 @@
 
 
 
-#area_to_PFMA <- function(Area) ifelse(Area == 1, "North - 5BCDE", "South - 5A3CD")
+area_to_PFMA <- function(Area) ifelse(Area == 1, "North - 5BCDE", "South - 5A3CD")
 
 .SS3_yieldcurve <- function(replist, scenario = "OM 1") {
 
@@ -289,7 +289,7 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
         #geom_line(linetype = 3, aes(y = upr)) +
         expand_limits(y = 0) +
         facet_wrap(vars(scen), ncol = 2) +
-        labs(x = "Year", y = "Coastwide recruitment") +
+        labs(x = "Year", y = "Recruitment") +
         gfplot::theme_pbs()
       return(g)
     }
@@ -322,7 +322,7 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
       expand_limits(y = 0) +
       facet_wrap(vars(scen), ncol = 2) +
       gfplot::theme_pbs() +
-      labs(x = "Year", y = "Coastwide recruitment")
+      labs(x = "Year", y = "Recruitment")
 
   }
 }
@@ -509,7 +509,7 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
           geom_line() +
           facet_wrap(vars(scen)) +
           gfplot::theme_pbs() +
-          labs(x = "Year", y = "Apical F", colour = "Gear")
+          labs(x = "Year", y = "Apical F", colour = "Gear", linetype = "Gear")
 
       }
 
@@ -680,7 +680,8 @@ SS3_lencomp <- function(replist, scenario = "OM 1", fleet = 7, mean_length = TRU
     return(rbind(mean_length_hist, mean_length_comp) %>%
              mutate(scen = scenario, Sex = ifelse(Sex == 1, "Female", "Male")))
   } else {
-    return(comp %>% mutate(Sex = ifelse(Sex == 1, "Female", "Male")))
+    if (!nrow(comp)) return(NULL)
+    return(comp %>% mutate(scen = scenario, Sex = ifelse(Sex == 1, "Female", "Male")))
   }
 }
 
@@ -922,3 +923,31 @@ SS3_agestructure <- function(x, scenario, ff, vars = c("LRP", "Current", "Unfish
   g
 }
 
+
+
+pars_fn <- function(replist, OM_name) {
+
+  x <- replist$parameters %>%
+    filter(Label %in% c("SR_LN(R0)", "SR_BH_steep", "NatM_uniform_Fem_GP_1", "NatM_uniform_Mal_GP_1")) %>%
+    select(Label, Value) %>%
+    #mutate(Value = round(Value, 3)) %>%
+    rename(Parameter = Label)
+
+  y <- replist$derived_quants %>%
+    filter(Label %in% c("SSB_2023", "F_2022", "annF_MSY", "SSB_unfished", "SSB_MSY")) %>%
+    select(Label, Value) %>%
+    #mutate(Value = round(Value, 3)) %>%
+    rename(Parameter = Label)
+
+  Fmult <- replist$equil_yield %>%
+    filter(Tot_Catch == max(Tot_Catch)) %>%
+    filter(Iter == min(Iter)) %>%
+    pull(Fmult)
+
+  z <- data.frame(Parameter = "Fmult", Value = Fmult)
+
+  out <- rbind(x, y, z)
+  names(out)[2] <- OM_name
+
+  return(out)
+}

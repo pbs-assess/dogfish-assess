@@ -13,7 +13,7 @@ fleet_index <- c("Bottom trawl" = 1,
                  "LL_3565" = 8,
                  "Trawl" = 9) # Trawl_6695
 
-# trawl_1935 is the proportion of 1935-1963 catch assigned to bottom trawl (remaining goes to hook and line)
+# trawl_1935 is the proportion of 1935-1965 catch assigned to bottom trawl (remaining goes to hook and line)
 ss3_catch <- function(csv = TRUE, trawl_1935 = 0.5) {
   catch <- readRDS("data/generated/catch.rds") %>%
     filter(area != "4B") %>%

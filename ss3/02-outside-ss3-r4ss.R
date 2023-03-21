@@ -1,6 +1,7 @@
 
 
 model_dir <- "model1a_dwLen"
+model_dir <- "model4d_estH_dwLen_recdev"
 ss_home <- here::here("ss3")
 #ss_home <- "C:/users/quang/Desktop/dogfish_ss3"
 
@@ -55,7 +56,7 @@ replist$estimated_non_dev_parameters %>%
   View()
 
 r4ss::SSplotSelex(replist, fleets = 1)
-r4ss::SSplotTimeseries(replist, subplot = 1)
+r4ss::SSplotTimeseries(replist, subplot = 12)
 r4ss::SSplotRecdevs(replist)
 r4ss::SSplotCatch(replist)
 r4ss::SSplotIndices(replist)

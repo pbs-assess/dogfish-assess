@@ -6,8 +6,8 @@ source("ss3/ss3_functions.R")
 # Compare SS models
 ss_home <- here::here("ss3")
 
-mods <- c("model1", "model1a_dwLen", "model4_estH", "model4a_estH_dwLen", "model4b_estH_dwLen_lowM")
-model_name <- c("(1) h=0.3, M=0.07", "(2) Downweight len", "(3) Estimate h", "(4) Estimate h + dwLen", "(5) Est h + dwLen + M=0.06")
+mods <- c("model4a_estH_dwLen", "model4b_estH_dwLen_lowM", "model4d_estH_dwLen_recdev", "model4e_estH_dwLen_exIPHC_recdev")
+model_name <- c("(1) M = 0.07", "(2) M = 0.06", "(3) Est rec dev", "(4) rec dev + exIPHC")
 
 multi_rep <- lapply(mods, function(x) {
   r4ss::SS_output(file.path(ss_home, x),
@@ -15,40 +15,24 @@ multi_rep <- lapply(mods, function(x) {
                   printstats = FALSE,
                   hidewarn = TRUE)
 })
+saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_03.21.2023.rds"))
+multi_rep <- readRDS(file = file.path(ss_home, "multi_rep_03.21.2023.rds"))
 
 ### Tables
 likelihoods <- lapply(1:length(mods), function(i) {
   x <- multi_rep[[i]][["likelihoods_used"]] %>%
-    mutate(name = rownames(.)) %>%
-    select(name, values)
-  colnames(x)[2] <- mods[i]
+    mutate(Component = rownames(.)) %>%
+    select(Component, values)
+  colnames(x)[2] <- model_name[i]
   return(x)
 }) %>%
   Reduce(dplyr::left_join, .)
+readr::write_excel_csv(likelihoods, file = "ss3/tables/likelihoods.csv")
 
 # Parameters R0, steepness, reference points
-pars_fn <- function(replist, OM_name) {
-
-  x <- replist$parameters %>%
-    filter(Label %in% c("SR_LN(R0)", "SR_BH_steep", "NatM_uniform_Fem_GP_1", "NatM_uniform_Mal_GP_1")) %>%
-    select(Label, Value) %>%
-    #mutate(Value = round(Value, 3)) %>%
-    rename(Parameter = Label)
-
-  y <- replist$derived_quants %>%
-    filter(Label %in% c("SSB_2023", "F_2022", "annF_MSY", "SSB_unfished", "SSB_MSY")) %>%
-    select(Label, Value) %>%
-    #mutate(Value = round(Value, 3)) %>%
-    rename(Parameter = Label)
-
-  out <- rbind(x, y)
-  names(out)[2] <- OM_name
-
-  return(out)
-}
 pars_report <- Map(pars_fn, multi_rep, model_name) %>%
   Reduce(left_join, .)
-readr::write_excel_csv(pars_report, file = "ss3/tables/")
+readr::write_excel_csv(pars_report, file = "ss3/tables/pars_report.csv")
 
 ### r4ss Plot comparisons
 multi_rep %>%
@@ -70,35 +54,41 @@ g <- Map(SS3_index, multi_rep, model_name, figure = FALSE) %>%
   labs(x = "Year", y = "Index") +
   guides(colour = "none") +
   theme(panel.spacing = unit(0, "in"))
-ggsave("figs/ss3/index_fit.png", g, height = 4, width = 8)
+ggsave("figs/ss3/index_fit.png", g, height = 4, width = 6)
 
 # Plot SR
 g <- SS3_SR(multi_rep, model_name) +
   labs(x = "Spawning output")
 ggsave("figs/ss3/srr.png", g, height = 4, width = 6)
 
+# Plot recruitment
+g <- SS3_recruitment(multi_rep, model_name)
+ggsave("figs/ss3/recruitment.png", g, height = 4, width = 6)
+
+g <- SS3_recruitment(multi_rep, model_name, dev = TRUE)
+ggsave("figs/ss3/recruit_dev.png", g, height = 4, width = 6)
+
 # Plot SSB
 g <- SS3_B(multi_rep, model_name) +
   guides(linetype = 'none') +
   labs(y = "Spawning output")
-ggsave("figs/ss3/spawning_est.png", g, height = 6, width = 6)
+ggsave("figs/ss3/spawning_est.png", g, height = 4, width = 6)
 
 g <- SS3_B(multi_rep, model_name, type = "SSB0") +
   guides(linetype = 'none') +
   labs(y = "Spawning depletion")
-ggsave("figs/ss3/depletion_est.png", g, height = 6, width = 6)
+ggsave("figs/ss3/depletion_est.png", g, height = 4, width = 6)
 
 g <- SS3_B(multi_rep, model_name, type = "SSBMSY") +
   guides(linetype = 'none') +
   geom_hline(yintercept = 0.4, linetype = 2) +
   geom_hline(yintercept = 0.8, linetype = 3)
-ggsave("figs/ss3/bbmsy_est.png", g, height = 6, width = 6)
+ggsave("figs/ss3/bbmsy_est.png", g, height = 4, width = 6)
 
 g <- SS3_B(multi_rep, model_name, type = "B") +
   labs(linetype = 'Sex') +
   theme(legend.position = "bottom")
-ggsave("figs/ss3/biomass_est.png", g, height = 6, width = 6)
-
+ggsave("figs/ss3/biomass_est.png", g, height = 5, width = 6)
 
 # Maturity at age/length
 g1 <- multi_rep[[1]]$endgrowth %>%
@@ -109,7 +99,7 @@ g1 <- multi_rep[[1]]$endgrowth %>%
   geom_line() +
   labs(x = "Age", y = "Maturity")
 
-g2 <- multi_rep[[1]]$biology%>%
+g2 <- multi_rep[[1]]$biology %>%
   ggplot(aes(Len_mean, Mat)) +
   #geom_point() +
   geom_line() +
@@ -153,10 +143,10 @@ ggsave("figs/ss3/spawning_age.png", g, height = 2, width = 6)
 
 # Selectivity
 g <- SS3_sel(multi_rep, model_name)
-ggsave("figs/ss3/sel_age.png", g, height = 6, width = 8)
+ggsave("figs/ss3/sel_age.png", g, height = 6, width = 6)
 
 g <- SS3_sel(multi_rep, model_name, type = "Lsel")
-ggsave("figs/ss3/sel_len.png", g, height = 6, width = 8)
+ggsave("figs/ss3/sel_len.png", g, height = 6, width = 6)
 
 # Mean length
 fleet_int <- c(1:4, 6)
@@ -173,11 +163,11 @@ g <- Map(SS3_lencomp, multi_rep, model_name, MoreArgs = list(fleet = fleet_int))
         legend.position = "bottom") +
   scale_shape_manual(values = c(16, 1)) +
   guides(colour = "none")
-ggsave("figs/ss3/mean_length.png", g, height = 6, width = 8)
+ggsave("figs/ss3/mean_length.png", g, height = 6, width = 6)
 
 
 # Length comps
-heights <- c(6, 6, 4, 5, NA, 8)
+heights <- c(6, 6, 4, 5, NA, 8) + 1
 xlim <- list(c(50, 125),
              c(25, 100),
              c(0, 125),
@@ -185,20 +175,24 @@ xlim <- list(c(50, 125),
              NA,
              c(30, 110))
 for(ff in fleet_int) {
-  len <- SS3_lencomp(multi_rep[[1]], model_name[1], fleet = ff, mean_length = FALSE) %>%
-    #filter(Obs > 1e-4, Exp > 1e-4) %>%
+  len <- Map(SS3_lencomp, multi_rep, model_name, MoreArgs = list(fleet = ff, mean_length = FALSE)) %>%
+    bind_rows() %>%
     mutate(Obs = ifelse(Sex == "Male", -1 * Obs, Obs),
            Exp = ifelse(Sex == "Male", -1 * Exp, Exp))
 
   g <- len %>%
+    filter(scen == model_name[1]) %>%
     ggplot(aes(Bin, Obs, fill = Sex)) +
     geom_col(colour = "grey60", width = 4, alpha = 0.75) +
-    geom_line(aes(y = Exp, linetype = Sex)) +
+    geom_line(data = len, aes(y = Exp, linetype = Sex, colour = scen)) +
     facet_wrap(vars(Yr), ncol = 4) +
     scale_y_continuous(labels = abs) +
-    labs(x = "Length", y = "Proportion") +
-    theme(legend.position = "bottom", panel.spacing = unit(0, "in")) +
+    theme(legend.position = "bottom",
+          panel.spacing = unit(0, "in")) +
+    scale_fill_manual(values = c("grey80", "white")) +
     xlim(xlim[[ff]]) +
+    labs(x = "Length", y = "Proportion", colour = "Model") +
+    guides(colour = guide_legend(nrow = 2)) +
     ggtitle(unique(len$FleetName))
   ggsave(paste0("figs/ss3/len_comp_fleet_", ff, ".png"), g, height = heights[ff], width = 6)
 }
@@ -206,6 +200,9 @@ for(ff in fleet_int) {
 # Exploitation and apical F
 g <- SS3_F(multi_rep, model_name)
 ggsave("figs/ss3/harvest_rate.png", g, height = 4, width = 6)
+
+g <- SS3_F(multi_rep, model_name, type = "fleet")
+ggsave("figs/ss3/fleet_F.png", g, height = 4, width = 6)
 
 g <- SS3_F(multi_rep, model_name, type = "FMSY") +
   labs(y = expression(U/U[MSY]))
@@ -220,9 +217,9 @@ ggsave("figs/ss3/kobe.png", g, height = 4, width = 6)
 # Yield curve
 g <- SS3_yieldcurve(multi_rep, model_name) +
   coord_cartesian(xlim = c(0, 0.03))
-ggsave("figs/ss3/yieldcurve_F.png", g, height = 5, width = 5)
+ggsave("figs/ss3/yieldcurve_F.png", g, height = 3, width = 5)
 
 g <- SS3_yieldcurve(multi_rep, model_name, xvar = "SB0")
-ggsave("figs/ss3/yieldcurve_depletion.png", g, height = 5, width = 6)
+ggsave("figs/ss3/yieldcurve_depletion.png", g, height = 3, width = 6)
 
 
