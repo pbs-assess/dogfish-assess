@@ -223,3 +223,25 @@ g <- SS3_yieldcurve(multi_rep, model_name, xvar = "SB0")
 ggsave("figs/ss3/yieldcurve_depletion.png", g, height = 3, width = 6)
 
 
+# Compare unfished vs. current length comp in a single OM
+g <- lapply(c(1:4, 6), function(ff) {
+  SS3_lencomp(multi_rep[[1]], fleet = ff, mean_length = FALSE, ghost = TRUE) %>%
+    group_by(FleetName) %>%
+    filter(Yr %in% range(Yr)) %>%
+    mutate(Exp = ifelse(Sex == "Male", -1 * Exp, Exp)) %>%
+    ggplot(aes(Bin, Exp, fill = Sex)) +
+    geom_col(colour = "grey60", width = 4, alpha = 0.75) +
+    #geom_line(data = len, aes(y = Exp, linetype = Sex, colour = scen)) +
+    facet_grid(vars(FleetName), vars(Yr)) +
+    scale_y_continuous(labels = abs) +
+    theme(legend.position = "bottom",
+          panel.spacing = unit(0, "in")) +
+    scale_fill_manual(values = c("grey80", "white")) +
+    #xlim(xlim[[ff]]) +
+    labs(x = "Length", y = "Proportion", colour = "Model") +
+    guides(colour = guide_legend(nrow = 2))
+})
+
+g2 <- ggpubr::ggarrange(plotlist = g, ncol = 1, common.legend = TRUE)
+ggsave("figs/ss3/len_comp_1937.png", g2, height = 8, width = 4)
+
