@@ -111,9 +111,6 @@ ggplot(old_landings, aes(x = year, y = landed_kg, colour = gear, fill = gear)) +
 old_dat <- full_join(old_landings, disc)
 old_dat <- make_NAs_zero(old_dat)
 
-ggplot(old_dat, aes(x = year, y = landed_kg + discarded_kg, colour = gear, fill = gear)) +
-  facet_wrap(~area, scales = "fixed") +
-  geom_col()
 
 d <- bind_rows(d_catch_modern, old_dat)
 
@@ -129,11 +126,38 @@ catch_plot <- function(x, column) {
     scale_fill_manual(values = cols) +
     ylim(0, 2.5e04)
 }
+
+ggplot(old_dat, aes(x = year, y = 1e-6 * (landed_kg + discarded_kg), colour = gear, fill = gear)) +
+  facet_wrap(~area, scales = "fixed") +
+  geom_col() +
+  labs(x = "Year", y = "Catch (kt)")
 ggsave("figs/reconstructed-catch.png", width = 8, height = 8)
 
-land <- catch_plot(d, landed_kg/1000) + ggtitle("Landings")
-discard <- catch_plot(d, discarded_kg/1000) + ggtitle("Discards")
-catch <- catch_plot(d, landed_kg/1000 + discarded_kg/1000) + ggtitle("Catch")
-cowplot::plot_grid(plotlist = list(land, discard, catch), ncol = 1L)
+land <- catch_plot(d, landed_kg/1000) + labs(x = "Year", y = "Landings (t)")
+discard <- catch_plot(d, discarded_kg/1000) + labs(x = "Year", y = "Discards (t)")
+catch <- catch_plot(d, landed_kg/1000 + discarded_kg/1000) + labs(x = "Year", y = "Catch (t)")
+
+g <- cowplot::plot_grid(plotlist = list(land, discard, catch), ncol = 1L)
+ggsave("figs/reconstructed-catch-discards.png", g, width = 8, height = 6)
+
+# Proportion discards
+p_discard <- catch_plot(d, landed_kg/1000 + discarded_kg/1000) + labs(x = "Year", y = "Catch (t)")
+
+gears <- sort(unique(x$gear))
+cols <- RColorBrewer::brewer.pal(n = length(gears), name = "Dark2")
+names(cols) <- gears
+
+g <- d %>% group_by(year, area) %>%
+  summarise(p_discard = sum(discarded_kg)/sum(landed_kg + discarded_kg)) %>%
+  ggplot(aes(x = year, y = p_discard)) +
+  facet_wrap(~area, scales = "fixed") +
+  geom_line() +
+  #geom_line(colour = "grey50", linewidth = 0.5) +
+  #coord_cartesian(expand = FALSE) +
+  theme_pbs() +
+  labs(x = "Year", y = "Proportion discards")
+ggsave("figs/proportion-discards.png", g, width = 5, height = 2.5)
+
+
 
 saveRDS(d, file = "data/generated/catch.rds")
