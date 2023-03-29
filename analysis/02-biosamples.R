@@ -140,36 +140,36 @@ g <- fit$data %>%
   labs(x = "Length", y = "Proportion mature")
 ggsave("figs/maturity-outside-survey-prop.png", g, width = 6, height = 3)
 
-# Re-fit if females mature at 71
-fit_71 <- fit$data %>%
-  mutate(mature = ifelse(female == 1, maturity_code >= 71, mature)) %>%
+# Re-fit if females mature at 55
+fit_55 <- fit$data %>%
+  mutate(mature = ifelse(female == 1, maturity_code >= 55, mature)) %>%
   stats::glm(mature ~ age_or_length * female, data = ., family = binomial)
 
-pred_data <- fit_71$data %>%
+pred_data <- fit_55$data %>%
   select(age_or_length, female) %>%
-  mutate(glmm_fe = predict(fit_71, newdata = ., type = "response"))
+  mutate(glmm_fe = predict(fit_55, newdata = ., type = "response"))
 
-prop_71 <- rbind(
+prop_55 <- rbind(
   g$data %>% filter(sex == 2) %>% ungroup() %>% select(age_or_length, n, p) %>% mutate(type = 77),
-  fit_71$data %>%
+  fit_55$data %>%
     filter(sex == 2) %>%
     group_by(age_or_length) %>%
     summarise(n = n(), p = mean(mature)) %>%
-    mutate(type = 71)
+    mutate(type = 55)
 )
 
-pred_71 <- rbind(
+pred_55 <- rbind(
   fit$pred_data %>% filter(female == 1) %>% select(age_or_length, glmm_fe) %>% mutate(type = 77),
-  pred_data %>% filter(female == 1) %>% select(age_or_length, glmm_fe) %>% mutate(type = 71)
+  pred_data %>% filter(female == 1) %>% select(age_or_length, glmm_fe) %>% mutate(type = 55)
 )
 
-g <- prop_71 %>%
+g <- prop_55 %>%
   ggplot(aes(age_or_length)) +
   geom_point(aes(y = p, shape = factor(type))) +
   scale_shape_manual(name = "Mature at", values = c(16, 1)) +
-  geom_line(data = pred_71, aes(y = glmm_fe, linetype = factor(type))) +
+  geom_line(data = pred_55, aes(y = glmm_fe, linetype = factor(type))) +
   labs(x = "Length", y = "Proportion mature", linetype = "Mature at")
-ggsave("figs/maturity-outside-survey-prop-71.png", g, width = 6, height = 3)
+ggsave("figs/maturity-outside-survey-prop-55.png", g, width = 6, height = 3)
 
 
 
