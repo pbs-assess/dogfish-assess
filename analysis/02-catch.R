@@ -158,6 +158,16 @@ g <- d %>% group_by(year, area) %>%
   labs(x = "Year", y = "Proportion discards")
 ggsave("figs/proportion-discards.png", g, width = 5, height = 2.5)
 
+land <- catch_plot(d, landed_kg/1000) + ggtitle("Landings")
+discard <- catch_plot(d, discarded_kg/1000) + ggtitle("Discards")
+catch <- catch_plot(d, landed_kg/1000 + discarded_kg/1000) + ggtitle("Catch")
+cowplot::plot_grid(plotlist = list(land, discard, catch), ncol = 1L)
+ggsave("figs/reconstructed-catch-discards.png", width = 8, height = 8)
 
+catch + facet_wrap(~area, ncol = 1) +
+  ylab("Reconstructed catch (t)") +
+  labs(fill = "Gear") + xlab("") +
+  ggtitle("")
+ggsave("figs/reconstructed-catch.png", width = 6.4, height = 5.5)
 
 saveRDS(d, file = "data/generated/catch.rds")
