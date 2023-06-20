@@ -125,7 +125,7 @@ ind <- left_join(ind, survs, by = join_by(year))
 # ind <- left_join(ind, survs, by = "year")
 
 ggplot() +
-  geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
+  geom_pointrange(data = ind_save, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
   coord_cartesian(ylim = c(0, NA))
 
 ind_save <- dplyr::filter(ind, !is.na(survey_abbrev))
