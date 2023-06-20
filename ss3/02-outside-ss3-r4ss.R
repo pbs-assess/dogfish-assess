@@ -15,7 +15,12 @@ fit_ss3 <- function(model_dir = "model1",
   setwd(dir_run)
   on.exit(setwd(dir_cur))
 
-  cmd <- "ss.exe -nox"
+  if (.Platform$OS.type == "unix") {
+    cmd <- "ss -nox"
+  } else {
+    cmd <- "ss.exe -nox"
+  }
+
   if (!hessian) {
     cmd <- paste(cmd, "-nohess")
   }
