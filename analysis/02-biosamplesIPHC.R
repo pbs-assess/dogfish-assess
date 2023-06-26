@@ -110,4 +110,17 @@ ggplot() +
   facet_wrap(~GMAs) +
   theme_classic()
 
+ggplot() +
+  geom_density(data = d_mfa, aes(length, group = sex, col = sex), size = 2) +
+  theme_classic()
 
+males <- filter(d_mfa, sex == "M")
+range(males$length)
+plot(density(males$length))
+
+ggplot() +
+  geom_boxplot(data = d_mfa, aes(GMAs, length)) +
+  theme_classic() +
+  facet_wrap (~sex)
+
+range(males$length)
