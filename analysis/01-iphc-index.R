@@ -295,15 +295,21 @@ ind <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds")
 obs <- group_by(d, year) |>
   summarise(n_hooksobserved = mean(hooksobserved))
 
-x <- ind |>
+ind |>
   left_join(obs) |>
   ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = n_hooksobserved)) +
   geom_pointrange() +
+  geom_line() +
+coord_cartesian(ylim = c(0, NA)) +
+geom_vline(xintercept = 2020, lty = 2) +
+geom_vline(xintercept = 2000, lty = 2) +
+scale_colour_viridis_c()
+
+x <- ind |>
+  left_join(obs) |>
+  ggplot(aes(year, est, ymin = lwr, ymax = upr), colour = "blue") +
+  geom_pointrange() +
   geom_line()
-  #coord_cartesian(ylim = c(0, NA)) +
-  #geom_vline(xintercept = 2020, lty = 2) +
-  #geom_vline(xintercept = 2000, lty = 2) +
-  #scale_colour_viridis_c()
 ind_web <- ind_web |>
   left_join(obs)
 x + geom_line(data = ind_web, aes(year, est/5), col = "red") + coord_cartesian(ylim = c(0, 50)) +
