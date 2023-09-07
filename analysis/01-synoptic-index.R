@@ -1,6 +1,7 @@
 library(dplyr)
 library(ggplot2)
 library(sdmTMB)
+library(cowplot)
 theme_set(gfplot::theme_pbs())
 
 s <- readRDS("data/raw/survey-sets.rds")
@@ -210,3 +211,30 @@ gg <- ggplot(ind, aes(year, est)) +
   labs(x = "Year", y = "Synoptic Trawl Index") +
   expand_limits(y = 0)
 ggsave("figs/synoptic/syn_index.png", gg, height = 3, width = 4)
+
+
+# Marginal effect of depth ----
+m1 <- visreg_delta(fit, xvar = "depth_m", breaks = seq(0, 1300, 50), scale = "response", plot = FALSE, model = 1)
+m2 <- visreg_delta(fit, xvar = "depth_m", breaks = seq(0, 1300, 50), scale = "response", plot = FALSE, model = 2)
+#saveRDS(list(m1 = m1, m2 = m2), file = 'data/generated/visreg_syn_depth.rds')
+
+gg1 <- plot(m1, gg = TRUE,
+            partial = FALSE, rug = FALSE,
+            line.par = list(col = 1)) +
+  coord_cartesian(xlim = c(0, 750), ylim = c(0, 1), expand = FALSE) +
+  labs(x = "Depth (m)", y = "Encounter probability")
+
+gg2 <- plot(m2, gg = TRUE,
+            partial = FALSE, rug = FALSE,
+            line.par = list(col = 1),
+            points.par = list(alpha = 0.2)) +
+  coord_cartesian(xlim = c(0, 750), ylim = c(0, 0.0005), expand = FALSE) +
+  labs(x = "Depth (m)", y = "CPUE")
+
+gg3 <- cowplot::plot_grid(gg1, gg2, ncol = 1, nrow = 2, align = "hv")
+ggsave("figs/synoptic/depth_marginal.png", gg3, height = 6, width = 4)
+
+
+# This used to work for sdmTMB
+#m <- ggeffects::ggeffect(fit, terms = "depth_m [20:269, by=10]", offset = 0)
+

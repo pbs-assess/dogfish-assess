@@ -117,7 +117,21 @@ ggsave("figs/hbll_out/adjusted_cpue_hist.png", gg, height = 4, width = 5)
 mesh <- make_mesh(d, c("X", "Y"), cutoff = 12)
 plot(mesh)
 mesh$mesh$n
+# Plot mesh ----
 
+g <- local({
+  mesh_m <- mesh$mesh
+  mesh_m$loc <- 1e3 * mesh_m$loc
+
+  ggplot() +
+    inlabru::gg(mesh_m, edge.color = "grey61") +
+    geom_sf(data = coast %>% sf::st_transform(crs = 32609), inherit.aes = FALSE) +
+    #geom_point(data = mesh$loc_xy %>% as.data.frame() %>% `*`(1e3), aes(X, Y), fill = "red", shape = 21, size = 1) +
+    labs(x = "Longitude", y = "Latitude")
+})
+ggsave("figs/hbll_out/hbll_out_mesh.png", g, width = 5, height = 6)
+
+# Call sdm
 fit_nb2 <- sdmTMB(
   catch_count ~ 1 + poly(log(depth_m), 2L),
   family = nbinom2(link = "log"),
@@ -245,3 +259,15 @@ gg <- ggplot(ind_save, aes(year, est)) +
   geom_linerange(aes(ymin = lwr, ymax = upr)) +
   labs(x = "Year", y = "HBLL Index")
 ggsave("figs/hbll_out/hbll_index.png", gg, height = 3, width = 4)
+
+# Marginal effect of depth ----
+marginal_depth <- visreg::visreg(fit_nb2, xvar = "depth_m", breaks = seq(0, 270, 10),
+                                 data = fit_nb2$data,
+                                 plot = FALSE)
+
+gg <- plot(marginal_depth, gg = TRUE,
+           line.par = list(col = 1),
+           points.par = list(alpha = 0.2)) +
+  coord_cartesian(xlim = c(0, 300), expand = FALSE) +
+  labs(x = "Depth (m)", y = "log(CPUE)")
+ggsave("figs/hbll_out/depth_marginal.png", gg, height = 3, width = 4)
