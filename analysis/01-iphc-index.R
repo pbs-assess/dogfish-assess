@@ -3,7 +3,7 @@ library(dplyr)
 library(sdmTMB)
 library(tidyr)
 library(sf)
-devtools::install_github("pbs-assess/gfiphc")
+#devtools::install_github("pbs-assess/gfiphc")
 library(gfiphc)
 library(gfdata)
 
@@ -124,7 +124,7 @@ x + geom_point(data = filter(surveyed1, iphc.reg.area == "2B"), aes(UTM.lon, UTM
 saveRDS(iphc_coast_trimmed3, "data/generated/IPHC_coastdata_nosog_gfdata.rds")
 
 
-# check website and gfiphc data trends
+# check website and gfiphc data trends ----
 d_website <- readRDS("data/generated/IPHC_coastdata_nosog.rds")
 d <- readRDS("data/generated/IPHC_coastdata_nosog_gfdata.rds") |>
   mutate(depth_m = exp(depth_m_log)) |>
@@ -144,7 +144,7 @@ ggplot(both, aes(year, count, group = data, colour = data)) +
   geom_line(size = 2)
 
 
-# hook competition
+# hook competition ----
 # h <- readxl::read_excel("data/raw/iphc-2021-fiss-hadj.xlsx") |>
 # dplyr::filter(`IPHC Reg Area` %in% "2B")
 # saveRDS(h, file = "data/raw/iphc-2021-fiss-hadj.rds")
@@ -209,10 +209,6 @@ d <- filter(d, year <= 2021) # hook adj. not ready for 2022
 d <- filter(d, !is.na(purpose)) # a few in 2021!?
 stopifnot(sum(is.na(d$hook_adjust_factor)) == 0L)
 
-mesh <- make_mesh(d, c("UTM_lon", "UTM_lat"), cutoff = 15)
-plot(mesh)
-mesh$mesh$n
-
 # d$offset <- log(d$hooksobserved2)
 stopifnot(sum(is.na(d$hooksobserved)) == 0L)
 
@@ -221,6 +217,64 @@ d$offset <- log(d$hooksfished / d$hook_adjust_factor) # hook comp
 #d$offset <- log(d$hooksobserved) # no hook comp
 stopifnot(sum(is.na(d$offset)) == 0L)
 
+## Figures for report - data and hook adjustment ----
+coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
+  sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
+
+gg <- ggplot(d, aes(longitude, latitude, fill = bait/hooksobserved, colour = bait/hooksobserved)) +
+  geom_sf(data = coast, inherit.aes = FALSE) +
+  coord_sf(expand = FALSE) +
+  geom_point(pch = 21, alpha = 0.3) +
+  facet_wrap(vars(year)) +
+  scale_fill_viridis_c(option = "C", limits = c(0, 1)) +
+  scale_colour_viridis_c(option = "C", limits = c(0, 1)) +
+  theme(panel.spacing = unit(0, "in"),
+        legend.position = 'bottom',
+        axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+  labs(x = "Longitude", y = "Latitude", fill = "Proportion baited hooks", colour = "Proportion baited hooks")
+ggsave("figs/iphc/baited_hooks.png", gg, height = 6, width = 5, dpi = 600)
+
+gg <- ggplot(d, aes(longitude, latitude, fill = N_it20/exp(offset), colour = N_it20/exp(offset))) +
+  geom_sf(data = coast, inherit.aes = FALSE) +
+  coord_sf(expand = FALSE) +
+  geom_point(pch = 21, alpha = 0.3) +
+  facet_wrap(vars(year)) +
+  theme(panel.spacing = unit(0, "in"),
+        axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+  scale_colour_viridis_c(trans = "log", breaks = c(0.006, 0.050, 0.37)) +
+  scale_fill_viridis_c(trans = "log", breaks = c(0.006, 0.050, 0.37)) +
+  labs(x = "Longitude", y = "Latitude", fill = "Adjusted CPUE", colour = "Adjusted CPUE")
+ggsave("figs/iphc/adjusted_cpue.png", gg, height = 6, width = 5, dpi = 600)
+
+gg <- d %>%
+  mutate(cpue = N_it20/exp(offset)) %>%
+  ggplot(aes(x = cpue, y = after_stat(count))) +
+  geom_histogram(bins = 20, colour = 1, fill = "grey80") +
+  facet_wrap(vars(year), ncol = 5) +
+  theme(panel.spacing = unit(0, "in")) +
+  labs(x = "Adjusted CPUE", y = "Frequency") +
+  coord_cartesian(xlim = c(0, 0.5))
+ggsave("figs/iphc/adjusted_cpue_hist.png", gg, height = 5, width = 6)
+
+## Fit sdm model ----
+mesh <- make_mesh(d, c("UTM_lon", "UTM_lat"), cutoff = 15)
+plot(mesh)
+mesh$mesh$n
+
+# Plot mesh ----
+g <- local({
+  mesh_m <- mesh$mesh
+  mesh_m$loc <- 1e3 * mesh_m$loc
+
+  ggplot() +
+    inlabru::gg(mesh_m, edge.color = "grey60") +
+    geom_sf(data = coast %>% sf::st_transform(crs = 32609), inherit.aes = FALSE) +
+    #geom_point(data = mesh$loc_xy %>% as.data.frame() %>% `*`(1e3), aes(X, Y), fill = "red", shape = 21, size = 1) +
+    labs(x = "Longitude", y = "Latitude")
+})
+ggsave("figs/iphc/iphc_mesh.png", g, width = 5, height = 6)
+
+# Call sdm
 fit_iphc_nb2 <- sdmTMB(
   N_it20 ~ 0 + poly(depth_m_log, 2L),
   family = nbinom2(link = "log"),
@@ -231,12 +285,12 @@ fit_iphc_nb2 <- sdmTMB(
   offset = "offset",
   spatiotemporal = "ar1",
   spatial = "on",
-  silent = FALSE,
+  silent = TRUE,
   anisotropy = TRUE,
   control = sdmTMBcontrol(newton_loops = 1L)
 )
 saveRDS(fit_iphc_nb2, file = "data/generated/iphc-nb2-sdmTMB_gfdata.rds")
-fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB.rds")
+#fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB.rds")
 fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 
 # fit_rw <- update(fit_iphc_nb2, spatiotemporal = "rw", time_varying = NULL,
@@ -265,7 +319,7 @@ grid <- s %>%
 
 g <- add_utm_columns(grid, ll_names = c("longitude", "latitude"), utm_crs = 32609) |>
   rename(UTM_lon = X, UTM_lat = Y)
-plot(g$X, g$Y)
+plot(g$UTM_lon, g$UTM_lat)
 nrow(g)
 nrow(distinct(g))
 
@@ -371,3 +425,77 @@ group_by(d, year) |>
 #   ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = type, fill = type)) +
 #   geom_ribbon(alpha = 0.3) +
 #   coord_cartesian(ylim = c(0, NA))
+
+
+
+## Plot figures in prediction grid ----
+# Depth ----
+gg <- grid %>% filter(year == 1998) %>%
+  ggplot(aes(longitude, latitude, fill = exp(depth_m_log), colour = exp(depth_m_log))) +
+  geom_sf(data = coast, inherit.aes = FALSE) +
+  coord_sf(expand = FALSE) +
+  geom_point(shape = 21) +
+  scale_fill_viridis_c(trans = "sqrt") +
+  scale_colour_viridis_c(trans = "sqrt") +
+  labs(x = "Longitude", y = "Latitude", colour = "Depth (m)", fill = "Depth (m)")
+ggsave("figs/iphc/prediction_grid_depth.png", gg, height = 4, width = 4, dpi = 600)
+
+# Omega ----
+rb_fill <- scale_fill_gradient2(high = "red", low = "blue", mid = "grey90")
+rb_col <- scale_colour_gradient2(high = "red", low = "blue", mid = "grey90")
+
+gg <- ggplot(p$data, aes(longitude, latitude, fill = omega_s, colour = omega_s)) +
+  geom_sf(data = coast, inherit.aes = FALSE) +
+  coord_sf(expand = FALSE) +
+  geom_point(shape = 21) +
+  rb_fill + rb_col +
+  labs(x = "Longitude", y = "Latitude", colour = "Spatial effect", fill = "Spatial effect")
+ggsave("figs/iphc/prediction_grid_omega.png", gg, height = 4, width = 4, dpi = 600)
+
+# Epsilon ----
+gg <- ggplot(p$data, aes(longitude, latitude, fill = epsilon_st, colour = epsilon_st)) +
+  geom_sf(data = coast, inherit.aes = FALSE) +
+  coord_sf(expand = FALSE) +
+  facet_wrap(vars(year)) +
+  geom_tile(height = 0.25, width = 0.25) + #point(shape = 21) +
+  rb_fill + rb_col +
+  theme(panel.spacing = unit(0, "in"),
+        legend.position = 'bottom',
+        axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+  labs(x = "Longitude", y = "Latitude", colour = "Spatiotemporal\neffect", fill = "Spatiotemporal\neffect")
+ggsave("figs/iphc/prediction_grid_eps.png", gg, height = 6, width = 5, dpi = 600)
+
+# log-density ----
+gg <- ggplot(p$data, aes(longitude, latitude, fill = est, colour = est)) +
+  geom_sf(data = coast, inherit.aes = FALSE) +
+  coord_sf(expand = FALSE) +
+  facet_wrap(vars(year)) +
+  geom_tile(width = 0.25, height = 0.25) +
+  scale_colour_viridis_c(option = "C") +
+  scale_fill_viridis_c(option = "C") +
+  theme(panel.spacing = unit(0, "in"),
+        legend.position = 'bottom',
+        axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+  labs(x = "Longitude", y = "Latitude", colour = "log density", fill = "log density")
+ggsave("figs/iphc/prediction_grid_density.png", gg, height = 6, width = 5, dpi = 600)
+
+# Index ----
+gg <- ggplot(ind, aes(year, est)) +
+  geom_point() +
+  geom_linerange(aes(ymin = lwr, ymax = upr)) +
+  labs(x = "Year", y = "IPHC Index") +
+  expand_limits(y = 0)
+ggsave("figs/iphc/iphc_index.png", gg, height = 3, width = 4)
+
+# Marginal effect of depth ----
+marginal_depth <- visreg::visreg(fit_iphc_nb2, xvar = "depth_m_log", breaks = seq(0, 500, 25),
+                                 data = fit_iphc_nb2$data,
+                                 xtrans = exp,
+                                 plot = FALSE)
+
+gg <- plot(marginal_depth, gg = TRUE,
+           line.par = list(col = 1),
+           points.par = list(alpha = 0.2)) +
+  coord_cartesian(xlim = c(0, 500), expand = FALSE) +
+  labs(x = "Depth (m)", y = "log(CPUE)")
+ggsave("figs/iphc/depth_marginal.png", gg, height = 3, width = 4)

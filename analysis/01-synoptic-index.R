@@ -73,7 +73,7 @@ g <- local({
   mesh_m$loc <- 1e3 * mesh_m$loc
 
   ggplot() +
-    inlabru::gg(mesh_m, edge.color = "grey61") +
+    inlabru::gg(mesh_m, edge.color = "grey60") +
     geom_sf(data = coast %>% sf::st_transform(crs = 32609), inherit.aes = FALSE) +
     #geom_point(data = mesh$loc_xy %>% as.data.frame() %>% `*`(1e3), aes(X, Y), fill = "red", shape = 21, size = 1) +
     labs(x = "Longitude", y = "Latitude")
