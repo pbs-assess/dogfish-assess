@@ -62,6 +62,33 @@ gg <- d %>%
   labs(x = expression("CPUE (g/"~m^2~")"), y = "Frequency")
 ggsave("figs/synoptic/cpue_hist.png", gg, height = 6, width = 5)
 
+## Design-based index ----
+index_design <- d %>%
+  mutate(cpue = catch_weight/area_swept,
+         catch_expand = area_km2 * cpue) %>%
+  summarize(index_strat = mean(catch_expand),
+            var_strat = var(catch_expand),
+            n = n(),
+            nsamp = unique(area_km2)/sum(area_swept) * n * 1e3 * 1e3, # Number of sampling units per stratum
+            .by = c(year, grouping_code, survey_abbrev, area_km2)) %>%
+  mutate(area_total = sum(area_km2), .by = c(year, survey_abbrev)) %>%
+  summarize(Biomass = sum(index_strat),
+            Var = sum(nsamp * (nsamp - n)/n * var_strat)/sum(nsamp)/sum(nsamp), # See SimSurvey appendix
+            #Var = sum(var_strat * area_km2^2/area_total^2),
+            .by = c(year, survey_abbrev)) %>%
+  mutate(SE = sqrt(Var), CV = SE/Biomass)
+
+g <- index_design %>%
+  ggplot(aes(year, Biomass)) +
+  geom_linerange(aes(ymin = Biomass - 2 * SE, ymax = Biomass + 2 * SE)) +
+  geom_point() +
+  theme(panel.spacing = unit(0, "in"),
+        legend.position = "bottom") +
+  expand_limits(y = 0) +
+  facet_wrap(vars(survey_abbrev), scales = "free_y") +
+  labs(x = "Year", y = "Index of biomass")
+ggsave("figs/synoptic/syn_index_design.png", g, height = 4, width = 6)
+
 ## Fit sdm model ----
 mesh <- make_mesh(d, c("X", "Y"), cutoff = 15)
 plot(mesh)

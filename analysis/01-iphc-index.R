@@ -256,6 +256,32 @@ gg <- d %>%
   coord_cartesian(xlim = c(0, 0.5))
 ggsave("figs/iphc/adjusted_cpue_hist.png", gg, height = 5, width = 6)
 
+## Nominal index ----
+do_boot <- function(x, nsim = 250) {
+  boot_fn <- function(d, i) {
+    d <- d[i, ]
+    mean(d$N_it20/exp(d$offset))
+  }
+  boot_out <- lapply(unique(x$year), function(y) {
+    samps <- filter(x, year == y)
+    boot::boot(samps, boot_fn, R = nsim)
+  })
+  data.frame(year = unique(x$year),
+             index = sapply(boot_out, getElement, "t0"),
+             var = sapply(boot_out, function(i) var(i$t))) %>%
+    mutate(sd = sqrt(var), cv = sd/index)
+}
+index_boot <- do_boot(d)
+
+gg <- index_boot %>%
+  ggplot(aes(year, index)) +
+  geom_linerange(aes(ymin = index - 2 * sd, ymax = index + 2 * sd)) +
+  geom_point() +
+  #geom_line() +
+  expand_limits(y = 0) +
+  labs(x = "Year", y = "Index of abundance")
+ggsave("figs/iphc/iphc_index_nominal.png", gg, height = 4, width = 6)
+
 ## Fit sdm model ----
 mesh <- make_mesh(d, c("UTM_lon", "UTM_lat"), cutoff = 15)
 plot(mesh)

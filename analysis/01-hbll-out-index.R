@@ -112,6 +112,43 @@ gg <- d %>%
 ggsave("figs/hbll_out/adjusted_cpue_hist.png", gg, height = 4, width = 5)
 
 
+## Design-based index ----
+# Some sets are missing strata area
+strata <- d %>%
+  filter(!is.na(area_km2)) %>%
+  summarize(area_km2 = unique(area_km2), .by = grouping_code)
+
+index_design <- d %>%
+  select(-area_km2) %>%
+  left_join(strata, by = "grouping_code") %>%
+  select(catch_count, offset, hook_count, Ait, year, survey_abbrev, grouping_code, area_km2) %>%
+  mutate(cpue = catch_count/exp(offset)) %>%
+  summarize(n = n(),
+            nsamp = unique(area_km2)/sum(exp(offset)) * n,
+            index_expand = mean(area_km2 * cpue),
+            index_var = var(area_km2 * cpue),
+            .by = c(year, grouping_code, survey_abbrev)) %>%
+  summarize(Biomass = sum(index_expand),
+            nset = sum(n),
+            sampling_units = sum(nsamp),
+            Var = sum(index_var)/n()/n(), # Divide by the number of strata
+            #Var = sum(nsamp/n * index_var)/sum(nsamp)/sum(nsamp),
+            .by = c(year, survey_abbrev)) %>%
+  mutate(SE = sqrt(Var), CV = SE/Biomass)
+
+g <- index_design %>%
+  ggplot(aes(year, Biomass, linetype = survey_abbrev, shape = survey_abbrev)) +
+  geom_linerange(aes(ymin = Biomass - 2 * SE, ymax = Biomass + 2 * SE)) +
+  geom_point() +
+  geom_line() +
+  theme(panel.spacing = unit(0, "in"), legend.position = "bottom") +
+  expand_limits(y = 0) +
+  labs(x = "Year", y = "Index of abundance", linetype = "Survey", shape = "Survey") +
+  scale_shape_manual(values = c(16, 1))
+ggsave("figs/hbll_out/hbll_index_design.png", g, height = 4, width = 6)
+
+
+
 
 ## Fit sdm model ----
 mesh <- make_mesh(d, c("X", "Y"), cutoff = 12)

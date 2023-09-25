@@ -352,9 +352,9 @@ d <- dplyr::filter(d, !is.na(depth_m))
 d$log_area_swept <- log(d$area_swept)
 
 
+
 df <- filter(d, sex == "F")
 dm <- filter(d, sex == "M")
-
 
 ## test a version where mean sex ratios not applied to the unsampled sets, instead they are excluded
 # df <- filter(d, sex == "F") %>%
@@ -467,3 +467,33 @@ bind_rows(
   gfplot::theme_pbs()
 
 ggsave("figs/sex-specific-indexes.png", width = 8, height = 5.0)
+
+## Design-based index ----
+index_design <- d %>%
+  mutate(cpue = catch_weight/area_swept,
+         catch_expand = area_km2 * cpue) %>%
+  summarize(index_strat = mean(catch_expand),
+            var_strat = var(catch_expand),
+            n = n(),
+            nsamp = unique(area_km2)/sum(area_swept) * n * 1e3 * 1e3, # Number of sampling units per stratum
+            .by = c(year, sex, grouping_code, survey_abbrev, area_km2)) %>%
+  mutate(area_total = sum(area_km2), .by = c(year, sex, survey_abbrev)) %>%
+  summarize(Biomass = sum(index_strat * area_km2/area_total),
+            Var = sum(nsamp * (nsamp - n)/n * var_strat)/sum(nsamp)/sum(nsamp), # See SimSurvey appendix
+            #Var = sum(var_strat * area_km2^2/area_total^2),
+            .by = c(year, sex, survey_abbrev)) %>%
+  mutate(SE = sqrt(Var), CV = SE/Biomass)
+
+g <- index_design %>%
+  ggplot(aes(ifelse(sex == "F", year + 0.1, year - 0.1), Biomass, shape = sex, linetype = sex)) +
+  geom_linerange(aes(ymin = pmax(Biomass - 2 * SE, 0), ymax = Biomass + 2 * SE)) +
+  geom_point() +
+  theme(panel.spacing = unit(0, "in"),
+        legend.position = "bottom") +
+  expand_limits(y = 0) +
+  facet_wrap(vars(survey_abbrev), scales = "free_y") +
+  labs(x = "Year", y = "Index of biomass", shape = "Sex", linetype = "Sex") +
+  scale_shape_manual(values = c("F" = 16, "M" = 1))
+ggsave("figs/synoptic/syn_index_design_sex.png", g, height = 4, width = 6)
+
+
