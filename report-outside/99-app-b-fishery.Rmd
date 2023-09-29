@@ -1,0 +1,29 @@
+
+# FISHERY DATA
+
+## BIOLOGICAL SAMPLES SUMMARY
+
+```{r comm-len-summary, results="asis"}
+dc <- readRDS(here::here("data/raw/commercial-samples.rds"))
+dc_sumry <- dc %>%
+  filter(
+    major_stat_area_name != "4B: STRAIT OF GEORGIA",
+    !sampling_desc == "UNKNOWN",
+    #gear_desc %in% c("BOTTOM TRAWL", "LONGLINE", "MIDWATER TRAWL"),
+    !is.na(length)) %>%
+  mutate(month = lubridate::month(trip_start_date)) %>%
+  group_by(gear_desc, sampling_desc, year) %>%
+  summarise(n_fe = length(unique(fishing_event_id)), n_samp = sum(length > 0)) %>%
+  mutate(txt = paste(n_fe, "-", n_samp)) %>%
+  reshape2::dcast(gear_desc + year ~ sampling_desc, value.var = "txt", fill = c("0 - 0"))
+
+
+csasdown::csas_table(
+  dc_sumry,
+  caption = "Biological samples from the commercial fishery. Numbers in each cell indicate the number of fishing events and samples.",
+  col_names = c("Gear", "Year", "Discards", "Retained", "Unsorted")
+) # %>%
+  #kableExtra::kable_styling(latex_options = c("hold_position")) %>%
+  #kableExtra::column_spec(c(3, 4), width = "2cm")
+```
+

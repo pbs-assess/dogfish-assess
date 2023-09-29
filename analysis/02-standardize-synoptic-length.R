@@ -239,11 +239,13 @@ saveRDS(fit, file = "data/generated/VAST_2f_bin5.rds")
 
 
 # Plot observed predicted data ----
-fit <- readRDS("D:/synoptic_length/VAST_2f_bin5.rds")
-#fit_3f <- readRDS("D:/synoptic_length/VAST_3f_bin5.rds")
+fit <- readRDS("data/generated/VAST_3f_bin5.rds")
+#fit_2f <- readRDS("data/generated/VAST_2f_bin5.rds")
+#fit <- readRDS("D:/synoptic_length/VAST_3f_bin5.rds")
+#fit_2f <- readRDS("D:/synoptic_length/VAST_2f_bin5.rds")
 
-#AIC <- list(fit, fit_3f) %>% sapply(function(i) i[["parameter_estimates"]][["AIC"]])
-#AIC - min(AIC) # VAST does not count random effects, I don't think AIC is a useful comaparison tool
+#AIC <- list(fit, fit_2f) %>% sapply(function(i) i[["parameter_estimates"]][["AIC"]])
+#AIC - min(AIC) # The 3 factor model reduces AIC by 160 units, VAST does not count random effects
 
 pred <- fit$data_frame %>%
   mutate(b_i = as.numeric(b_i), a_i = as.numeric(a_i),
@@ -299,7 +301,7 @@ ggsave("figs/synoptic_length/pred_encounter_hist.png", g, height = 5, width = 6)
 
 
 # Plot factors, correlations, and loadings. Saved in working_dir
-plot_VAST_factor(fit, working_dir = "figs/synoptic_length", save_figure = TRUE)
+plot_VAST_factor(fit, working_dir = "figs/synoptic_length", save_figure = TRUE, rel_size = 2)
 
 # Plot spatial density ----
 g <- plot_spatial_cpue(fit, category = "F_80", type = "pred")
@@ -368,7 +370,6 @@ g <- plot_lencomp(len_std, len_nom, y = 2013:2022) +
 ggsave("figs/synoptic_length/compare_comp2.png", g, height = 8, width = 5)
 
 # Length comp by survey area
-len_bin <- unique(dbin2$bin) %>% as.character() %>% as.numeric()
 len_nom_surv <- d %>%
   mutate(length = ifelse(length < min(len_bin), min(len_bin), length),
          length = ifelse(length > max(len_bin), max(len_bin), length),
@@ -400,6 +401,19 @@ g <- plot_lencomp(len_std_surv, len_nom_surv, y = 2013:2022) +
   coord_cartesian(xlim = c(35, 105), ylim = c(-0.2, 0.2))
 ggsave("figs/synoptic_length/compare_area_comp2.png", g, height = 8, width = 5)
 
+# Proportion abundance by area
+g <- len_std_surv %>%
+  mutate(parea = value/sum(value), .by = c(year, Category)) %>%
+  ggplot(aes(year, parea, fill = survey_abbrev)) +
+  geom_col(width = 1, colour = NA) +
+  facet_wrap(vars(Category), ncol = 6) +
+  theme(legend.position = "bottom", axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+  labs(x = "Year", y = "Proportion abundance", fill = "Survey") +
+  coord_cartesian(expand = FALSE)
+ggsave("figs/synoptic_length/compare_area_prop.png", g, height = 6, width = 6)
+
+
+# Mean length by area
 mlen_obs <- len_nom_surv %>%
   summarize(value = weighted.mean(bin + 2.5, n), .by = c(year, sex, survey_abbrev, type))
 mlen_pred <- len_std_surv %>%
@@ -450,8 +464,15 @@ g <- len_std %>%
 ggsave("figs/synoptic_length/length_index_rel_bin.png", g, height = 5, width = 6)
 
 # Cluster analysis of length bins in VAST model ----
-cspatial <- plot_dendogram(fit, k = 2, Lvec = c("L_omega1_cf", "L_omega2_cf"), rel_size = 2)
-cst <- plot_dendogram(fit, k = 2, Lvec = c("L_epsilon1_cf", "L_epsilon2_cf"), rel_size = 2)
+cspatial <- plot_dendrogram(fit, k = 3, Lvec = c("L_omega1_cf", "L_omega2_cf"), rel_size = 2)
+cst <- plot_dendrogram(fit, k = 3, Lvec = c("L_epsilon1_cf", "L_epsilon2_cf"), rel_size = 2)
+
+ggsave("figs/synoptic_length/ncluster_spatial.png",
+       cspatial$g_nclust + ggtitle(NULL),
+       height = 3, width = 4)
+ggsave("figs/synoptic_length/ncluster_st.png",
+       cst$g_nclust + ggtitle(NULL),
+       height = 3, width = 4)
 
 ggsave("figs/synoptic_length/corr_spatial.png",
        cspatial$g_corr + theme(axis.text.x = element_text(angle = 90)),
@@ -467,26 +488,9 @@ ggsave("figs/synoptic_length/den_st.png",
        cst$g_clust + ggtitle(NULL),
        height = 4, width = 6)
 
-ggsave("figs/synoptic_length/ncluster_spatial.png",
-       cspatial$g_nclust + ggtitle(NULL),
-       height = 3, width = 4)
-
-ggsave("figs/synoptic_length/ncluster_st.png",
-       cst$g_nclust + ggtitle(NULL),
-       height = 3, width = 4)
-
 # Plot first two principal components of the total variance matrix...
-PCA <- local({
-  V_factor <- lapply(c("L_epsilon1_cf", "L_epsilon2_cf"), function(x) {
-    L <- fit$Report[[x]]
-    L2 <- L %*% t(L)
-    return(L2)
-  })
-  V_total <- do.call("+", V_factor)
-  stats::prcomp(V_total)
-})
-plot(PCA$rotation[, 1], PCA$rotation[, 2], xlab = "Component 1", ylab = "Component 2")
-text(PCA$rotation[, 1], PCA$rotation[, 2], rownames(PCA$rotation), pos = 3)
+plot_PCA(fit, L = c("L_epsilon1_cf", "L_epsilon2_cf"))
+plot_PCA(fit, L = c("L_omega1_cf", "L_omega2_cf"))
 
 
 # Variance calculations for proportions

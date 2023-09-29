@@ -268,7 +268,7 @@ plot_VAST_factor <- function(fit,
                              map_size = c(6, 8),
                              corr_size = c(5, 6),
                              load_size = c(5, 3),
-                             text_size = GeomText$default_aes$size, ...) {
+                             rel_size = 1, ...) {
 
   require(VAST)
 
@@ -311,10 +311,10 @@ plot_VAST_factor <- function(fit,
       gcorr <- corr_j %>%
         ggplot(aes(Var2, Var1)) +
         geom_tile(height = 1, width = 1, colour = "black", aes(fill = value), alpha = 0.5) +
-        geom_text(aes(label = value)) +
+        geom_text(aes(label = value), size = rel(rel_size)) +
         coord_cartesian(expand = FALSE) +
         scale_fill_gradient2(low = scales::muted("blue"), high = scales::muted("red")) +
-        theme(legend.position = "none") +
+        theme(legend.position = "none", axis.text.x = element_text(angle = 90)) +
         labs(x = NULL, y = NULL) +
         guides(fill = "none")
 
@@ -505,12 +505,15 @@ plot_lencomp <- function(len_std, len_nom, y = unique(len_std$year), bin_width =
   g
 }
 
-plot_dendogram <- function(fit,
-                           k = 2,
-                           Lvec = c("L_epsilon1_cf", "L_epsilon2_cf", "L_omega1_cf", "L_omega2_cf"),
-                           category_names = fit$category_names,
-                           rel_size = 1) {
+plot_dendrogram <- function(fit,
+                            k = 2,
+                            Lvec = c("L_epsilon1_cf", "L_epsilon2_cf", "L_omega1_cf", "L_omega2_cf"),
+                            category_names = fit$category_names,
+                            clust_method = c("silhouette", "wss", "gap_stat"),
+                            FUNcluster = stats::kmeans,
+                            rel_size = 1) {
   Lvec <- match.arg(Lvec, several.ok = TRUE)
+  clust_method <- match.arg(clust_method)
 
   require(factoextra)
 
@@ -522,7 +525,7 @@ plot_dendogram <- function(fit,
     L2 <- L %*% t(L)
     return(L2)
   })
-  V_total <- do.call("+", V_factor)
+  V_total <- Reduce("+", V_factor)
 
   # Plot correlation matrix
   g_corr <- local({
@@ -549,7 +552,7 @@ plot_dendogram <- function(fit,
       guides(fill = "none")
   })
 
-  # Calculate disance matrix, see equation 11
+  # Calculate distance matrix, see equation 11
   gamma <- sapply(1:length(fit$category_names), function(i) {
     sapply(1:length(fit$category_names), function(j) {
       #browser(expr = i > j)
@@ -561,14 +564,26 @@ plot_dendogram <- function(fit,
   }) %>%
     structure(dimnames = list(fit$category_names, fit$category_names))
 
-  # Determine number of clusters (2 is ideal)
-  g_nclust <- factoextra::fviz_nbclust(gamma, FUNcluster = stats::kmeans)
+  # Determine number of clusters
+  g_nclust <- factoextra::fviz_nbclust(gamma, FUNcluster = FUNcluster, method = clust_method, nboot = 500)
 
   # Get distance matrix
-  dist_matrix <- factoextra::get_dist(gamma, method = "euclidean", stand = FALSE)
-  factoextra::fviz_dist(dist_matrix)
+  #dist_matrix <- factoextra::get_dist(gamma, method = "euclidean", stand = FALSE)
+  #factoextra::fviz_dist(dist_matrix)
 
-  # Make dendrogram (group of k)
+  # Make dendrogram from (group by k)
+  fvec <- c("L_epsilon1_cf" = "Epsilon1_gct", "L_epsilon2_cf" = "Epsilon2_gct",
+            "L_omega1_cf" = "Omega1_gc", "L_omega2_cf" = "Omega2_gc")
+  field <- lapply(fvec[Lvec], function(x) fit$Report[[x]])
+  ff <- Reduce("+", field)
+  if (length(dim(ff)) > 2) {
+    ffout <- array(0, dim(ff)[1:2]) %>%
+      structure(dimnames = dimnames(ff)[1:2])
+    for(t in 2:dim(ff)[3]) ffout[] <- ffout + ff[, , t] - ff[, , t-1]
+    ff <- ffout
+  }
+  dist_matrix <- factoextra::get_dist(t(ff), method = "euclidean", stand = TRUE)
+
   clust <- stats::hclust(dist_matrix)
   #plot(clust)
   clust_k <- stats::cutree(clust, k = k)
@@ -576,6 +591,23 @@ plot_dendogram <- function(fit,
   g_clust <- factoextra::fviz_dend(clust2, k = k)
 
   list(g_corr = g_corr, gamma = gamma, g_nclust = g_nclust, dist = dist, g_clust = g_clust)
+}
+
+
+plot_PCA <- function(fit, L = c("L_epsilon1_cf", "L_epsilon2_cf")) {
+  PCA <- local({
+    V_factor <- lapply(L, function(x) {
+      L <- fit$Report[[x]]
+      L2 <- L %*% t(L)
+      return(L2)
+    })
+    V_total <- do.call("+", V_factor)
+    stats::prcomp(V_total)
+  })
+  plot(PCA$rotation[, 1], PCA$rotation[, 2], xlab = "Component 1", ylab = "Component 2")
+  text(PCA$rotation[, 1], PCA$rotation[, 2], rownames(PCA$rotation), pos = 3)
+  abline(h = 0, v = 0, lty = 2)
+  invisible()
 }
 
 

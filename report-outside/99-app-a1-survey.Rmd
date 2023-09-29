@@ -1,0 +1,120 @@
+<!-- The following code should appear at the beginning of the first appendix.
+After that, all subsequent sections will be turned into appendices. -->
+
+`r if(knitr:::is_latex_output()) '\\Appendices'`
+
+`r if(!knitr:::is_latex_output()) '# (APPENDIX) Appendix {-}'`
+
+# SURVEY DATA {#app:survey-data}
+
+## SET SUMMARY
+
+```{r survey-set-summary, results="asis"}
+s <- readRDS(here::here("data/raw/survey-sets.rds")) %>%
+  filter(!grepl("HBLL INS", survey_abbrev),
+         !grepl("DOG", survey_abbrev))
+		 
+iphc <- readRDS(here::here("data/generated/IPHC_coastdata_nosog.rds")) %>%
+  group_by(year) %>%
+  summarise(
+    survey_abbrev = "IPHC",
+    n_sets = n(),
+    n_pos = sum(cpue > 0),
+    w_pos = 0,
+    p_pos = mean(cpue > 0) %>% round(2),
+    pw_pos = 0
+  )
+
+sumry <- s %>%
+  group_by(survey_abbrev, year) %>%
+  summarise(
+    n_sets = length(unique(fishing_event_id)),
+    n_pos = sum(catch_count > 0),
+    w_pos = sum(catch_weight > 0),
+    p_pos = mean(catch_count > 0) %>% round(2),
+    pw_pos = mean(catch_weight > 0) %>% round(2)
+  ) %>%
+  rbind(iphc)
+
+csasdown::csas_table(
+  sumry,
+  format = "latex",
+  caption = "Summary of the survey sets for Outside Dogfish. Sets record the catch in either numbers (n), weight (w), or both.",
+  col_names = c("Survey", "Year", "Number of sets", "Positive sets (n)", "Positive sets (w)", "Proportion positive (n)", "Proportion positive (w)"),
+  align = "r"
+) %>%
+  kableExtra::column_spec(column = 3:6, width = "4cm") %>%
+  #kableExtra::column_spec(4, width = "4cm") %>%
+  #kableExtra::column_spec(5, width = "4cm") %>%
+  #kableExtra::column_spec(6, width = "4cm") %>%
+  kableExtra::kable_styling(latex_options = "hold_position")
+```
+
+## SURVEY LENGTH COMP SUMMARY
+
+```{r survey-len-summary, results="asis"}
+d <- readRDS(here::here("data/raw/survey-samples.rds")) %>%
+  mutate(species_common_name = "north pacific spiny dogfish") %>% # some missing!?, there are NAs at the bottom of the dataset for ALL columns
+  filter(major_stat_area_name != "4B: STRAIT OF GEORGIA")
+
+diphc <- read.csv(here::here("data/raw/IPHC_dogfish_lengths2021.csv")) %>%
+  filter(reg_area == "2B", sex %in% c("F", "M")) %>%
+  group_by(year) %>%
+  summarise(
+    survey_abbrev = "IPHC",
+    length = n(),
+    weight = 0,
+    maturity = 0
+  )
+
+sumry_len <- d %>%
+  #mutate(survey_type = survey[match(survey_abbrev, names(survey))]) %>%
+  group_by(survey_abbrev, year) %>%
+  summarise(
+    specimens = sum(!is.na(specimen_id)),
+    length = sum(!is.na(length)),
+    weight = sum(!is.na(weight)),
+    maturity = sum(!is.na(maturity_code))
+    #aged = sum(!is.na(age)),
+    #age_specimen_collected = sum(!is.na(age_specimen_collected))
+  ) %>%
+  rbind(diphc)
+
+csasdown::csas_table(
+  sumry_len,
+  caption = "Biological samples by survey and year. HS MSA is the Hecate Strait Multispecies Assemblage Survey. Trawl surveys include the synoptic surveys in Hecate Strait (SYN HS), Queen Charlotte Sound (SYN QCS), and West Coast Vancouver Island (SYN WCVI).",
+  col_names = c("Survey", "Year", "Number of specimens", "Lengths", "Weights", "Maturities"),
+  align = c("l", "r", "r", "r", "r", "r")
+)
+```
+
+```{r syn-len, fig.cap="Length composition by sex from the Synoptic Trawl surveys."}
+knitr::include_graphics(here::here("figs/lengths-synoptic-outside.png"))
+```
+
+\clearpage
+
+## Outside HBLL survey
+
+```{r hbll-out-cpue, fig.cap="HBLL catch rates adjusted for hook competition."}
+knitr::include_graphics(here::here("figs/hbll_out/adjusted_cpue.png"))
+```
+
+```{r hbll-out-p, fig.cap="Proportion baited hooks."}
+knitr::include_graphics(here::here("figs/hbll_out/baited_hooks.png"))
+```
+
+```{r hbll-out-index, fig.cap="HBLL index of abundance for Outside Spiny Dogfish."}
+knitr::include_graphics(here::here("figs/hbll_out/HBLL_index.png"))
+```
+
+```{r hbll-out-depth, fig.cap="HBLL catch rate by depth from individual sets (points) and the marginal depth effect (black line) estimated in the geospatial model. The grey band indicates the 95 percent confidence interval of the mean?"}
+knitr::include_graphics(here::here("figs/hbll_out/depth_marginal.png"))
+```
+
+
+\clearpage
+
+## IPHC FISS
+
+## Synoptic Trawl survey
