@@ -25,6 +25,7 @@ gamma_hat <- 5 # logistic SD
 
 steepness <- 0.283 # US West Coast assessment
 sigmaR <- 0.2 # US West Coast assessment
+R0 <- 1000 # Arbitrary; scales the whole stock; can be left as is
 
 M <- 0.065 # (Galluci et al, 2009)
 
@@ -102,7 +103,6 @@ get_SR_params <- function(steepness, R0, phi_E) {
   list(s0 = s0, Beta = Beta, kappa = kappa)
 }
 
-R0 <- 1000 # Adjust?
 
 # numbers at age and SSB:
 N_ta <- matrix(nrow = N_t, ncol = N_a, data = 0)
