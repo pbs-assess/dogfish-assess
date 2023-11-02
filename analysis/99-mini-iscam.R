@@ -30,6 +30,7 @@ M <- 0.065 # (Galluci et al, 2009)
 
 # fishing mortality time series
 # F_total <- exp(as.numeric(arima.sim(n = N_t, list(ar = 0.9), sd = sqrt(0.2))))
+N_t <- length(seq(start, end))
 F_total <- rep(0.06, N_t)
 fishing_stopped_n_yrs_ago <- 50
 F_total[seq(N_t - fishing_stopped_n_yrs_ago, N_t)] <- 0.001
