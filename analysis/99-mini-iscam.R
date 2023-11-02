@@ -187,7 +187,7 @@ dat_ts <- bind_rows(
   data.frame(type = "SSB", value = SSB_t, years = yrs),
   data.frame(type = "Biomass", value = B_t, years = yrs),
   data.frame(type = "F", value = F_total, years = yrs),
-  data.frame(type = "Recruitment (numbers)", value = R_init * exp(recdevs), years = yrs)
+  data.frame(type = "Recruitment (numbers)", value = c(NA, R_t[-1]), years = yrs)
 )
 
 dat_age <- bind_rows(
@@ -211,7 +211,8 @@ SSB_plot <- seq(0, max(SSB_t), length.out = 100)
 recruits_plot <- p$s0 * SSB_plot / (1 + p$Beta * SSB_plot)
 g_sr <- ggplot(data.frame(SSB = SSB_plot, R = recruits_plot), aes(SSB, R)) +
   geom_line() +
-  geom_point(data = data.frame(SSB_t = SSB_t[-1], R_t = R_t[-1]), aes(SSB_t, R_t))
+  geom_point(data = data.frame(SSB_t = SSB_t[-1], R_t = R_t[-1], year = yrs[-1]), aes(SSB_t, R_t, colour = year)) +
+  scale_colour_viridis_c()
 g_sr
 
 g_ts <- ggplot(dat_ts, aes(years, value)) +
