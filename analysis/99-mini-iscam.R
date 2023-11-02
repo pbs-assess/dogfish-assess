@@ -7,6 +7,7 @@ EXTRA_PLOTS <- FALSE
 # Stuff to adjust:
 start <- 1920
 end <- 2022
+N_t <- length(seq(start, end))
 
 lw_a <- exp(-13.28) # (Anderson et al. 2021)
 lw_b <- 3.20 # (Anderson et al. 2021)
@@ -30,11 +31,11 @@ sigmaR <- 0.2 # US West Coast assessment
 R0 <- 1000 # Arbitrary; scales the whole stock; can be left as is
 
 M <- 0.065 # US West Coast
+# M <- rep(M, N_t)
 # M <- 0.094 # (Galluci et al, 2009)
 
 # fishing mortality time series
 # F_total <- exp(as.numeric(arima.sim(n = N_t, list(ar = 0.9), sd = sqrt(0.2))))
-N_t <- length(seq(start, end))
 F_total <- rep(0.06, N_t)
 fishing_stopped_n_yrs_ago <- 50
 F_total[seq(N_t - fishing_stopped_n_yrs_ago, N_t)] <- 0.001
