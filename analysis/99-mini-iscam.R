@@ -19,6 +19,8 @@ linf <- 132
 age50 <- 35
 sd50 <- 10
 
+gestation <- 3 # years
+
 # commercial selectivity
 a_hat <- 10 # logistic 50%
 gamma_hat <- 5 # logistic SD
@@ -27,7 +29,8 @@ steepness <- 0.283 # US West Coast assessment
 sigmaR <- 0.2 # US West Coast assessment
 R0 <- 1000 # Arbitrary; scales the whole stock; can be left as is
 
-M <- 0.065 # (Galluci et al, 2009)
+M <- 0.065 # US West Coast
+# M <- 0.094 # (Galluci et al, 2009)
 
 # fishing mortality time series
 # F_total <- exp(as.numeric(arima.sim(n = N_t, list(ar = 0.9), sd = sqrt(0.2))))
@@ -43,16 +46,20 @@ N_t <- length(seq(start, end))
 N_a <- 150
 age <- seq(1, N_a)
 
+# length at age a:
 l_a <- linf * (1 - exp(-k * (age - t0))) # G17
 if (EXTRA_PLOTS) plot(age, l_a)
 
+# weight at age a:
 w_a <- lw_a * l_a^lw_b # G18
 if (EXTRA_PLOTS) plot(l_a, w_a)
 
+# maturity at age a:
 mat_a <- plogis(age, age50, sd50) # FIXME 'scale'
 if (EXTRA_PLOTS) plot(age, mat_a)
 
-f_a <- w_a * mat_a # FIXME change for dogfish?
+# mature biomass at age a:
+f_a <- w_a * mat_a / gestation # FIXME change for dogfish?
 if (EXTRA_PLOTS) plot(age, f_a)
 
 if (EXTRA_PLOTS) plot(F_total)
@@ -64,9 +71,11 @@ for (a in 1:N_a) {
   F_ta[, a] <- F_total
 }
 
+# commercial vulnerability at age a:
 v_a <- 1 / (1 + exp(-(age - a_hat) / gamma_hat))
 if (EXTRA_PLOTS) plot(v_a)
 
+# total mortality at time t and age a:
 Z_ta <- matrix(nrow = N_t, ncol = N_a)
 for (t in 1:N_t) {
   for (a in 1:N_a) {
