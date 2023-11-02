@@ -32,9 +32,9 @@ plot(age, mat_a)
 f_a <- w_a * mat_a # FIXME change for dogfish?
 plot(age, f_a)
 
+# adjust values here:
 F_total <- exp(as.numeric(arima.sim(n = N_t, list(ar = 0.9), sd = sqrt(0.2))))
-
-F_total <- rep(0.15, N_t)
+F_total <- rep(0.35, N_t)
 F_total[seq(N_t - 30, N_t)] <- 0.01
 
 plot(F_total)
@@ -47,8 +47,8 @@ for (a in 1:N_a) {
 }
 
 # female selectivity
-a_hat <- 35
-gamma_hat <- 10
+a_hat <- 10
+gamma_hat <- 5
 
 v_a <- 1 / (1 + exp(-(age - a_hat) / gamma_hat))
 plot(v_a)
@@ -168,7 +168,8 @@ g_age <- ggplot(dat_age, aes(age, value)) +
 g_ts <- ggplot(dat_ts, aes(years, value)) +
   geom_line() +
   facet_wrap(~type, scale = "free_y", ncol = 3) +
-  ylim(0, NA) + ylab("") + xlab("Year")
+  ylim(0, NA) + ylab("") + xlab("Year") +
+  geom_vline(xintercept = end - 30)
 
 g <- cowplot::plot_grid(g_age, g_ts, ncol = 2L, rel_widths = c(1, 1.5))
 print(g)
