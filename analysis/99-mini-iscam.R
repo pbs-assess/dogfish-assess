@@ -142,15 +142,15 @@ SSB_t <- apply(SSB_ta, 1, sum)
 
 library(ggplot2)
 library(dplyr)
-theme_set(ggsidekick::theme_sleek())
+theme_set(gfplot::theme_pbs())
 
 dat_ts <- bind_rows(
-  data.frame(type = "Vulnerable biomass", value = V_t, yrs = yrs),
-  data.frame(type = "Catch", value = C_t, yrs = yrs),
-  data.frame(type = "SSB", value = SSB_t, yrs = yrs),
-  data.frame(type = "Biomass", value = B_t, yrs = yrs),
-  data.frame(type = "F", value = F_total, yrs = yrs),
-  data.frame(type = "Recruitment (numbers)", value = R_init * exp(recdevs), yrs = yrs)
+  data.frame(type = "Vulnerable biomass", value = V_t, years = yrs),
+  data.frame(type = "Catch", value = C_t, years = yrs),
+  data.frame(type = "SSB", value = SSB_t, years = yrs),
+  data.frame(type = "Biomass", value = B_t, years = yrs),
+  data.frame(type = "F", value = F_total, years = yrs),
+  data.frame(type = "Recruitment (numbers)", value = R_init * exp(recdevs), years = yrs)
 )
 
 dat_age <- bind_rows(
@@ -163,12 +163,13 @@ dat_age <- bind_rows(
 g_age <- ggplot(dat_age, aes(age, value)) +
   geom_line() +
   facet_wrap(~type, scale = "free_y") +
-  ylim(0, NA)
+  ylim(0, NA) + ylab("") + xlab("Age")
 
-g_ts <- ggplot(dat_ts, aes(yrs, value)) +
+g_ts <- ggplot(dat_ts, aes(years, value)) +
   geom_line() +
   facet_wrap(~type, scale = "free_y", ncol = 3) +
-  ylim(0, NA)
+  ylim(0, NA) + ylab("") + xlab("Year")
 
 g <- cowplot::plot_grid(g_age, g_ts, ncol = 2L, rel_widths = c(1, 1.5))
 print(g)
+
