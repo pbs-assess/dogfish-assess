@@ -8,6 +8,7 @@ EXTRA_PLOTS <- FALSE
 start <- 1920
 end <- 2022
 N_t <- length(seq(start, end))
+N_a <- 150
 
 lw_a <- exp(-13.28) # (Anderson et al. 2021)
 lw_b <- 3.20 # (Anderson et al. 2021)
@@ -18,7 +19,7 @@ linf <- 132
 
 # maturity
 age50 <- 35
-sd50 <- 10
+sd50 <- 20
 
 gestation <- 3 # years
 
@@ -29,6 +30,8 @@ gamma_hat <- 5 # logistic SD
 steepness <- 0.283 # US West Coast assessment
 sigmaR <- 0.2 # US West Coast assessment
 R0 <- 1000 # Arbitrary; scales the whole stock; can be left as is
+recdevs <- rnorm(N_t, 0, sigmaR)
+# recdevs[(N_t-20):N_t] <- -2
 
 M <- 0.065 # US West Coast
 # M <- rep(M, N_t)
@@ -36,15 +39,18 @@ M <- 0.065 # US West Coast
 
 # fishing mortality time series
 # F_total <- exp(as.numeric(arima.sim(n = N_t, list(ar = 0.9), sd = sqrt(0.2))))
-F_total <- rep(0.06, N_t)
-fishing_stopped_n_yrs_ago <- 50
-F_total[seq(N_t - fishing_stopped_n_yrs_ago, N_t)] <- 0.001
+F_total <- rep(0.05, N_t)
+fishing_stopped_n_yrs_ago <- 30
+F_total[seq(N_t - fishing_stopped_n_yrs_ago, N_t)] <- 0.01
+
+predation_catch <- rep(150, N_t)
+predation_prop_a <- rep(1, N_a)
+predation_prop_a <- predation_prop_a / sum(predation_prop_a)
 
 # ---------------------------------------------------------------------------
 
 yrs <- seq(start, end)
 N_t <- length(seq(start, end))
-N_a <- 150
 age <- seq(1, N_a)
 
 # length at age a:
@@ -84,7 +90,6 @@ for (t in 1:N_t) {
   }
 }
 
-recdevs <- rnorm(N_t, 0, sigmaR)
 if (EXTRA_PLOTS) plot(recdevs, type = "o")
 
 init_omegas <- rnorm(N_a, 0, sigmaR)
@@ -171,8 +176,8 @@ for (t in 1:N_t) {
         }
       }
     }
-    SSB_ta[t, a] <- N_ta[t, a] * f_a[a]
-    B_ta[t, a] <- N_ta[t, a] * w_a[a]
+    SSB_ta[t, a] <- N_ta[t, a] * f_a[a] - predation_prop_a[a] * predation_catch[t]
+    B_ta[t, a] <- N_ta[t, a] * w_a[a] - predation_prop_a[a] * predation_catch[t]
     C_ta[t, a] <- (N_ta[t, a] * w_a[a] * F_ta[t, a] *
       v_a[a] * (1 - exp(-Z_ta[t, a]))) / Z_ta[t, a]
     lambda <- 0 # FIXME: I forget
@@ -198,7 +203,8 @@ dat_ts <- bind_rows(
   data.frame(type = "SSB", value = SSB_t, years = yrs),
   data.frame(type = "Biomass", value = B_t, years = yrs),
   data.frame(type = "F", value = F_total, years = yrs),
-  data.frame(type = "Recruitment (numbers)", value = c(NA, R_t[-1]), years = yrs)
+  data.frame(type = "Recruitment (numbers)", value = c(NA, R_t[-1]), years = yrs),
+  data.frame(type = "Predation (biomass removed)", value = predation_catch, years = yrs)
 )
 
 dat_age <- bind_rows(
@@ -214,7 +220,8 @@ g_age <- ggplot(dat_age, aes(age, value)) +
   facet_wrap(~type, scale = "free_y") +
   ylim(0, NA) +
   ylab("") +
-  xlab("Age")
+  xlab("Age") +
+  ggtitle("Age-related curves")
 
 p <- get_SR_params(steepness, R0 = R0, phi_E = phi_E)
 # p <- get_SR_params(0.2, R0 = R0, phi_E = phi_E)
@@ -223,8 +230,8 @@ recruits_plot <- p$s0 * SSB_plot / (1 + p$Beta * SSB_plot)
 g_sr <- ggplot(data.frame(SSB = SSB_plot, R = recruits_plot), aes(SSB, R)) +
   geom_line() +
   geom_point(data = data.frame(SSB_t = SSB_t[-1], R_t = R_t[-1], year = yrs[-1]), aes(SSB_t, R_t, colour = year)) +
-  scale_colour_viridis_c()
-g_sr
+  scale_colour_viridis_c() +
+  ggtitle("Stock-recruit function")
 
 g_ts <- ggplot(dat_ts, aes(years, value)) +
   geom_line() +
@@ -232,7 +239,18 @@ g_ts <- ggplot(dat_ts, aes(years, value)) +
   ylim(0, NA) +
   ylab("") +
   xlab("Year") +
-  geom_vline(xintercept = end - fishing_stopped_n_yrs_ago)
+  geom_vline(xintercept = end - fishing_stopped_n_yrs_ago) +
+  ggtitle("Time series")
 
-g <- cowplot::plot_grid(g_sr, g_age, g_ts, ncol = 1L, rel_heights = c(1, 2, 2))
+g_ts_zoom <- ggplot(filter(dat_ts, years > end - 40), aes(years, value)) +
+  geom_line() +
+  facet_wrap(~type, scale = "free_y", ncol = 3) +
+  ylim(0, NA) +
+  ylab("") +
+  xlab("Year") +
+  geom_vline(xintercept = end - fishing_stopped_n_yrs_ago) +
+  ggtitle("Time series zoomed")
+
+g <- cowplot::plot_grid(g_sr, g_age, g_ts, g_ts_zoom, ncol = 1L, rel_heights = c(1, 2, 2, 2))
 print(g)
+
