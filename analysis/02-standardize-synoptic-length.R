@@ -420,15 +420,48 @@ mlen_pred <- len_std_surv %>%
   summarize(value = weighted.mean(bin + 2.5, value), .by = c(year, sex, survey_abbrev, type))
 
 g <- rbind(mlen_obs, mlen_pred) %>%
-  ggplot(aes(year, value, colour = sex, shape = type, linetype = type)) +
+  ggplot(aes(year, value, shape = type, linetype = type)) +
   geom_line() +
   geom_point() +
-  facet_wrap(vars(survey_abbrev)) +
-  #expand_limits(y = 0) +
+  facet_grid(vars(survey_abbrev), vars(sex)) +
+  theme(panel.spacing = unit(0, "in"),
+        legend.position = "bottom") +
+  coord_cartesian(ylim = c(50, 100)) +
   labs(x = "Year", y = "Mean length (cm)", colour = "Sex", shape = "Series", linetype = "Series") +
   scale_shape_manual(values = c(1, 16)) +
   scale_linetype_manual(values = c("Nominal" = 2, "Standardized" = 1))
-ggsave("figs/synoptic_length/mean_length_area.png", g, height = 4, width = 6)
+ggsave("figs/synoptic_length/mean_length_area.png", g, height = 7, width = 6)
+
+# Coastwide mean length
+mlen_obs_cw <- len_nom_surv %>%
+  summarize(value = weighted.mean(bin + 2.5, n), .by = c(year, sex, type))
+
+mlen_pred_cw <- fit$Report$D_gct %>%
+  structure(class = "array") %>%
+  reshape2::melt() %>%
+  left_join(gfplot::synoptic_grid %>% select(survey) %>% mutate(Site = 1:n()), by = "Site") %>%
+  rename(survey_abbrev = survey, year = Time) %>%
+  summarize(value = sum(value), .by = c(year, Category)) %>%
+  mutate(p = value/sum(value), .by = c(year)) %>%
+  mutate(sex = substr(Category, 1, 1),
+         bin = strsplit(Category %>% as.character(), "_") %>% sapply(getElement, 2) %>% as.numeric(),
+         type = "Standardized") %>%
+  summarise(value = weighted.mean(bin + 2.5, value), .by = c(year, sex, type))
+  select(year, sex, type, value)
+
+g <- rbind(mlen_obs_cw, mlen_pred_cw) %>%
+  ggplot(aes(year, value, shape = type, linetype = type)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(sex)) +
+  theme(panel.spacing = unit(0, "in"),
+        legend.position = "bottom") +
+  coord_cartesian(ylim = c(50, 100)) +
+  labs(x = "Year", y = "Coastwide mean length (cm)", colour = "Sex", shape = "Series", linetype = "Series") +
+  scale_shape_manual(values = c(1, 16)) +
+  scale_linetype_manual(values = c("Nominal" = 2, "Standardized" = 1))
+ggsave("figs/synoptic_length/mean_length_coastwide.png", g, height = 3, width = 6)
+
 
 
 # Index by length bin

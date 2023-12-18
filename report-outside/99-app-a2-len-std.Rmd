@@ -156,24 +156,28 @@ csasdown::csas_table(
 knitr::include_graphics(here::here("figs/synoptic_length/ncluster_st.png"))
 ```
 
-```{r syn-comp1, out.height=8, fig.cap="Comparison of the nominal and standardized length composition from 2003--2012. Proportions sum up to one across all length bins and sexes."}
+```{r syn-comp1, out.height="8in", fig.cap="Comparison of the nominal and standardized length composition from 2003--2012. Proportions sum up to one across all length bins and sexes."}
 knitr::include_graphics(here::here("figs/synoptic_length/compare_comp1.png"))
 ```
 
-```{r syn-comp2, out.height=8, fig.cap="Comparison of the nominal and standardized length composition from 2013--2022. Proportions sum up to one across all length bins and sexes. No survey was conducted in 2020 and the abundance was imputed by the spatiotemporal model through the spatiotemporal random walk."}
+```{r syn-comp2, out.height="8in", fig.cap="Comparison of the nominal and standardized length composition from 2013--2022. Proportions sum up to one across all length bins and sexes. No survey was conducted in 2020 and the abundance was imputed by the spatiotemporal model through the spatiotemporal random walk."}
 knitr::include_graphics(here::here("figs/synoptic_length/compare_comp2.png"))
 ```
 
-```{r syn-area-comp1, out.height=8, fig.cap="Comparison of the nominal (shaded polygon) and standardized length (lines) composition by sex (colors) and survey area (columns) from 2003--2012 (rows). Proportions sum up to one across all length bins and sexes. Numbers in the corners indicate the number of length samples across both sexes in each panel. The spatiotemporal model imputes abundance in unsampled time-area strata."}
+```{r syn-area-comp1, out.height="8in", fig.cap="Comparison of the nominal (shaded polygon) and standardized length (lines) composition by sex (colors) and survey area (columns) from 2003--2012 (rows). Proportions sum up to one across all length bins and sexes. Numbers in the corners indicate the number of length samples across both sexes in each panel. The spatiotemporal model imputes abundance in unsampled time-area strata."}
 knitr::include_graphics(here::here("figs/synoptic_length/compare_area_comp1.png"))
 ```
 
-```{r syn-area-comp2, out.height=8, fig.cap="Comparison of the nominal (shaded polygon) and standardized length (lines) composition by sex (colors) and survey area (columns) from 2013--2022 (rows). Numbers in the corners indicate the number of length samples across both sexes in each panel. The spatiotemporal model imputes abundance in unsampled time-area strata."}
+```{r syn-area-comp2, out.height="8in", fig.cap="Comparison of the nominal (shaded polygon) and standardized length (lines) composition by sex (colors) and survey area (columns) from 2013--2022 (rows). Numbers in the corners indicate the number of length samples across both sexes in each panel. The spatiotemporal model imputes abundance in unsampled time-area strata."}
 knitr::include_graphics(here::here("figs/synoptic_length/compare_area_comp2.png"))
 ```
 
-```{r syn-area-mlen, fig.cap="Comparison of the observed (open circles and dashed lines) and predicted (filled circles and solid lines) mean length by sex (colors) and survey area (panels). Survey areas are generally sampled biennially while the spatiotemporal model imputes values in unsampled years."}
+```{r syn-area-mlen, fig.cap="Comparison of the observed (open circles and dashed lines) and predicted (filled circles and solid lines) mean length by sex and trawl survey area. The nominal values are the mean length of the biological samples while the standardized values are predicted from spatiotemporal model, which imputes the abundance in unsampled time-area strata."}
 knitr::include_graphics(here::here("figs/synoptic_length/mean_length_area.png"))
+```
+
+```{r syn-mlen, fig.cap="Comparison of the observed (open circles and dashed lines) and predicted (filled circles and solid lines) coastwide mean length by sex. The nominal values are the mean length of the biological samples from trawl surveys which typically sample two of four areas per year. The standardized values are predicted from spatiotemporal model, which imputes the abundance in unsampled time-area strata."}
+knitr::include_graphics(here::here("figs/synoptic_length/mean_length_coastwide.png"))
 ```
 
 ```{r syn-area-prop, fig.cap="Predicted proportion of abundance by area and size-sex class. These proportions are preserved when calculating the standardized stock-wide length composition."}
