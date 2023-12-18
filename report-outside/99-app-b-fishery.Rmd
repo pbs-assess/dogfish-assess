@@ -20,10 +20,24 @@ dc_sumry <- dc %>%
 
 csasdown::csas_table(
   dc_sumry,
-  caption = "Biological samples from the commercial fishery. Numbers in each cell indicate the number of fishing events and samples.",
+  caption = "Biological samples from the commercial fishery. In each cell, the first number indicates the number of fishing events and the second number indicates the number of samples.",
   col_names = c("Gear", "Year", "Discards", "Retained", "Unsorted")
 ) # %>%
   #kableExtra::kable_styling(latex_options = c("hold_position")) %>%
   #kableExtra::column_spec(c(3, 4), width = "2cm")
+```
+
+
+
+```{r comm-len-unsorted, fig.cap="Unsorted length frequency in the commercial fishery by fishing gear."}
+knitr::include_graphics(here::here("lengths-commerical-outside.png"))
+```
+
+```{r comm-len-ret, fig.cap="Length frequency in the commercial fishery by fishing gear of retained dogfish."}
+knitr::include_graphics(here::here("lengths-commerical-outside-retained.png"))
+```
+
+```{r comm-len-disc, fig.cap="Length frequency in the commercial fishery by fishing gear of discarded dogfish."}
+knitr::include_graphics(here::here("lengths-commerical-outside-discard.png"))
 ```
 

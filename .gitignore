@@ -41,3 +41,6 @@ vb_gfplot.cpp
 *.dep
 *.cov
 runnumber.ss
+
+*_book
+*csas-style
