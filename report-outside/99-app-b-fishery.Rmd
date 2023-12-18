@@ -29,15 +29,15 @@ csasdown::csas_table(
 
 
 
-```{r comm-len-unsorted, fig.cap="Unsorted length frequency in the commercial fishery by fishing gear."}
-knitr::include_graphics(here::here("lengths-commerical-outside.png"))
+```{r comm-len-unsorted, out.height="8in", out.width="4.4in", fig.cap="Unsorted length frequency in the commercial fishery by fishing gear."}
+knitr::include_graphics(here::here("figs/lengths-commercial-outside.png"))
 ```
 
 ```{r comm-len-ret, fig.cap="Length frequency in the commercial fishery by fishing gear of retained dogfish."}
-knitr::include_graphics(here::here("lengths-commerical-outside-retained.png"))
+knitr::include_graphics(here::here("figs/lengths-commercial-outside-retained.png"))
 ```
 
 ```{r comm-len-disc, fig.cap="Length frequency in the commercial fishery by fishing gear of discarded dogfish."}
-knitr::include_graphics(here::here("lengths-commerical-outside-discard.png"))
+knitr::include_graphics(here::here("figs/lengths-commercial-outside-discard.png"))
 ```
 

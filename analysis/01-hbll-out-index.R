@@ -111,6 +111,16 @@ gg <- d %>%
   coord_cartesian(xlim = c(0, 1))
 ggsave("figs/hbll_out/adjusted_cpue_hist.png", gg, height = 4, width = 5)
 
+gg <- d %>%
+  mutate(cpue = catch_count/exp(offset)) %>%
+  ggplot(aes(depth_m, log(cpue + 1))) +
+  geom_point(alpha = 0.5) +
+  facet_wrap(vars(year)) +
+  labs(x = "Depth (m)", y = "log(CPUE + 1)") +
+  theme(panel.spacing = unit(0, "in")) +
+  coord_cartesian(xlim = c(0, 300))
+ggsave("figs/hbll_out/adjusted_cpue_depth_time.png", gg, height = 5, width = 6)
+
 
 ## Design-based index ----
 # Some sets are missing strata area

@@ -62,6 +62,15 @@ gg <- d %>%
   labs(x = expression("CPUE (g/"~m^2~")"), y = "Frequency")
 ggsave("figs/synoptic/cpue_hist.png", gg, height = 6, width = 5)
 
+gg <- d %>%
+  mutate(cpue = 100 * catch_weight/area_swept) %>%
+  ggplot(aes(log(depth_m), log(cpue + 1))) +
+  geom_point(alpha = 0.5) +
+  facet_wrap(vars(year)) +
+  labs(x = "log-depth (m)", y = "log(CPUE + 1)") +
+  theme(panel.spacing = unit(0, "in"))
+ggsave("figs/synoptic/cpue_depth_time.png", gg, height = 5, width = 6)
+
 ## Design-based index ----
 index_design <- d %>%
   mutate(cpue = catch_weight/area_swept,

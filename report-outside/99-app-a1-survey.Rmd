@@ -13,17 +13,6 @@ After that, all subsequent sections will be turned into appendices. -->
 s <- readRDS(here::here("data/raw/survey-sets.rds")) %>%
   filter(!grepl("HBLL INS", survey_abbrev),
          !grepl("DOG", survey_abbrev))
-		 
-iphc <- readRDS(here::here("data/generated/IPHC_coastdata_nosog.rds")) %>%
-  group_by(year) %>%
-  summarise(
-    survey_abbrev = "IPHC",
-    n_sets = n(),
-    n_pos = sum(cpue > 0),
-    w_pos = 0,
-    p_pos = mean(cpue > 0) %>% round(2),
-    pw_pos = 0
-  )
 
 sumry <- s %>%
   group_by(survey_abbrev, year) %>%
@@ -33,21 +22,16 @@ sumry <- s %>%
     w_pos = sum(catch_weight > 0),
     p_pos = mean(catch_count > 0) %>% round(2),
     pw_pos = mean(catch_weight > 0) %>% round(2)
-  ) %>%
-  rbind(iphc)
+  )
 
 csasdown::csas_table(
   sumry,
   format = "latex",
   caption = "Summary of the survey sets for Outside Dogfish. Sets record the catch in either numbers (n), weight (w), or both.",
   col_names = c("Survey", "Year", "Number of sets", "Positive sets (n)", "Positive sets (w)", "Proportion positive (n)", "Proportion positive (w)"),
-  align = "r"
+  align = rep("r", 7),
 ) %>%
-  kableExtra::column_spec(column = 3:6, width = "4cm") %>%
-  #kableExtra::column_spec(4, width = "4cm") %>%
-  #kableExtra::column_spec(5, width = "4cm") %>%
-  #kableExtra::column_spec(6, width = "4cm") %>%
-  kableExtra::kable_styling(latex_options = "hold_position")
+  kableExtra::column_spec(column = 3:7, width = "2cm")
 ```
 
 ## SURVEY LENGTH COMP SUMMARY
