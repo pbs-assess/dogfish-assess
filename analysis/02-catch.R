@@ -124,17 +124,23 @@ catch_plot <- function(x, column) {
     coord_cartesian(expand = FALSE) +
     theme_pbs() +
     scale_fill_manual(values = cols) +
-    ylim(0, 2.5e04)
+    expand_limits(y = 0)
+    #ylim(0, 2.5e04)
 }
 
-ggplot(old_dat, aes(x = year, y = 1e-6 * (landed_kg + discarded_kg), colour = gear, fill = gear)) +
-  facet_wrap(~area, scales = "fixed") +
-  geom_col() +
-  labs(x = "Year", y = "Catch (kt)")
-ggsave("figs/reconstructed-catch.png", width = 8, height = 8)
+gears <- sort(unique(d$gear))
+cols <- RColorBrewer::brewer.pal(n = length(gears), name = "Dark2")
+names(cols) <- gears
 
-land <- catch_plot(d, landed_kg/1000) + labs(x = "Year", y = "Landings (t)")
-discard <- catch_plot(d, discarded_kg/1000) + labs(x = "Year", y = "Discards (t)")
+#g <- ggplot(old_dat, aes(x = year, y = 1e-6 * (landed_kg + discarded_kg), colour = gear, fill = gear)) +
+#  facet_wrap(~area, scales = "fixed") +
+#  geom_col() +
+#  labs(x = "Year", y = "Catch (kt)")
+#ggsave("figs/reconstructed-catch.png", g, width = 8, height = 8)
+
+## Both Inside and Outside ----
+land <- catch_plot(d, landed_kg/1e6) + labs(x = "Year", y = "Landings (kt)")
+discard <- catch_plot(d, discarded_kg/1000) + labs(x = "Year", y = "Discards (kt)")
 catch <- catch_plot(d, landed_kg/1000 + discarded_kg/1000) + labs(x = "Year", y = "Catch (t)")
 
 g <- cowplot::plot_grid(plotlist = list(land, discard, catch), ncol = 1L)
@@ -143,31 +149,88 @@ ggsave("figs/reconstructed-catch-discards.png", g, width = 8, height = 6)
 # Proportion discards
 p_discard <- catch_plot(d, landed_kg/1000 + discarded_kg/1000) + labs(x = "Year", y = "Catch (t)")
 
-gears <- sort(unique(x$gear))
-cols <- RColorBrewer::brewer.pal(n = length(gears), name = "Dark2")
-names(cols) <- gears
-
 g <- d %>% group_by(year, area) %>%
   summarise(p_discard = sum(discarded_kg)/sum(landed_kg + discarded_kg)) %>%
   ggplot(aes(x = year, y = p_discard)) +
   facet_wrap(~area, scales = "fixed") +
   geom_line() +
-  #geom_line(colour = "grey50", linewidth = 0.5) +
-  #coord_cartesian(expand = FALSE) +
   theme_pbs() +
   labs(x = "Year", y = "Proportion discards")
 ggsave("figs/proportion-discards.png", g, width = 5, height = 2.5)
 
-land <- catch_plot(d, landed_kg/1000) + ggtitle("Landings")
-discard <- catch_plot(d, discarded_kg/1000) + ggtitle("Discards")
-catch <- catch_plot(d, landed_kg/1000 + discarded_kg/1000) + ggtitle("Catch")
-cowplot::plot_grid(plotlist = list(land, discard, catch), ncol = 1L)
-ggsave("figs/reconstructed-catch-discards.png", width = 8, height = 8)
 
-catch + facet_wrap(~area, ncol = 1) +
+g <- catch + facet_wrap(~area, ncol = 1) +
   ylab("Reconstructed catch (t)") +
   labs(fill = "Gear") + xlab("") +
   ggtitle("")
-ggsave("figs/reconstructed-catch.png", width = 6.4, height = 5.5)
+ggsave("figs/reconstructed-catch.png", g, width = 6.4, height = 5.5)
 
 saveRDS(d, file = "data/generated/catch.rds")
+
+
+## Outside only ----
+g <- d %>%
+  filter(area != "4B") %>%
+  reshape2::melt(id.vars = c("year", "gear", "species_common_name", "area")) %>%
+  mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
+         value = value/1e6) %>%
+  ggplot(aes(year, value, fill = gear)) +
+  geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
+  #coord_cartesian(expand = FALSE) +
+  facet_grid(vars(variable), vars(area), scales = "free_y", switch = "y") +
+  theme_pbs() +
+  scale_fill_manual(values = cols) +
+  expand_limits(y = 0) +
+  labs(y = NULL, x = "Year", fill = "Gear") +
+  theme(legend.position = "bottom",
+        strip.placement = "outside")
+ggsave("figs/reconstructed-catch-discards-outside.png", g, width = 6, height = 6)
+
+g <- d %>%
+  filter(area != "4B") %>%
+  group_by(year, area) %>%
+  summarise(p_discard = sum(discarded_kg)/sum(landed_kg + discarded_kg)) %>%
+  ggplot(aes(x = year, y = p_discard)) +
+  facet_wrap(~area, scales = "fixed") +
+  geom_line() +
+  geom_point(shape = 1) +
+  #geom_line(colour = "grey50", linewidth = 0.5) +
+  #coord_cartesian(expand = FALSE) +
+  theme_pbs() +
+  labs(x = "Year", y = "Proportion discards") +
+  geom_vline(xintercept = 1996, linetype = 2)
+ggsave("figs/proportion-discards-outside.png", g, width = 4, height = 2.5)
+
+
+## Inside only ----
+g <- d %>%
+  filter(area == "4B") %>%
+  reshape2::melt(id.vars = c("year", "gear", "species_common_name", "area")) %>%
+  mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
+         value = value/1e6) %>%
+  ggplot(aes(year, value, fill = gear)) +
+  geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
+  #coord_cartesian(expand = FALSE) +
+  facet_grid(vars(variable), vars(area), scales = "free_y", switch = "y") +
+  theme_pbs() +
+  scale_fill_manual(values = cols) +
+  expand_limits(y = 0) +
+  labs(y = NULL, x = "Year", fill = "Gear") +
+  theme(legend.position = "bottom",
+        strip.placement = "outside")
+ggsave("figs/reconstructed-catch-discards-inside.png", g, width = 6, height = 6)
+
+g <- d %>%
+  filter(area == "4B") %>%
+  group_by(year, area) %>%
+  summarise(p_discard = sum(discarded_kg)/sum(landed_kg + discarded_kg)) %>%
+  ggplot(aes(x = year, y = p_discard)) +
+  facet_wrap(~area, scales = "fixed") +
+  geom_line() +
+  geom_point(shape = 1) +
+  #geom_line(colour = "grey50", linewidth = 0.5) +
+  #coord_cartesian(expand = FALSE) +
+  theme_pbs() +
+  labs(x = "Year", y = "Proportion discards") +
+  geom_vline(xintercept = 1996, linetype = 2)
+ggsave("figs/proportion-discards-inside.png", g, width = 4, height = 2.5)

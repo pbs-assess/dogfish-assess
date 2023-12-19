@@ -1,7 +1,17 @@
 
 # FISHERY DATA
 
-## BIOLOGICAL SAMPLES SUMMARY
+## COMMERCIAL CATCH
+
+```{r comm-catch, fig.cap="Reconstructed catch by landings and discards of Outside Dogfish."}
+knitr::include_graphics("figs/reconstructed-catch-discards-outside.png")
+```
+
+```{r comm-disc-rate, fig.cap="Proportion of discards to total catch (landings plus discards) of Outside Dogfish. Observer coverage of the trawl fishery started in 1996 (denoted by the vertical dotted line)."}
+knitr::include_graphics("figs/proportion-discards-outside.png")
+```
+
+## COMMERCIAL BIOLOGICAL SAMPLES SUMMARY
 
 ```{r comm-len-summary, results="asis"}
 dc <- readRDS(here::here("data/raw/commercial-samples.rds"))
@@ -16,7 +26,6 @@ dc_sumry <- dc %>%
   summarise(n_fe = length(unique(fishing_event_id)), n_samp = sum(length > 0)) %>%
   mutate(txt = paste(n_fe, "-", n_samp)) %>%
   reshape2::dcast(gear_desc + year ~ sampling_desc, value.var = "txt", fill = c("0 - 0"))
-
 
 csasdown::csas_table(
   dc_sumry,
