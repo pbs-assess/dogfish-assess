@@ -340,8 +340,10 @@ fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 
 #with julian
 ggplot(d, aes(year, julian)) + geom_point()
+range(d$julian)
+d$julian_small <- d$julian/100
 fit_iphc_nb2_wjulian <- sdmTMB(
-  numobs ~ 0 + poly(depth_m_log, 2L) + julian,
+  numobs ~ 0 + poly(depth_m_log, 2L) + julian_small,
   family = nbinom2(link = "log"),
   time_varying = ~1,
   data = d,
@@ -425,15 +427,19 @@ geom_vline(xintercept = 2020, lty = 2) +
 geom_vline(xintercept = 2000, lty = 2) +
 scale_colour_viridis_c()
 
+ggplot(ind_julian, aes(year, est, ymin = lwr, ymax = upr), colour = "blue") +
+  geom_pointrange() +
+  geom_line()
+
 x <- ind |>
   left_join(obs) |>
   ggplot(aes(year, est, ymin = lwr, ymax = upr), colour = "blue") +
   geom_pointrange() +
   geom_line()
-ind_web <- ind_web |>
+ind_julian <- ind_julian |>
   left_join(obs)
-x + geom_line(data = ind_web, aes(year, est/5), col = "red") + coord_cartesian(ylim = c(0, 50)) +
-  geom_pointrange(data = ind_web, aes(ymin = lwr/5, ymax = upr/5), col = "red") + geom_point()
+x + geom_line(data = ind_julian, aes(year, est), col = "red") + coord_cartesian(ylim = c(0, 50)) +
+  geom_pointrange(data = ind_julian, aes(ymin = lwr, ymax = upr), col = "red") + geom_point()
 
 
 # ind_rw |>
