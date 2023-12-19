@@ -25,26 +25,33 @@ iphc_stations <- iphc_stations |>
 
 # number of hooks
 test <- get_iphc_hooks("north pacific spiny dogfish")
-iphc_hksobs <- readRDS("data/raw/Non-Pacific halibut data_raw.rds") |> # from website, used this previously for number counted
+iphc_hksobs <- readRDS("data/raw/Non-Pacific halibut data_raw.rds") |>
   dplyr::select(Year, Station, HooksFished, HooksRetrieved, HooksObserved) |>
   mutate(Station = as.character(Station))
 names(iphc_hksobs) <- tolower(names(iphc_hksobs))
+unique(iphc_hksobs$year)
 
 # load iphc data from gfiphc
+#reran to update years
 # x <- get_iphc_spp_name()
 # x[grep("Dogfish", x$iphc_common_name), ]
 # sp <- "north pacific spiny dogfish"
 # cache_pbs_data_iphc(sp)
 # sp_set_counts <- readRDS(paste0(gsub(" ", "-", sp), ".rds"))
+# unique(sp_set_counts$set_counts$year)
 # df_iphc <- filter(sp_set_counts$set_counts, standard == "Y" &  usable == "Y")
 # df_iphc |>
 #  group_by(year) %>%
 #  summarise(total = sum(N_it20)) |>
-#   ggplot(aes(year, total)) + geom_line()
-# saveRDS(df_iphc, "data/raw/Non-Pacific halibut data_raw_gfdata.rds")
-
+#  ggplot(aes(year, total)) + geom_line()
+# df_iphc |>
+#   group_by(year) %>%
+#   ggplot(aes(lon, lat)) + geom_point() + facet_wrap(~year)
+#
+# saveRDS(df_iphc, "data/raw/Non-Pacific halibut data_raw_gfdata.rds") #this has station but doesn't have IPHC area
 iphc_coast <- readRDS("data/raw/Non-Pacific halibut data_raw_gfdata.rds")
 
+#this has station and IPHC reg area and date (if including julian date)
 iphc_latlongs <- readRDS("data/raw/Set and Pacific halibut data_raw.rds") %>%
   dplyr::select(IPHC.Reg.Area, Station, Date, Eff, Ineffcde, BeginLat, BeginLon, AvgDepth..fm., Stlkey) |>
   mutate(Station = as.character(Station)) |>
@@ -55,9 +62,9 @@ iphc_latlongs <- readRDS("data/raw/Set and Pacific halibut data_raw.rds") %>%
 names(iphc_latlongs) <- tolower(names(iphc_latlongs))
 
 iphc_coast2 <- iphc_coast %>%
-  inner_join(iphc_stations) |>
-  inner_join(iphc_latlongs) |>
-  inner_join(iphc_hksobs) |>
+  inner_join(iphc_stations) |> #for iphc reg area
+  inner_join(iphc_latlongs) |> #for julian date
+  inner_join(iphc_hksobs) |> #for hook information
   distinct(.keep_all = TRUE)
 
 # check for duplicate years and stations
@@ -67,12 +74,12 @@ iphc_coast3 <- iphc_coast2 %>%
   filter(eff == "Y") %>%
   filter(purpose == "Standard Grid") %>%
   mutate(startlonfix = ifelse(beginlon > 0, beginlon * -1, beginlon)) %>%
-  filter(iphc.reg.area == "2B") %>%
+  filter(iphc.reg.area == "2B") %>% #to get BC
   mutate(depth_m = 1.8288 * avgdepth..fm.) %>%
   mutate(depth_m_log = log(depth_m)) %>%
   dplyr::select(
     depth_m_log, year, beginlat, beginlon, station,
-    iphc.reg.area, N_it20, E_it20, C_it20, date, hooksfished, hooksobserved
+    iphc.reg.area, N_it20, N_it, E_it20, C_it20, date, hooksfished, hooksobserved
   ) |>
   drop_na(E_it20)
 
@@ -92,40 +99,44 @@ iphc_coast4 <- add_utm_columns(iphc_coast3,
   mutate(UTM.lat.m = UTM.lat.m * 1000, UTM.lon.m = UTM.lon.m * 1000) |>
   distinct(year, station, N_it20, .keep_all = TRUE)
 
-filter(iphc_coast4, station == 2099 & year == 2019) # check no duplications, which one is right?
+x <- filter(iphc_coast4, station == 2099 & year == 2019) #Two sets that day or is this a mistake?
+saveRDS(iphc_coast4, "data/generated/IPHC_coastdata_nosog_gfdata.rds")
 
-
+# Check of the data  ------------------------------------------------------
 # get rid of SOG points the expansion set in 2018
 shelf <- st_read("data/raw", "Shelf_polygon_noSOG") %>%
   st_transform(crs = 32609)
 
-iphc_coast4sf <- st_as_sf(iphc_coast4,
+iphc_coast4sf <- st_as_sf(iphc_depth,
   coords = c("UTM.lon.m", "UTM.lat.m"),
   crs = 32609
 )
 
-iphc_nosog <- st_intersection(iphc_coast4sf, st_geometry(shelf)) %>%
-  st_drop_geometry() %>%
-  dplyr::select(-dmy)
+plot(st_geometry(shelf))
+plot(iphc_coast4sf, add = T) #all the points are outside of the SOG
+
+#iphc_nosog <- st_intersection(iphc_coast4sf, st_geometry(shelf)) %>%
+#  st_drop_geometry() %>%
+#  dplyr::select(-dmy)
 
 # stations with only one survey
 surveyed1 <- iphc_nosog %>%
   group_by(station) %>%
   mutate(count = n()) %>%
-  filter(count == 1)
+  filter(count == 1) |>
+  tally() #only three locations with one survey, that is fine
+#iphc_coast_trimmed3 <- filter(iphc_nosog, !(station %in% surveyed1$station))
 
-iphc_coast_trimmed3 <- filter(iphc_nosog, !(station %in% surveyed1$station))
-
-x <- ggplot(
-  data = filter(iphc_coast_trimmed3, iphc.reg.area == "2B"),
-  aes(UTM.lon, UTM.lat), size = 1.5, col = "blue"
-) +
-  geom_point()
-x + geom_point(data = filter(surveyed1, iphc.reg.area == "2B"), aes(UTM.lon, UTM.lat, col = "red"))
-saveRDS(iphc_coast_trimmed3, "data/generated/IPHC_coastdata_nosog_gfdata.rds")
+# x <- ggplot(
+#   data = filter(iphc_coast_trimmed3, iphc.reg.area == "2B"),
+#   aes(UTM.lon, UTM.lat), size = 1.5, col = "blue"
+# ) +
+#   geom_point()
+# x + geom_point(data = filter(surveyed1, iphc.reg.area == "2B"), aes(UTM.lon, UTM.lat, col = "red"))
+# saveRDS(iphc_coast_trimmed3, "data/generated/IPHC_coastdata_nosog_gfdata.rds")
 
 
-# check website and gfiphc data trends ----
+# Check of website and gfiphc data trends ----
 d_website <- readRDS("data/generated/IPHC_coastdata_nosog.rds")
 d <- readRDS("data/generated/IPHC_coastdata_nosog_gfdata.rds") |>
   mutate(depth_m = exp(depth_m_log)) |>
@@ -145,19 +156,21 @@ ggplot(both, aes(year, count, group = data, colour = data)) +
   geom_line(size = 2)
 
 
-# hook competition ----
-# h <- readxl::read_excel("data/raw/iphc-2021-fiss-hadj.xlsx") |>
-# dplyr::filter(`IPHC Reg Area` %in% "2B")
-# saveRDS(h, file = "data/raw/iphc-2021-fiss-hadj.rds")
+# Add Hook Competition ----
+#from https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fwww.iphc.int%2Fuploads%2F2023%2F12%2Fiphc-2023-fiss-hadj-20231031.xlsx&wdOrigin=BROWSELINK
+#h <- readxl::read_excel("data/raw/iphc-2023-fiss-hadj-20231031.xlsx") |> #iphc-2021-fiss-hadj.xlsx") #old data set
+#dplyr::filter(`IPHC Reg Area` %in% "2B")
+#saveRDS(h, file = "data/raw/iphc-2023-fiss-hadj.rds")
 
 d <- readRDS("data/generated/IPHC_coastdata_nosog_gfdata.rds") |>
   mutate(depth_m = exp(depth_m_log)) |>
-  mutate(hooksobserved = as.numeric(hooksobserved), hooksfished = as.numeric(hooksfished))
+  mutate(hooksobserved = as.numeric(hooksobserved), hooksfished = as.numeric(hooksfished), station = as.character(station))
 
-h <- readRDS("data/raw/iphc-2021-fiss-hadj.rds") |>
+h <- readRDS("data/raw/iphc-2023-fiss-hadj.rds") |>
   filter(Year >= 1998, Effective == "Y", Purpose == "SG") |>
   select(year = Year, station = Station, bait = Bait, hookobserved = `Hooks Observed`, purpose = Purpose, hadj = h.adj, date = Date) |>
-  mutate(hadj = as.numeric(hadj))
+  mutate(hadj = as.numeric(hadj), bait = as.numeric(bait), hookobserved = as.numeric(hookobserved),
+         station = as.character(station))
 
 h$bait[h$bait == 0] <- 1
 h <- h[h$hookobserved > 0, ]
@@ -206,7 +219,7 @@ stopifnot(sum(is.na(d$depth_m_log)) == 0L)
 stopifnot(sum(is.na(d$N_it20)) == 0L)
 stopifnot(sum(is.na(d$E_it20)) == 0L)
 
-d <- filter(d, year <= 2021) # hook adj. not ready for 2022
+#d <- filter(d, year <= 2021) # hook adj. not ready for 2022
 d <- filter(d, !is.na(purpose)) # a few in 2021!?
 stopifnot(sum(is.na(d$hook_adjust_factor)) == 0L)
 
@@ -217,6 +230,8 @@ d$offset <- log(d$hooksfished / d$hook_adjust_factor) # hook comp
 #d$offset <- log(d$hooksobserved / d$hook_adjust_factor) # hook comp
 #d$offset <- log(d$hooksobserved) # no hook comp
 stopifnot(sum(is.na(d$offset)) == 0L)
+
+saveRDS(d, "data/generated/IPHC_coastdata_nosog_gfdata_hk.rds")
 
 ## Figures for report - data and hook adjustment ----
 coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
@@ -302,8 +317,11 @@ g <- local({
 ggsave("figs/iphc/iphc_mesh.png", g, width = 5, height = 6)
 
 # Call sdm
+d <- readRDS("data/generated/IPHC_coastdata_nosog_gfdata_hk.rds")
+d$numobs <- ifelse(is.na(d$N_it20) == TRUE, d$N_it, d$N_it20)
+
 fit_iphc_nb2 <- sdmTMB(
-  N_it20 ~ 0 + poly(depth_m_log, 2L),
+  numobs ~ 0 + poly(depth_m_log, 2L), #should this be N_it or N_it20, previously was N_it20
   family = nbinom2(link = "log"),
   time_varying = ~1,
   data = d,
@@ -319,6 +337,25 @@ fit_iphc_nb2 <- sdmTMB(
 saveRDS(fit_iphc_nb2, file = "data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 #fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB.rds")
 fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata.rds")
+
+#with julian
+ggplot(d, aes(year, julian)) + geom_point()
+fit_iphc_nb2_wjulian <- sdmTMB(
+  numobs ~ 0 + poly(depth_m_log, 2L) + julian,
+  family = nbinom2(link = "log"),
+  time_varying = ~1,
+  data = d,
+  mesh = mesh,
+  time = "year",
+  offset = "offset",
+  spatiotemporal = "ar1",
+  spatial = "on",
+  silent = TRUE,
+  anisotropy = TRUE,
+  control = sdmTMBcontrol(newton_loops = 1L)
+)
+saveRDS(fit_iphc_nb2_wjulian, file = "data/generated/iphc-nb2-sdmTMB_gfdata_wjulian.rds")
+fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata_wjulian.rds")
 
 # fit_rw <- update(fit_iphc_nb2, spatiotemporal = "rw", time_varying = NULL,
 #   formula. = number_observed ~ 1 + poly(depth_m_log, 2L))
@@ -365,8 +402,10 @@ p <- predict(fit_iphc_nb2, newdata = grid, return_tmb_object = TRUE)
 ind <- get_index(p, bias_correct = TRUE)
 
 saveRDS(ind, file = "data/generated/geostat-ind-iphc_gfdata.rds")
+saveRDS(ind, file = "data/generated/geostat-ind-iphc_gfdata_julian.rds")
 ind_web <- readRDS("data/generated/geostat-ind-iphc.rds")
 ind <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds")
+ind_julian <- readRDS("data/generated/geostat-ind-iphc_gfdata_julian.rds")
 # ind_withouthk <- readRDS("data/generated/geostat-ind-iphc_withouthk.rds")
 
 # hk <- ggplot(ind, aes(year, log(est)), colour = "black") +
