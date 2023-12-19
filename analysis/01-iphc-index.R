@@ -439,8 +439,8 @@ x <- ind |>
   geom_line()
 ind_julian <- ind_julian |>
   left_join(obs)
-x + geom_line(data = ind_julian, aes(year, est), col = "red") +
-  geom_pointrange(data = ind_julian, aes(ymin = lwr, ymax = upr), col = "red") + geom_point()
+x + geom_line(data = ind_julian, aes(year, est), col = "red") + coord_cartesian(ylim = c(0, 50)) +
+geom_pointrange(data = ind_julian, aes(ymin = lwr, ymax = upr), col = "red") + geom_point()
 
 
 # ind_rw |>
