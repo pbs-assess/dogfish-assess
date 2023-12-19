@@ -71,16 +71,16 @@ ss3_catch()
 ss3_index <- function(csv = TRUE) {
   # IPHC
   iphc <- readRDS("data/generated/geostat-ind-iphc.rds") %>%
-    mutate(fleet = 4)
+    mutate(fleet = fleet_index["IPHC"])
 
   # HBLL
   hbll <- readRDS("data/generated/geostat-ind-hbll-out.rds") %>%
-    mutate(fleet = 5) %>%
+    mutate(fleet = fleet_index["HBLL"]) %>%
     select(-survey_abbrev)
 
   # Synoptic Trawl
   syn <- readRDS("data/generated/geostat-ind-synoptic.rds") %>%
-    mutate(fleet = 6) %>%
+    mutate(fleet = fleet_index["SYN"]) %>%
     select(-survey_abbrev)
 
   ind <- rbind(hbll, iphc, syn) %>%

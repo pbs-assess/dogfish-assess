@@ -2,24 +2,19 @@ library(gfplot)
 library(dplyr)
 library(ggplot2)
 
+
 d <- readRDS("data/raw/survey-samples.rds")
 d <- mutate(d, species_common_name = "north pacific spiny dogfish") # some missing!?, there are NAs at the bottom of the dataset for ALL columns
 dc <- readRDS("data/raw/commercial-samples.rds")
 
-# Summary of numbers and trips of outside surveys
-d_sumry <- local({
-  d_subset <- d %>%
-    filter(major_stat_area_name != "4B: STRAIT OF GEORGIA",
-           !is.na(length))
+# Number of trips (sets?) of outside surveys ----
+d_sumry <- d %>%
+  filter(major_stat_area_name != "4B: STRAIT OF GEORGIA",
+         !is.na(length)) %>%
+  summarise(n_fe = length(unique(fishing_event_id)), n_samp = sum(length > 0), .by = c(year, survey_abbrev))
 
-  d_fe <- d_subset %>%
-    group_by(year, survey_abbrev) %>%
-    summarise(n_fe = length(unique(fishing_event_id)), n_samp = sum(length > 0))
 
-  d_fe
-})
-
-# Summary of number of trips of outside commercial fishing
+# Number of trips with bio sampling (opportunistic) of outside commercial fishing by year and month ----
 dc_sumry <- dc %>%
   filter(major_stat_area_name != "4B: STRAIT OF GEORGIA",
          !sampling_desc == "UNKNOWN",
@@ -33,26 +28,24 @@ g <- ggplot(dc_sumry, aes(month, year)) +
   facet_grid(vars(gear_desc), vars(sampling_desc)) +
   geom_tile(height = 1, width = 1, aes(fill = n_fe)) +
   #geom_text(aes(label = n_fe)) +
-  gfplot::theme_pbs() +
   scale_fill_viridis_c(trans = "log") +
   geom_hline(colour = "grey80", yintercept = 1970:2021 + 0.5) +
   geom_vline(colour = "grey80", xintercept = 1:12 + 0.5)
 
 g <- ggplot(dc_sumry, aes(month, year)) +
   facet_grid(vars(gear_desc), vars(sampling_desc)) +
-  geom_text(aes(label = n_fe)) +
-  gfplot::theme_pbs()
+  geom_text(aes(label = n_fe))
 
 
-# Length composition --------------------------------------------------
+# Survey length composition --------------------------------------------------
 
 table(d$survey_abbrev)
 
 lengths_syn <- tidy_lengths_raw(d,
   survey = c("SYN WCHG", "SYN HS", "SYN QCS", "SYN WCVI")
 )
-plot_lengths(lengths_syn, show_year = "all")
-ggsave("figs/lengths-synoptic-outside.png", width = 7, height = 11)
+g <- plot_lengths(lengths_syn, show_year = "all")
+ggsave("figs/lengths-synoptic-outside.png", width = 6, height = 8)
 
 lengths_dog <- tidy_lengths_raw(d,
   survey = c("DOG")
@@ -64,12 +57,14 @@ lengths_hbll_ins <- tidy_lengths_raw(d,
   survey = c("HBLL INS N", "HBLL INS S")
 )
 g <- plot_lengths(lengths_hbll_ins, show_year = "all")
-ggsave("figs/lengths-hbll-survey-inside.png", g, width = 6, height = 8)
+ggsave("figs/lengths-hbll-survey-inside.png", g, width = 4, height = 7)
 
 table(dc$length_type)
 table(dc$sampling_desc)
 table(dc$gear_desc)
 
+
+# Outside commercial length ----
 ins <- grep("4B", dc$major_stat_area_name)
 
 lengths_comm <- dc[-ins, ] |>
@@ -79,9 +74,33 @@ lengths_comm <- dc[-ins, ] |>
   purrr::map_dfr(~ tidy_lengths_raw(., sample_type = "commercial"),
     .id = "survey_abbrev"
   )
-g <- plot_lengths(lengths_comm, show_year = "all")
-ggsave("figs/lengths-commercial-outside.png", g, width = 6, height = 8)
+g <- plot_lengths(lengths_comm, show_year = "all") +
+  ggtitle("Length frequencies - Unsorted")
+ggsave("figs/lengths-commercial-outside.png", g, width = 5, height = 9)
 
+lengths_comm_discard <- dc[-ins, ] |>
+  filter(sampling_desc %in% "DISCARDS") |>
+  filter(gear_desc %in% c("BOTTOM TRAWL", "LONGLINE", "MIDWATER TRAWL")) %>%
+  split(.$gear_desc) |>
+  purrr::map_dfr(~ tidy_lengths_raw(., spp_cat_code = c(1, 4), sample_type = "commercial"),
+                 .id = "survey_abbrev"
+  )
+g <- plot_lengths(lengths_comm_discard, show_year = "all") +
+  ggtitle("Length frequencies - Discards")
+ggsave("figs/lengths-commercial-outside-discard.png", g, width = 4, height = 5)
+
+lengths_comm_ret <- dc[-ins, ] |>
+  filter(sampling_desc %in% "KEEPERS") |>
+  filter(gear_desc %in% c("BOTTOM TRAWL", "LONGLINE", "MIDWATER TRAWL")) %>%
+  split(.$gear_desc) |>
+  purrr::map_dfr(~ tidy_lengths_raw(., spp_cat_code = 3, sample_type = "commercial"),
+                 .id = "survey_abbrev"
+  )
+g <- plot_lengths(lengths_comm_ret, show_year = "all") +
+  ggtitle("Length frequencies - Retained")
+ggsave("figs/lengths-commercial-outside-retained.png", g, width = 5, height = 6)
+
+# Inside commercial length ----
 lengths_comm <- dc[ins, ] |>
   filter(sampling_desc %in% "UNSORTED") |>
   filter(gear_desc %in% c("BOTTOM TRAWL", "LONGLINE", "MIDWATER TRAWL")) %>%
@@ -90,17 +109,18 @@ lengths_comm <- dc[ins, ] |>
     .id = "survey_abbrev"
   )
 g <- plot_lengths(lengths_comm, show_year = "all")
-ggsave("figs/lengths-commercial-inside.png", g, width = 6, height = 10)
+ggsave("figs/lengths-commercial-inside.png", g, width = 5, height = 5)
 
 # Length weight -------------------------------------------------------
 
 # all surveys combined right now:
 mm <- fit_length_weight(d, sex = "male", df = 3, usability_codes = c(0, 1, 2, 6))
 mf <- fit_length_weight(d, sex = "female", df = 3, usability_codes = c(0, 1, 2, 6))
-plot_length_weight(object_female = mf, object_male = mm)
+g <- plot_length_weight(object_female = mf, object_male = mm) +
+  ggtitle("Length-weight relationship (all BC samples)")
 mm$pars
 mf$pars
-ggsave("figs/length-weight-survey.png", width = 5, height = 4)
+ggsave("figs/length-weight-survey.png", g, width = 5, height = 4)
 
 # Maturity ------------------------------------------------------------
 
@@ -126,16 +146,15 @@ fit <- d |>
   filter(survey_abbrev %in% c("SYN WCHG", "SYN HS", "SYN QCS", "SYN WCVI")) |>
   fit_mat_ogive(type = "length", usability_codes = c(0, 1, 2, 6))
 summary(fit$model)
-plot_mat_ogive(fit)
-ggsave("figs/maturity-outside-survey.png", width = 6, height = 3)
+g <- plot_mat_ogive(fit)
+ggsave("figs/maturity-outside-survey.png", g, width = 6, height = 3)
 
 g <- fit$data %>%
-  group_by(sex, age_or_length) %>%
-  summarise(n = n(), p = mean(mature)) %>%
+  summarise(n = n(), p = mean(mature), .by = c(sex, age_or_length)) %>%
   ggplot(aes(age_or_length)) +
   geom_point(aes(y = p, shape = factor(sex))) +
   #geom_text(aes(y = p, label = n), alpha = 0.4, hjust = 0, nudge_y = 0.025) +
-  scale_shape_manual(name = "Sex", values = c(16, 1)) +
+  scale_shape_manual(name = "Sex", values = c(16, 1), labels = c("M", "F")) +
   geom_line(data = fit$pred_data, aes(y = glmm_fe, linetype = factor(female)), show.legend = FALSE) +
   labs(x = "Length", y = "Proportion mature")
 ggsave("figs/maturity-outside-survey-prop.png", g, width = 6, height = 3)
@@ -168,11 +187,29 @@ g <- prop_55 %>%
   geom_point(aes(y = p, shape = factor(type))) +
   scale_shape_manual(name = "Mature at", values = c(16, 1)) +
   geom_line(data = pred_55, aes(y = glmm_fe, linetype = factor(type))) +
-  labs(x = "Length", y = "Proportion mature", linetype = "Mature at")
-ggsave("figs/maturity-outside-survey-prop-55.png", g, width = 6, height = 3)
+  labs(x = "Length", y = "Proportion mature", shape = "Category", linetype = "Category")
+ggsave("figs/maturity-outside-survey-compare.png", g, width = 6, height = 3)
 
+# Annual proportion of mature females (code 55)
+ann_55 <- d %>%
+  filter(survey_abbrev %in% c("SYN WCHG", "SYN HS", "SYN QCS", "SYN WCVI"),
+         sex == 2,
+         maturity_code != 0) %>%
+  group_by(year) %>%
+  summarise(n = n(),
+            p_55 = mean(maturity_code >= 55))
 
+# Annual proportion of pregnant females (code 77) among mature animals
+ann_77 <- d %>%
+  filter(survey_abbrev %in% c("SYN WCHG", "SYN HS", "SYN QCS", "SYN WCVI"),
+         sex == 2,
+         maturity_code != 0) %>%
+  group_by(year) %>%
+  summarise(n = n(),
+            p_55 = sum(maturity_code >= 77)/sum(maturity_code >= 55))
 
+#plot(p_55 ~ year, ann_55, typ = 'o', ylim = c(0, 1))
+#lines(p_55 ~ year, ann_77, typ = 'o', col = 2)
 
 
 # inside stock

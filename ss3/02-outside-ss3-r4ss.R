@@ -1,7 +1,8 @@
-
+mods <- c("model4a_estH_dwLen", "model4b_estH_dwLen_lowM", "model4d_estH_dwLen_recdev", "model4e_estH_dwLen_exIPHC_recdev")
 
 model_dir <- "model1a_dwLen"
 model_dir <- "model4d_estH_dwLen_recdev"
+model_dir <- "model4e_estH_dwLen_exIPHC_recdev"
 ss_home <- here::here("ss3")
 #ss_home <- "C:/users/quang/Desktop/dogfish_ss3"
 
@@ -16,7 +17,8 @@ fit_ss3 <- function(model_dir = "model1",
   on.exit(setwd(dir_cur))
 
   if (.Platform$OS.type == "unix") {
-    cmd <- "ss -nox"
+    # cmd <- "ss -nox"
+    cmd <- "ss_osx"
   } else {
     cmd <- "ss.exe -nox"
   }
@@ -33,15 +35,14 @@ fit_ss3 <- function(model_dir = "model1",
   system(cmd)
 }
 
-fit_ss3(model_dir, hessian = FALSE, ss_home = ss_home, max_phase = 10L)
+# fit_ss3(model_dir, hessian = FALSE, ss_home = ss_home, max_phase = 10L)
 
-#library(snowfall); sfInit(parallel = TRUE, cpus = length(mods))
-#sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
-#sfStop()
-
-
+snowfall::sfInit(parallel = TRUE, cpus = length(mods))
+snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
+snowfall::sfStop()
 
 # Load r4ss list
+
 replist <- r4ss::SS_output(file.path(ss_home, model_dir),
                            verbose = FALSE,
                            printstats = FALSE,
@@ -50,14 +51,13 @@ replist <- r4ss::SS_output(file.path(ss_home, model_dir),
 #saveRDS(replist, file = file.path(ss_home, paste0("r4ss_", model_dir, ".rds")))
 
 # Generate HTML report
-r4ss::SS_plots(replist,
-               verbose = FALSE)
+r4ss::SS_plots(replist, verbose = FALSE)
 
 
 # Report and plot various output in R
-replist$estimated_non_dev_parameters %>%
-  select(Value, Parm_StDev) %>%
-  mutate(CV = abs(Parm_StDev/Value) %>% round(2)) %>%
+replist$estimated_non_dev_parameters |>
+  select(Value, Parm_StDev) |>
+  mutate(CV = abs(Parm_StDev/Value) |> round(2)) |>
   View()
 
 r4ss::SSplotSelex(replist, fleets = 1)
@@ -67,4 +67,3 @@ r4ss::SSplotCatch(replist)
 r4ss::SSplotIndices(replist)
 r4ss::SSplotComps(replist)
 replist$likelihoods_used
-

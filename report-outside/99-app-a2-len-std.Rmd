@@ -1,0 +1,197 @@
+
+## Synoptic Trawl survey length composition standardization
+
+The current design of the Synoptic Trawl samples alternates regions of outside waters (Figure \@ref(fig:)). 
+Generally, the Hecate Strait and Queen Charlotte Sound are sampled together in one year and the West Coast Vancouver Island and West Coast Haida Gwaii are sampled in the next year.
+Nominal length composition, i.e., based on collected biological samples, may be unrepresentative of the entire stock if there is spatial heterogeneity in stock abundance.
+Following the general approach of spatiotemporal modeling for aggregate catch rates, we use geospatial models to also develop a stock-wide length composition by imputing abundance by length class in unsampled time-area strata [@thorsonhaltuch2018].
+
+### Model fitting
+
+For survey set $i$, the catch rate ($C$, numbers per swept area) by sex-length category $\ell = 1, 2, \ldots, n_{\ell}$ was obtained by calculating the length composition by proportion was calculated for set $i$ in year $y$ from the biological samples $N$, then expanding proportions by the weight per unit effort (WPUE) of the entire set:
+
+$$
+C_i(y, \ell) = \dfrac{N_i(y,\ell)}{\sum_{\ell} N_i(y,\ell)} \times \textrm{WPUE}_i(y)
+$$
+
+Length categories were identified by length bins of 5 cm with separate bins by sex. 
+The boundary of the smallest length bin was 35 cm, and the upper boundary of the largest bin at 120 and 100 cm for females and males, respectively. 
+
+The multivariate spatiotemporal model implemented here predicted annual spatial abundance by size and sex. 
+The encounter probability $p$ and relative abundance $\mu$ were modeled as separate linear mixed-effect models:
+
+\begin{align}
+  p_i(y,\ell) &= \textrm{logit}\left(\beta_1(\ell) + \sum_{j=1}^{k_{\omega1}} L_{\omega1}(\ell, j) \times \omega_1(j, s_i) + \sum_{j=1}^{k_{\epsilon1}} L_{\epsilon1}(\ell, j) \times \epsilon_1(j, s_i, y)\right)\\
+  \mu_i(y,\ell) &= \exp\left(\beta_2(\ell) + \sum_{j=1}^{k_{\omega2}} L_{\omega2}(\ell, j) \times \omega_2(j, s_i) + \sum_{j=1}^{k_{\epsilon2}} L_{\epsilon2}(\ell, j) \times \epsilon_2(j, s_i, y)\right)
+\end{align}
+
+where $s_i$ denotes the UTM coordinate of set $i$, $\beta$ are fixed intercepts by category, $\omega$ is a spatial random field indexed by location, $\epsilon$ is a spatiotemporal random field indexed by location and year, and 1 and 2 denote the corresponding parameters for encounter probability and abundance, respectively. 
+The number of random fields, also referred to as factors, is denoted by $k$, indexed by $j = 1, 2, \ldots, k$. 
+The fixed effects loading matrix $L$ is of dimension $n_\ell \times k$ and assigns the values of factor $j$ to category $\ell$, e.g., $L(\ell,j) = 0$ implies that factor $j$ contains no prediction for category $\ell$. 
+
+The approach slightly differs from that presented in @thorsonhaltuch2018 which estimated separate factors for each size class.
+Here, we utilized the spatial dynamic factor analysis (SDFA) approach in which $k$ factors are shared amongst all categories [@thorson2016; @omorithorson2022]. 
+In this way, the encounter probability and abundance are predicted as linear combinations of $k$ factors and the contribution of each factor to the prediction of each size is specified by the loadings matrix. 
+The SDFA approach is advantageous because it employs parsimony and can reduce the number of estimated parameters when there are common underlying abundance trends among categories.
+The value of $k$, from 1 up to the number of categories, is decided by the analyst and the best model can be decided on iterative fitting and comparison.
+
+The spatiotemporal field is modeled as a random walk over time,
+
+$$
+\epsilon(j, s_i, y) = \epsilon(j, s_i, y-1) + \delta(j, s_i, y)
+$$
+
+where $\delta$ is a Gaussian-Markov random field. Research in progress indicates that the random walk spatiotemporal structure is the best model with the current survey design to estimate spatial and time effects (S. Anderson, DFO, pers. comm.).
+
+The likelihood $\Lambda$ for data point $C_{y,i,\ell}$ used a binomial-lognormal distribution:
+
+$$
+\Lambda_{y,i,\ell} = 
+\begin{cases}
+1 - \hat{p}_i(y,\ell) \quad & C_i(y,\ell) = 0\\
+\hat{p}_i(y,\ell) \times f(\log(C_i(y,\ell)); \log[\hat{\mu}_i(y,\ell)], \hat{\sigma}(\ell)) \quad & C_i(y,\ell) > 0\\
+\end{cases}
+$$
+
+where $f(x;\mu,\sigma)$ is the normal probability density function.
+
+The distribution of the random field $j$ is multivariate normal,
+
+\begin{align}
+\omega_1(j, \cdot) &\sim MVN(0, \bm{\Sigma_1})\\
+\omega_2(j, \cdot) &\sim MVN(0, \bm{\Sigma_2})\\
+\delta_1(j, \cdot, y) &\sim MVN(0, \bm{\Sigma_1})\\
+\delta_2(j, \cdot, y) &\sim MVN(0, \bm{\Sigma_2})
+\end{align}
+
+where $\cdot$ denotes the evaluation of the prior distribution across mesh cells $s_m$ which should span the geographical area of the data. 
+The corresponding values at $s_i$ are obtained by bilinear interpolation. 
+Covariance matrix $\bm{\Sigma}$ is specified by an anistropic Matérn function, where correlation between mesh cells decays as a function of distance (separate for linear predictors 1 and 2) and spatial direction (shared between predictors 1 and 2), and is constrained to have unit variance.
+
+This model was implemented in the VAST R package [@thorson2019].
+
+### Model predictions
+
+Once the model is fitted, the predicted density $d$ is obtained as the product of the two linear predictors,
+
+$$
+\hat{d}_g(y,\ell) = \hat{p}_g(y,\ell) \times \hat{\mu}_g(y,\ell)
+$$
+
+across grid cells $m$ which span the full survey area. 
+A population index $I$ was generated as the summation across $m$, i.e., $\hat{I}(y,\ell) = \sum_g \hat{d}_g(y,\ell)$.
+The predicted proportions can be obtained as
+
+$$
+\hat{p}(y,\ell) = \frac{\hat{I}(y,\ell)}{\sum_{\ell}\hat{I}(y,\ell)}
+$$
+
+The factor analysis provides additional insight on the correlation structure of the population. Following @omorithorson2022, the covariance matrix for the spatial process $\bm{V_{\omega}}$ and spatiotemporal process $\bm{V_{\epsilon}}$, both of dimension $n_\ell \times n_\ell$, are calculated as
+
+\begin{align}
+\bm{V_{\omega}} &= \bm{L_{\omega1}}\bm{L_{\omega1}}^T + \bm{L_{\omega2}}\bm{L_{\omega2}}^T\\
+\bm{V_{\epsilon}} &= \bm{L_{\epsilon1}}\bm{L_{\epsilon1}}^T + \bm{L_{\epsilon2}}\bm{L_{\epsilon2}}^T\\
+\end{align}
+
+The corresponding correlation matrices are then calculated to describe the co-occurrence of animals among sex-size categories.
+
+**I don't fully understand the methods below. Explore the calculations and update later**
+
+Following the approach in @omorithorson2022, the optimal number of clusters was calculated based on the similarity of the distance matrix $\gamma$ calculated from $V$
+
+$$
+\gamma_{\ell,\ell'} = \sqrt{V_{\ell,\ell} + V_{\ell',\ell'} - 2 V_{\ell,\ell'}}
+$$
+
+For a candidate cluster number, the average silhouette width measures the similarity of objects within the same cluster compared to other clusters (i.e., examines the mean distance between all members in one cluster against the distance between members of the other clusters). 
+The optimal number maximizes averages silhouette width.
+The constituent categories for each cluster are then presented with dendrograms. 
+These calculations were facilitated by the factoextra R package.
+
+### Model results
+
+While the model fitted to catch rates in individual sets, the goodness of fit metrics presented here are relative to the overall size proportions. 
+The model was fitted with $k=2,3$. 
+The silhouette width, when applied to the estimates in the 3-factor model, appeared to asymptote at 2 clusters (Figure \@ref(fig:clust)).
+When applied to the 2-factor model, the optimal number of clusters was suggested to be higher (not shown here). Given this pattern, we present the results from the 3-factor model, although the standardized length composition did not substantially differ with the 2-factor model.
+Visual inspection confirmed that there were no factors and loadings with values numerically close to zero, indicative of overparameterization ($k$ is too large). 
+Comparison of these two models is reported in Table \@ref(tab:vast-summary).
+
+For many years, the standardized proportions follow the general shape of the nominal proportions (Figures \@ref(fig:syn-comp1) -- \@ref(fig:syn-comp2)).
+To further evaluate deviations between the two compositions, we compared area-specific length composition, where the standardized proportions are calculated from the predicted density in grid cells corresponding to each survey area (Figures \@ref(fig:syn-area-comp1) -- \@ref(fig:syn-area-comp2)). 
+These compositions can also be presented in terms of mean length to evaluate trends over time (Figure \@ref(fig:syn-area-mlen)). 
+
+The predicted mean length generally followed the trend in the observed values among survey areas, although there are some outliers in the observed proportions and the model's ability to fit to them varies. 
+For example, the VAST model did not fit well to the proportions of large females observed in WCVI in 2010 and 2012 (Figure \@ref(fig:syn-area-comp1)).
+There are clusters of small dogfish in both the Hecate Strait and Queen Charlotte Sound surveys in 2019 and 2021, and the predicted proportions moves leftward for Hecate Strait in 2021 and 2022 (Figure \@ref(fig:syn-area-comp2)).
+
+There were fewest dogfish samples in WCHG and the model appears to fit well to the relative large number of samples in 2010 and 2012. 
+Early in the time series, the length distribution is rightward based on sparse samples in 2006 and 2007.
+Ultimately, the WCHG density estimates contributed the least to the standardized composition because they were much lower compared to other areas (Figure \@ref(fig:syn-area-prop)). 
+
+There is high correlation in the population trends of many size-sex categories (Figures \@ref(fig:syn-comp-corr-sp) -- \@ref(fig:syn-comp-corr-st)).
+Based on the spatial factors which model the spatial component indepenent of time, the lowest correlations (close to zero) are seen between small males (35-40 cm) and large females (> 85 cm), indicating that a trawl set that catches large females are not likely to catch small males and vice versa.
+There appears to be a north-south gradient, with the small males likely to be found in Hecate Strait and large females off of WCVI (Figure \@ref(fig:syn-area-prop)).
+Dendograms from the cluster analysis show similar groupings of size-sex categories between the smallest, largest, and intermediate size classes, when the number of clusters is fixed to 3 (Figure \@ref(fig:dend-st)).
+
+```{r vast-summary, results="asis"}
+df <- tibble::tibble(
+  Factors = c(2, 3),
+  `Fixed effects` = c(330, 442),
+  `Random effects` = c(19992, 29988),
+  `Objective function` = c(77452.8, 77260.69),
+  `$\\Delta AIC$` = c(0, 160.2) 
+)
+
+csasdown::csas_table(
+  df,
+  format = "latex",
+  caption = "Summary of the model structure between the 2 and 3 factor models, including the number of parameters (fixed effects and random effects) and the objective function value. The AIC is calculated without the number of random effects.",
+  align = "r"
+)
+
+```
+
+```{r clust, fig.cap="Average silhouette width as a function of the number of clusters, which partition the size-sex categories into groups and potentially informing the best number of factors for the VAST model. The optimal number of clusters is the value with the maximum silhouette width, although it appears to asymptote at 2."}
+knitr::include_graphics(here::here("figs/synoptic_length/ncluster_st.png"))
+```
+
+```{r syn-comp1, out.height="8in", fig.cap="Comparison of the nominal and standardized length composition from 2003--2012. Proportions sum up to one across all length bins and sexes."}
+knitr::include_graphics(here::here("figs/synoptic_length/compare_comp1.png"))
+```
+
+```{r syn-comp2, out.height="8in", fig.cap="Comparison of the nominal and standardized length composition from 2013--2022. Proportions sum up to one across all length bins and sexes. No survey was conducted in 2020 and the abundance was imputed by the spatiotemporal model through the spatiotemporal random walk."}
+knitr::include_graphics(here::here("figs/synoptic_length/compare_comp2.png"))
+```
+
+```{r syn-area-comp1, out.height="8in", fig.cap="Comparison of the nominal (shaded polygon) and standardized length (lines) composition by sex (colors) and survey area (columns) from 2003--2012 (rows). Proportions sum up to one across all length bins and sexes. Numbers in the corners indicate the number of length samples across both sexes in each panel. The spatiotemporal model imputes abundance in unsampled time-area strata."}
+knitr::include_graphics(here::here("figs/synoptic_length/compare_area_comp1.png"))
+```
+
+```{r syn-area-comp2, out.height="8in", fig.cap="Comparison of the nominal (shaded polygon) and standardized length (lines) composition by sex (colors) and survey area (columns) from 2013--2022 (rows). Numbers in the corners indicate the number of length samples across both sexes in each panel. The spatiotemporal model imputes abundance in unsampled time-area strata."}
+knitr::include_graphics(here::here("figs/synoptic_length/compare_area_comp2.png"))
+```
+
+```{r syn-area-mlen, fig.cap="Comparison of the observed (open circles and dashed lines) and predicted (filled circles and solid lines) mean length by sex and trawl survey area. The nominal values are the mean length of the biological samples while the standardized values are predicted from spatiotemporal model, which imputes the abundance in unsampled time-area strata."}
+knitr::include_graphics(here::here("figs/synoptic_length/mean_length_area.png"))
+```
+
+```{r syn-mlen, fig.cap="Comparison of the observed (open circles and dashed lines) and predicted (filled circles and solid lines) coastwide mean length by sex. The nominal values are the mean length of the biological samples from trawl surveys which typically sample two of four areas per year. The standardized values are predicted from spatiotemporal model, which imputes the abundance in unsampled time-area strata."}
+knitr::include_graphics(here::here("figs/synoptic_length/mean_length_coastwide.png"))
+```
+
+```{r syn-area-prop, fig.cap="Predicted proportion of abundance by area and size-sex class. These proportions are preserved when calculating the standardized stock-wide length composition."}
+knitr::include_graphics(here::here("figs/synoptic_length/compare_area_prop.png"))
+```
+
+```{r syn-comp-corr-sp, fig.cap="Correlation matrix in the spatial process among size-sex categories estimated in the spatiotemporal model."}
+knitr::include_graphics(here::here("figs/synoptic_length/corr_spatial.png"))
+```
+
+```{r syn-comp-corr-st, fig.cap="Correlation matrix in the spatiotemporal process among size-sex categories estimated in the spatiotemporal model."}
+knitr::include_graphics(here::here("figs/synoptic_length/corr_st.png"))
+```
+
+```{r dend-st, fig.cap="Dendogram that organizes the sex-size categories into three clusters based on the spatiotemporal process estimated in VAST."}
+knitr::include_graphics(here::here("figs/synoptic_length/den_st.png"))
+```
