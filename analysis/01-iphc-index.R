@@ -24,6 +24,7 @@ iphc_stations <- iphc_stations |>
   mutate(station = as.character(station))
 
 # number of hooks
+test <- get_iphc_hooks("north pacific spiny dogfish")
 iphc_hksobs <- readRDS("data/raw/Non-Pacific halibut data_raw.rds") |> # from website, used this previously for number counted
   dplyr::select(Year, Station, HooksFished, HooksRetrieved, HooksObserved) |>
   mutate(Station = as.character(Station))
@@ -313,7 +314,7 @@ x <- ind |>
 ind_web <- ind_web |>
   left_join(obs)
 x + geom_line(data = ind_web, aes(year, est/5), col = "red") + coord_cartesian(ylim = c(0, 50)) +
-  geom_pointrange(data = ind_web, aes(ymin = lwr/5, ymax = upr/5), col = "red")
+  geom_pointrange(data = ind_web, aes(ymin = lwr/5, ymax = upr/5), col = "red") + geom_point()
 
 
 # ind_rw |>
