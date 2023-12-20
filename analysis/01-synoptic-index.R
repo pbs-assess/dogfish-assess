@@ -4,7 +4,11 @@ library(sdmTMB)
 library(cowplot)
 theme_set(gfplot::theme_pbs())
 
-s <- readRDS("data/raw/survey-sets.rds")
+coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
+  sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
+
+s <- readRDS("data/raw/survey-sets_2023.rds")
+#s <- readRDS("data/raw/survey-sets.rds") #where did this file come from?
 d <- dplyr::filter(s, grepl("SYN", survey_abbrev))
 table(d$survey_abbrev)
 d <- sdmTMB::add_utm_columns(d, utm_crs = 32609)
@@ -13,7 +17,6 @@ d <- sdmTMB::add_utm_columns(d, utm_crs = 32609)
 d$area_swept1 <- d$doorspread_m * d$tow_length_m
 d$area_swept2 <- d$doorspread_m * (d$speed_mpm * d$duration_min)
 d$area_swept <- ifelse(!is.na(d$area_swept1), d$area_swept1, d$area_swept2)
-
 
 table(d$year[is.na(d$doorspread_m)])
 table(d$year[is.na(d$tow_length_m)])
@@ -74,7 +77,7 @@ ggsave("figs/synoptic/cpue_depth_time.png", gg, height = 5, width = 6)
 ## Design-based index ----
 index_design <- d %>%
   mutate(cpue = catch_weight/area_swept,
-         catch_expand = area_km2 * cpue) %>%
+         catch_expand = area_km2 * cpue) %>% #where did this area_km2 value come from? I cahnged to area_swept
   summarize(index_strat = mean(catch_expand),
             var_strat = var(catch_expand),
             n = n(),
@@ -162,7 +165,7 @@ survs <- select(d, year, survey_abbrev) |> distinct() |>
   group_by(year) |>
   summarise(survey_abbrev = paste(survey_abbrev, collapse = ", "))
 
-ind <- left_join(ind, survs, by = join_by(year, survey_abbrev))
+ind <- left_join(ind, survs, by = join_by(year))
 
 ggplot(ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
   geom_pointrange() +
@@ -172,11 +175,9 @@ ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
   geom_pointrange() +
   coord_cartesian(ylim = c(0, NA))
 
-
-
 ## Plot figures in prediction grid ----
 # Depth ----
-gg <- ggplot(grid %>% filter(year == yrs[1]), aes(longitude, latitude, fill = depth_m, colour = depth_m)) +
+gg <- ggplot(grid %>% filter(year == yrs[1]), aes(longitude, latitude, fill = depth_m_log, colour = depth_m_log)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   geom_tile(width = 0.025, height = 0.025) +
