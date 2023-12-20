@@ -338,26 +338,26 @@ saveRDS(fit_iphc_nb2, file = "data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 #fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB.rds")
 fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 
-#with julian
-ggplot(d, aes(year, julian)) + geom_point()
-range(d$julian)
-d$julian_small <- d$julian/100
-fit_iphc_nb2_wjulian <- sdmTMB(
-  numobs ~ 0 + poly(depth_m_log, 2L) + julian_small,
-  family = nbinom2(link = "log"),
-  time_varying = ~1,
-  data = d,
-  mesh = mesh,
-  time = "year",
-  offset = "offset",
-  spatiotemporal = "ar1",
-  spatial = "on",
-  silent = TRUE,
-  anisotropy = TRUE,
-  control = sdmTMBcontrol(newton_loops = 1L)
-)
-saveRDS(fit_iphc_nb2_wjulian, file = "data/generated/iphc-nb2-sdmTMB_gfdata_wjulian.rds")
-fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata_wjulian.rds")
+# #with julian
+# ggplot(d, aes(year, julian)) + geom_point()
+# range(d$julian)
+# d$julian_small <- d$julian/100
+# fit_iphc_nb2_wjulian <- sdmTMB(
+#   numobs ~ 0 + poly(depth_m_log, 2L) + julian_small,
+#   family = nbinom2(link = "log"),
+#   time_varying = ~1,
+#   data = d,
+#   mesh = mesh,
+#   time = "year",
+#   offset = "offset",
+#   spatiotemporal = "ar1",
+#   spatial = "on",
+#   silent = TRUE,
+#   anisotropy = TRUE,
+#   control = sdmTMBcontrol(newton_loops = 1L)
+# )
+# saveRDS(fit_iphc_nb2_wjulian, file = "data/generated/iphc-nb2-sdmTMB_gfdata_wjulian.rds")
+# fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata_wjulian.rds")
 
 # fit_rw <- update(fit_iphc_nb2, spatiotemporal = "rw", time_varying = NULL,
 #   formula. = number_observed ~ 1 + poly(depth_m_log, 2L))
@@ -405,10 +405,10 @@ p <- predict(fit_iphc_nb2, newdata = grid, return_tmb_object = TRUE)
 ind <- get_index(p, bias_correct = TRUE)
 
 saveRDS(ind, file = "data/generated/geostat-ind-iphc_gfdata.rds")
-saveRDS(ind, file = "data/generated/geostat-ind-iphc_gfdata_julian.rds")
-ind_web <- readRDS("data/generated/geostat-ind-iphc.rds")
+#saveRDS(ind, file = "data/generated/geostat-ind-iphc_gfdata_julian.rds")
+#ind_web <- readRDS("data/generated/geostat-ind-iphc.rds")
 ind <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds")
-ind_julian <- readRDS("data/generated/geostat-ind-iphc_gfdata_julian.rds")
+#ind_julian <- readRDS("data/generated/geostat-ind-iphc_gfdata_julian.rds")
 # ind_withouthk <- readRDS("data/generated/geostat-ind-iphc_withouthk.rds")
 
 # hk <- ggplot(ind, aes(year, log(est)), colour = "black") +
@@ -428,19 +428,19 @@ geom_vline(xintercept = 2020, lty = 2) +
 geom_vline(xintercept = 2000, lty = 2) +
 scale_colour_viridis_c()
 
-ggplot(ind_julian, aes(year, est, ymin = lwr, ymax = upr), colour = "blue") +
-  geom_pointrange() +
-  geom_line()
+# ggplot(ind_julian, aes(year, est, ymin = lwr, ymax = upr), colour = "blue") +
+#   geom_pointrange() +
+#   geom_line()
 
 x <- ind |>
   left_join(obs) |>
   ggplot(aes(year, est, ymin = lwr, ymax = upr), colour = "blue") +
   geom_pointrange() +
   geom_line()
-ind_julian <- ind_julian |>
-  left_join(obs)
-x + geom_line(data = ind_julian, aes(year, est), col = "red") + coord_cartesian(ylim = c(0, 50)) +
-geom_pointrange(data = ind_julian, aes(ymin = lwr, ymax = upr), col = "red") + geom_point()
+# ind_julian <- ind_julian |>
+#   left_join(obs)
+# x + geom_line(data = ind_julian, aes(year, est), col = "red") + coord_cartesian(ylim = c(0, 50)) +
+# geom_pointrange(data = ind_julian, aes(ymin = lwr, ymax = upr), col = "red") + geom_point()
 
 
 # ind_rw |>
