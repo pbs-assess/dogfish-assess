@@ -122,6 +122,25 @@ mm$pars
 mf$pars
 ggsave("figs/length-weight-survey.png", g, width = 5, height = 4)
 
+
+# Outside (all surveys except IPHC):
+mm <- d %>%
+  filter(major_stat_area_name != "4B: STRAIT OF GEORGIA") %>%
+  fit_length_weight(sex = "male", df = 3, usability_codes = c(0, 1, 2, 6))
+mf <- d %>%
+  filter(major_stat_area_name != "4B: STRAIT OF GEORGIA") %>%
+  fit_length_weight(sex = "female", df = 3, usability_codes = c(0, 1, 2, 6))
+g <- plot_length_weight(object_female = mf, object_male = mm, pt_alpha = 1) +
+  ggtitle("Length-weight relationship (all BC samples)") +
+  facet_wrap(vars(sex)) +
+  guides(linetype = "none", colour = "none")
+
+mm$pars
+mf$pars
+ggsave("figs/length-weight-survey-outside.png", g, width = 6, height = 4)
+
+
+
 # Maturity ------------------------------------------------------------
 
 # gfbio threshold for mature dogfish
@@ -141,10 +160,18 @@ d %>%
   group_by(maturity_code, maturity_desc) %>%
   summarise(n = n())
 
+d %>%
+  filter(major_stat_area_name != "4B: STRAIT OF GEORGIA") %>%
+  tidy_maturity_months() %>%
+  plot_maturity_months()
+
+
 # outside stock - female mature if maturity_code >= 77
+# For males, set maturity at 30 (see Jackie King's email to Quang and Sean, March 29, 2023)
 fit <- d |>
   filter(survey_abbrev %in% c("SYN WCHG", "SYN HS", "SYN QCS", "SYN WCVI")) |>
-  fit_mat_ogive(type = "length", usability_codes = c(0, 1, 2, 6))
+  fit_mat_ogive(type = "length", usability_codes = c(0, 1, 2, 6),
+                custom_maturity_at = c(30, 77))
 summary(fit$model)
 g <- plot_mat_ogive(fit)
 ggsave("figs/maturity-outside-survey.png", g, width = 6, height = 3)
@@ -160,34 +187,44 @@ g <- fit$data %>%
 ggsave("figs/maturity-outside-survey-prop.png", g, width = 6, height = 3)
 
 # Re-fit if females mature at 55
-fit_55 <- fit$data %>%
-  mutate(mature = ifelse(female == 1, maturity_code >= 55, mature)) %>%
-  stats::glm(mature ~ age_or_length * female, data = ., family = binomial)
+fit_55 <- d |>
+  filter(survey_abbrev %in% c("SYN WCHG", "SYN HS", "SYN QCS", "SYN WCVI")) |>
+  fit_mat_ogive(type = "length", usability_codes = c(0, 1, 2, 6),
+                custom_maturity_at = c(30, 55))
 
 pred_data <- fit_55$data %>%
   select(age_or_length, female) %>%
   mutate(glmm_fe = predict(fit_55, newdata = ., type = "response"))
 
 prop_55 <- rbind(
-  g$data %>% filter(sex == 2) %>% ungroup() %>% select(age_or_length, n, p) %>% mutate(type = 77),
+  fit$data %>%
+    group_by(age_or_length, sex) %>%
+    summarise(n = n(), p = mean(mature)) %>%
+    mutate(type = ifelse(sex == 2, "Female (77)", "Male (30)")),
   fit_55$data %>%
     filter(sex == 2) %>%
     group_by(age_or_length) %>%
     summarise(n = n(), p = mean(mature)) %>%
-    mutate(type = 55)
+    mutate(type = "Female (55)")
 )
 
 pred_55 <- rbind(
-  fit$pred_data %>% filter(female == 1) %>% select(age_or_length, glmm_fe) %>% mutate(type = 77),
-  pred_data %>% filter(female == 1) %>% select(age_or_length, glmm_fe) %>% mutate(type = 55)
+  fit$pred_data %>%
+    #filter(female == 1) %>%
+    select(age_or_length, glmm_fe, female) %>%
+    mutate(type = ifelse(female == 1, "Female (77)", "Male (30)")),
+  fit_55$pred_data %>%
+    filter(female == 1) %>%
+    select(age_or_length, glmm_fe, female) %>%
+    mutate(type = "Female (55)")
 )
 
 g <- prop_55 %>%
   ggplot(aes(age_or_length)) +
   geom_point(aes(y = p, shape = factor(type))) +
-  scale_shape_manual(name = "Mature at", values = c(16, 1)) +
+  scale_shape_manual(values = c(16, 1, 4)) +
   geom_line(data = pred_55, aes(y = glmm_fe, linetype = factor(type))) +
-  labs(x = "Length", y = "Proportion mature", shape = "Category", linetype = "Category")
+  labs(x = "Length", y = "Proportion", linetype = "Sex", shape = "Sex")
 ggsave("figs/maturity-outside-survey-compare.png", g, width = 6, height = 3)
 
 # Annual proportion of mature females (code 55)

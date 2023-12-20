@@ -4,6 +4,7 @@ rmd_files: ["index.Rmd",
             "04-references.Rmd",
             "99-app-a1-survey.Rmd",
             "99-app-a2-len-std.Rmd",
-            "99-app-b-fishery.Rmd"
+            "99-app-b-fishery.Rmd",
+            "99-app-c-growth-maturity.Rmd"
             ]
 delete_merged_file: true

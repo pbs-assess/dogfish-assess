@@ -4,11 +4,11 @@
 ## COMMERCIAL CATCH
 
 ```{r comm-catch, fig.cap="Reconstructed catch by landings and discards of Outside Dogfish."}
-knitr::include_graphics("figs/reconstructed-catch-discards-outside.png")
+knitr::include_graphics(here::here("figs/reconstructed-catch-discards-outside.png"))
 ```
 
 ```{r comm-disc-rate, fig.cap="Proportion of discards to total catch (landings plus discards) of Outside Dogfish. Observer coverage of the trawl fishery started in 1996 (denoted by the vertical dotted line)."}
-knitr::include_graphics("figs/proportion-discards-outside.png")
+knitr::include_graphics(here::here("figs/proportion-discards-outside.png"))
 ```
 
 ## COMMERCIAL BIOLOGICAL SAMPLES SUMMARY

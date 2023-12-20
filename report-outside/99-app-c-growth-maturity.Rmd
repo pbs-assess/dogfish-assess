@@ -1,0 +1,55 @@
+
+# GROWTH AND MATURITY {#app:growth}
+
+## Length-age relationship
+
+To develop the growth curve, length-at-age has been determined from spine samples have been collected from various surveys, tag returns, and some fisheries (Table \@ref(tab:summary-age); @mcfarlane2009). 
+As such, these data do not reflect any size or age selection in a fishery.
+
+```{r len-age, fig.cap="Estimated von Bertalanffy growth parameters for Dogfish."}
+knitr::include_graphics(here::here("figs/length-age-vb.png"))
+```
+
+```{r age-resid, fig.cap="Residual from the fitted von Bertalanffy growth curve. Colors identify age samples by area."}
+knitr::include_graphics(here::here("figs/length-age-residual.png"))
+```
+
+
+```{r summary-age, results="asis"}
+dat <- readxl::read_excel(here::here("data/raw/Age.Length.Data.xlsx")) %>%
+  filter(!is.na(Age),
+         sex != 7,
+         !is.na(length)) %>%
+  rename(Year = `Sample year`) %>%
+  mutate(Area = ifelse(Area == "4A", "4B", Area),
+         #length = 0.1 * length, # convert to cm
+         sex = ifelse(sex == 1, "Male", "Female")) %>%
+  summarise(n = n(), .by = c(Year, Area)) %>%
+  reshape2::dcast(list("Year", "Area"), fill = 0, value.var = "n")
+dat$Total <- rowSums(dat[, -1])
+
+csasdown::csas_table(
+  dat,
+  align = "r",
+  caption = "Number of age samples by area and year."
+)
+```
+
+
+## Length-weight relationship
+
+```{r len-wt, fig.cap="Weight-at-length by sex estimated from biological samples collected in the surveys in British Columbia."}
+knitr::include_graphics(here::here("figs/length-weight-survey.png"))
+```
+
+## Maturity-length relationship
+
+The female maturity ogive is estimated with the size of 50 and 95 percent maturity at 86.3 and 96.2 cm, respectively (Figure \@ref(fig:mat-len)).
+The pregnancy ogive is estimated with the size of 50 and 95 percent pregnancy at 97.6 and 115.1 cm, respectively.
+
+The male maturity ogive is estimated with the size of 50 and 95 percent maturity at 67.9 and 74.1 cm, respectively.
+
+```{r mat-len, fig.cap="Maturity ogives estimated from biological samples collected in the trawl surveys in Outside waters. Maturity status is classified based on macroscopic evaluation of gonads. Maturity code 55 indicates maturing females based on ova size 5-10 mm and thickened uterii (>10 mm). Maturity code 77 indicates pup bearing females (yolk sac pups). Maturity code 30 indicates maturing males based on testes color and clasper development (extended past anal fins). Lines and points indicate the estimated and observed proportions."}
+knitr::include_graphics(here::here("figs/maturity-outside-survey-compare.png"))
+```
+

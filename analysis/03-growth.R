@@ -7,25 +7,29 @@ dat <- readxl::read_excel("data/raw/Age.Length.Data.xlsx") %>%
   filter(!is.na(Age),
          sex != 7,
          !is.na(length)) %>%
-  mutate(length = 0.1 * length, # convert to cm
+  mutate(Area = ifelse(Area == "4A", "4B", Area),
+         length = 0.1 * length, # convert to cm
          sex = ifelse(sex == 1, "Male", "Female"))
 
 #### Plot data
 # By Area
 g <- ggplot(dat, aes(Age, length, colour = sex)) +
-  geom_point(alpha = 0.5) +
+  geom_point(alpha = 0.4) +
   gfplot::theme_pbs() +
   facet_wrap(vars(Area)) +
-  expand_limits(y = 0) +
+  expand_limits(x = 0, y = 0) +
+  coord_cartesian(expand = FALSE) +
+  theme(panel.spacing = unit(0, "in")) +
   labs(x = "Age", y = "Length (cm)", colour = "Sex")
 ggsave("figs/length-age-area.png", g, height = 4, width = 6)
 
 # By Year
 g <- ggplot(dat, aes(Age, length, colour = sex)) +
-  geom_point(alpha = 0.5) +
+  geom_point(alpha = 0.4) +
   gfplot::theme_pbs() +
   facet_wrap(vars(`Sample year`)) +
-  expand_limits(y = 0) +
+  expand_limits(x = 0, y = 0) +
+  coord_cartesian(expand = FALSE) +
   labs(x = "Age", y = "Length (cm)", colour = "Sex")
 ggsave("figs/length-age-year.png", g, height = 4, width = 6)
 
@@ -56,14 +60,15 @@ vb_m <- dat %>%
 
 g <- gfplot::plot_growth(object_f = vb_f,
                          object_m = vb_m,
-                         lab_x = 0.6,
-                         lab_x_gap = 0.20,
+                         lab_x = 0.4,
+                         lab_x_gap = 0.35,
                          pt_alpha = 0.8,
                          col = c(Female = "black", Male = "black"),
                          french = FALSE,
                          jitter = TRUE) +
   facet_wrap(vars(sex)) +
-  guides(col = "none", lty = "none")
+  guides(col = "none", lty = "none") +
+  theme(panel.spacing = unit(0, "in"))
 ggsave("figs/length-age-vb.png", g, height = 3, width = 6)
 
 #### Plot residual by area
@@ -75,14 +80,26 @@ dat <- dat %>%
          pred = linf * (1 - exp(-k * (Age - t0))) * exp(-0.5 * sigma * sigma),
          resid = log(length/pred))
 g <- dat %>%
-  filter(resid > -1) %>%
   ggplot(aes(Age, resid, colour = sex)) +
-  geom_point(alpha = 0.5) +
+  geom_point(alpha = 0.4) +
   gfplot::theme_pbs() +
   facet_wrap(vars(Area)) +
   geom_hline(yintercept = 0, linetype = 2) +
+  theme(panel.spacing = unit(0, "in")) +
+  coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
   labs(x = "Age", y = "Residual", colour = "Sex")
-ggsave("figs/length-age-residual-area.png", g, height = 4, width = 6)
+ggsave("figs/length-age-residual-area.png", g, height = 5, width = 6)
+
+g <- dat %>%
+  ggplot(aes(Age, resid, colour = Area)) +
+  geom_jitter(alpha = 0.4) +
+  gfplot::theme_pbs() +
+  facet_wrap(vars(sex)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  theme(panel.spacing = unit(0, "in")) +
+  coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
+  labs(x = "Age", y = "Residual", colour = NULL)
+ggsave("figs/length-age-residual.png", g, height = 3, width = 6)
 
 
 ###### Tried Schnute function but AIC does not support additional inflection parameter

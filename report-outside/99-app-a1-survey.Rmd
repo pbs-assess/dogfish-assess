@@ -34,7 +34,7 @@ csasdown::csas_table(
   kableExtra::column_spec(column = 3:7, width = "2cm")
 ```
 
-## SURVEY LENGTH COMP SUMMARY
+## SURVEY BIOLOGICAL SAMPLES SUMMARY
 
 ```{r survey-len-summary, results="asis"}
 d <- readRDS(here::here("data/raw/survey-samples.rds")) %>%
