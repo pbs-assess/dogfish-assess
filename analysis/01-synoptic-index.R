@@ -9,6 +9,7 @@ coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", re
 
 s <- readRDS("data/raw/survey-sets_2023.rds")
 #s <- readRDS("data/raw/survey-sets.rds") #where did this file come from?
+# SA: it's built in data/raw/pull-raw-data.R
 d <- dplyr::filter(s, grepl("SYN", survey_abbrev))
 table(d$survey_abbrev)
 d <- sdmTMB::add_utm_columns(d, utm_crs = 32609)

@@ -7,6 +7,7 @@ theme_set(gfplot::theme_pbs())
 # setwd("C:/Users/tcarruth/Documents/GitHub/dogfish-assess")
 
 s <- readRDS("data/raw/survey-sets_2023.rds")
+# built in data/raw/pull-raw-data.R
 #s <- readRDS("data/raw/survey-sets.rds")
 d <- dplyr::filter(s, grepl("HBLL OUT", survey_abbrev))
 d <- sdmTMB::add_utm_columns(d, utm_crs = 32609)
