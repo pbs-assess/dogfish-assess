@@ -24,7 +24,7 @@ iphc_stations <- iphc_stations |>
   mutate(station = as.character(station))
 
 # number of hooks
-test <- get_iphc_hooks("north pacific spiny dogfish")
+# test <- get_iphc_hooks("north pacific spiny dogfish")
 iphc_hksobs <- readRDS("data/raw/Non-Pacific halibut data_raw.rds") |>
   dplyr::select(Year, Station, HooksFished, HooksRetrieved, HooksObserved) |>
   mutate(Station = as.character(Station))
@@ -61,6 +61,17 @@ iphc_latlongs <- readRDS("data/raw/Set and Pacific halibut data_raw.rds") %>%
   mutate(year = as.numeric(year))
 names(iphc_latlongs) <- tolower(names(iphc_latlongs))
 
+iphc_stations <- filter(iphc_stations,
+  purpose == "Standard Grid", iphc.reg.area..group. == "2B" # 2B = BC
+) |>
+  select(station) |>
+  distinct()
+
+# iphc_latlongs <- filter(iphc_latlongs, iphc.reg.area == "2B") |>
+#   select(station, date) |>
+#   distinct()
+
+# FIXME many-to-many here!!
 iphc_coast2 <- iphc_coast %>%
   inner_join(iphc_stations) |> #for iphc reg area
   inner_join(iphc_latlongs) |> #for julian date
@@ -72,9 +83,7 @@ iphc_coast2[duplicated(iphc_coast2), ]
 
 iphc_coast3 <- iphc_coast2 %>%
   filter(eff == "Y") %>%
-  filter(purpose == "Standard Grid") %>%
   mutate(startlonfix = ifelse(beginlon > 0, beginlon * -1, beginlon)) %>%
-  filter(iphc.reg.area == "2B") %>% #to get BC
   mutate(depth_m = 1.8288 * avgdepth..fm.) %>%
   mutate(depth_m_log = log(depth_m)) %>%
   dplyr::select(
@@ -107,7 +116,7 @@ saveRDS(iphc_coast4, "data/generated/IPHC_coastdata_nosog_gfdata.rds")
 shelf <- st_read("data/raw", "Shelf_polygon_noSOG") %>%
   st_transform(crs = 32609)
 
-iphc_coast4sf <- st_as_sf(iphc_depth,
+iphc_coast4sf <- st_as_sf(iphc_coast4,
   coords = c("UTM.lon.m", "UTM.lat.m"),
   crs = 32609
 )
