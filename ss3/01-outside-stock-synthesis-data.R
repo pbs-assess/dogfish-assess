@@ -80,10 +80,9 @@ ss3_catch <- function(csv = TRUE) {
 }
 ss3_catch()
 
-
 ss3_index <- function(csv = TRUE) {
   # IPHC
-  iphc <- readRDS("data/generated/geostat-ind-iphc.rds") %>%
+  iphc <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds") %>%
     mutate(fleet = fleet_index["Iphc"])
 
   # HBLL
