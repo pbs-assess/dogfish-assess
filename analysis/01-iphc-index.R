@@ -71,10 +71,22 @@ iphc_stations <- filter(iphc_stations,
 #   select(station, date) |>
 #   distinct()
 
-# FIXME many-to-many here!!
-iphc_coast2 <- iphc_coast %>%
-  inner_join(iphc_stations) |> #for iphc reg area
-  inner_join(iphc_latlongs) |> #for julian date
+# fixed - bring datasets together
+iphc_stations2a <- filter(iphc_stations, iphc.reg.area..group. == "2B")
+station <- iphc_stations2a$station
+iphc_coast2 <- iphc_coast |>
+  filter(station %in% station)
+iphc_coast2 <- iphc_coast2 |>
+  inner_join(iphc_latlongs,
+             by = c("station" = "station", "year" = "year"), relationship = "many-to-many")
+x <- iphc_coast2 |> select(station, year, date)
+x[duplicated(x), ] #so there are a couple stations that have been fished twice in the same year
+#these pairs pose a problem for the next step that does not have a date associated with it.
+#we can drop these points or assume that the hook values are the same
+#i dropped them
+iphc_coast2 <- iphc_coast2 |>  #for julian date
+  filter(station !=2107 & year !=2019) |>
+  filter(station != 2099 & year != 2019) |>
   inner_join(iphc_hksobs) |> #for hook information
   distinct(.keep_all = TRUE)
 
@@ -124,26 +136,9 @@ iphc_coast4sf <- st_as_sf(iphc_coast4,
 plot(st_geometry(shelf))
 plot(iphc_coast4sf, add = T) #all the points are outside of the SOG
 
-#iphc_nosog <- st_intersection(iphc_coast4sf, st_geometry(shelf)) %>%
-#  st_drop_geometry() %>%
-#  dplyr::select(-dmy)
-
-# stations with only one survey
-surveyed1 <- iphc_nosog %>%
-  group_by(station) %>%
-  mutate(count = n()) %>%
-  filter(count == 1) |>
-  tally() #only three locations with one survey, that is fine
-#iphc_coast_trimmed3 <- filter(iphc_nosog, !(station %in% surveyed1$station))
-
-# x <- ggplot(
-#   data = filter(iphc_coast_trimmed3, iphc.reg.area == "2B"),
-#   aes(UTM.lon, UTM.lat), size = 1.5, col = "blue"
-# ) +
-#   geom_point()
-# x + geom_point(data = filter(surveyed1, iphc.reg.area == "2B"), aes(UTM.lon, UTM.lat, col = "red"))
-# saveRDS(iphc_coast_trimmed3, "data/generated/IPHC_coastdata_nosog_gfdata.rds")
-
+iphc_nosog <- st_intersection(iphc_coast4sf, st_geometry(shelf)) %>%
+ st_drop_geometry() %>%
+ dplyr::select(-dmy)
 
 # Check of website and gfiphc data trends ----
 d_website <- readRDS("data/generated/IPHC_coastdata_nosog.rds")
@@ -167,9 +162,9 @@ ggplot(both, aes(year, count, group = data, colour = data)) +
 
 # Add Hook Competition ----
 #from https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fwww.iphc.int%2Fuploads%2F2023%2F12%2Fiphc-2023-fiss-hadj-20231031.xlsx&wdOrigin=BROWSELINK
-#h <- readxl::read_excel("data/raw/iphc-2023-fiss-hadj-20231031.xlsx") |> #iphc-2021-fiss-hadj.xlsx") #old data set
-#dplyr::filter(`IPHC Reg Area` %in% "2B")
-#saveRDS(h, file = "data/raw/iphc-2023-fiss-hadj.rds")
+# h <- readxl::read_excel("data/raw/iphc-2023-fiss-hadj-20231031.xlsx") |> #iphc-2021-fiss-hadj.xlsx") #old data set
+# dplyr::filter(`IPHC Reg Area` %in% "2B")
+# saveRDS(h, file = "data/raw/iphc-2023-fiss-hadj.rds")
 
 d <- readRDS("data/generated/IPHC_coastdata_nosog_gfdata.rds") |>
   mutate(depth_m = exp(depth_m_log)) |>
@@ -328,6 +323,7 @@ ggsave("figs/iphc/iphc_mesh.png", g, width = 5, height = 6)
 # Call sdm
 d <- readRDS("data/generated/IPHC_coastdata_nosog_gfdata_hk.rds")
 d$numobs <- ifelse(is.na(d$N_it20) == TRUE, d$N_it, d$N_it20)
+d |> filter(N_it20) |> group_by(year) |> tally()
 
 fit_iphc_nb2 <- sdmTMB(
   numobs ~ 0 + poly(depth_m_log, 2L), #should this be N_it or N_it20, previously was N_it20
@@ -346,6 +342,8 @@ fit_iphc_nb2 <- sdmTMB(
 saveRDS(fit_iphc_nb2, file = "data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 #fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB.rds")
 fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata.rds")
+
+fit_iphc_nb2$data |> filter(N_it20 == 0) |> group_by(year) |> tally()
 
 # #with julian
 # ggplot(d, aes(year, julian)) + geom_point()
