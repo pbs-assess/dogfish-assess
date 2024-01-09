@@ -131,7 +131,7 @@ mf <- d %>%
   filter(major_stat_area_name != "4B: STRAIT OF GEORGIA") %>%
   fit_length_weight(sex = "female", df = 3, usability_codes = c(0, 1, 2, 6))
 g <- plot_length_weight(object_female = mf, object_male = mm, pt_alpha = 1) +
-  ggtitle("Length-weight relationship (all BC samples)") +
+  ggtitle("Length-weight relationship") +
   facet_wrap(vars(sex)) +
   guides(linetype = "none", colour = "none")
 

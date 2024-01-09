@@ -1,66 +1,79 @@
 library(dplyr)
 library(ggplot2)
 
-fleet_index <- c("Bottom trawl" = 1,
-                 "Midwater trawl" = 2,
-                 "Longline" = 3,
-                 "Hook and line" = 3,
-                 "Iphc" = 4,
-                 "IPHC" = 4,
-                 "HBLL" = 5,
-                 "SYN" = 6,
-                 "Syn" = 6,
-                 "Trawl_3565" = 7,
-                 "LL_3565" = 8,
-                 "Trawl" = 9) # Trawl_6695
+fleet_index <- c(
+  "Bottom Trawl Landings" = 1,   # Catch series since 1935, targets the biggest fish - Use KEEPERS lengths (1977-1980, 1987, 2000)
+  "Bottom Trawl Discards" = 2,   # Catch series since 1966, catches smaller fish - Use DISCARDS lengths (1990s to 2019, sparse)
+  "Midwater Trawl" = 3,         # Use UNSORTED lengths (data quantity, 1980s-1990s) - not a strong difference in unsorted comps over time when
+                               # discards went from 0 to 90 percent
+  "Longline Landings" = 4,      # Use RETAINED lengths
+  "Longline Discards" = 5,      # Map selectivity to BottomTrawlDiscards
+  "Iphc" = 6,
+  "Hbll" = 7,
+  "Syn" = 8
+)
 
-# trawl_1935 is the proportion of 1935-1965 catch assigned to bottom trawl (remaining goes to hook and line)
-ss3_catch <- function(csv = TRUE, trawl_1935 = 0.5) {
+
+ss3_catch <- function(csv = TRUE) {
+
   catch <- readRDS("data/generated/catch.rds") %>%
     filter(area != "4B") %>%
-    mutate(catch = 1e-3 * (landed_kg + discarded_kg)) %>%
-    reshape2::acast(list("year", "gear"), value.var = "catch")
-
-
-  catch <- readRDS("data/generated/catch.rds") %>%
-    filter(area != "4B",
-           gear %in% c("Bottom trawl", "Midwater trawl", "Hook and line", "Trawl", "Trawl + hook and line")) %>%
     group_by(year, gear) %>%
     summarise(landing = 1e-3 * sum(landed_kg),
               discard = 1e-3 * sum(discarded_kg)) %>%
-    reshape2::melt(id.vars = c("year", "gear"))
+    ungroup()
 
-  g <- ggplot(catch, aes(year, value, shape = variable, linetype = variable)) +
-    facet_grid(vars(gear), vars(variable)) +
-    geom_point() +
-    geom_line()
+  f1 <- catch %>%
+    filter(grepl("trawl", gear) | grepl("Trawl", gear)) %>%
+    summarise(value = sum(landing), .by = year) %>%
+    mutate(fleet = 1)
 
-  ### Combine discard and landings for now
-  catch_combine <- catch %>%
-    group_by(year, gear) %>%
-    summarise(value = sum(value))
+  f2 <- catch %>%
+    filter(grepl("trawl", gear) | grepl("Trawl", gear)) %>%
+    summarise(value = sum(discard), .by = year) %>%
+    mutate(fleet = 2)
 
-  split_1935 <- function(catch, trawl_1935 = 0.5) {
+  f3 <- catch %>%
+    filter(gear == "Midwater trawl") %>%
+    summarise(value = sum(landing + discard), .by = year) %>%
+    mutate(fleet = 3)
 
-    catch_ex1935 <- filter(catch_combine, gear != "Trawl + hook and line")
-    catch_1935 <- filter(catch_combine, gear == "Trawl + hook and line") %>%
-      mutate(`Trawl_3565` = value * trawl_1935,
-             `LL_3565` = value * (1 - trawl_1935)) %>%
-      select(year, Trawl_3565, LL_3565) %>%
-      reshape2::melt(id.vars = "year") %>%
-      rename(gear = variable)
-    rbind(catch_1935, catch_ex1935)
-  }
+  f4 <- catch %>%
+    filter(gear == "Hook and line") %>%
+    summarise(value = sum(landing), .by = year) %>%
+    mutate(fleet = 4)
 
-  out <- catch_combine %>%
-    split_1935(trawl_1935 = trawl_1935) %>%
-    mutate(fleet = fleet_index[match(gear, names(fleet_index))],
-           se = 0.01,
+  f5 <- catch %>%
+    filter(gear == "Hook and line") %>%
+    summarise(value = sum(discard), .by = year) %>%
+    mutate(fleet = 5)
+
+  out <- rbind(f1, f2, f3, f4, f5) %>%
+    mutate(se = 0.01,
            season = 1) %>%
-    filter(value > 0,
-           year < 2023) %>%
+    filter(value > 0) %>%
     select(year, season, fleet, value, se) %>%
     arrange(fleet, year)
+
+  g <- out %>%
+    mutate(fleet2 = names(fleet_index)[fleet]) %>%
+    ggplot(aes(year, value, fill = fleet2)) +
+    facet_wrap(vars(fleet2)) +
+    geom_col(width = 1) +
+    gfplot::theme_pbs() +
+    guides(fill = "none") +
+    labs(x = "Year", y = "Catch (t)")
+  ggsave("figs/ss3/catch_fleet.png", g, height = 3, width = 6)
+
+  g <- out %>%
+    mutate(fleet2 = names(fleet_index)[fleet]) %>%
+    ggplot(aes(year, value, fill = fleet2)) +
+    facet_wrap(vars(fleet2), scales = "free_y") +
+    geom_col(width = 1) +
+    gfplot::theme_pbs() +
+    guides(fill = "none") +
+    labs(x = "Year", y = "Catch (t)")
+  ggsave("figs/ss3/catch_fleet2.png", g, height = 3, width = 6)
 
   if (csv) write.csv(out, file = "data/ss3/ss3-catch.csv", row.names = FALSE)
   invisible(out)
@@ -71,17 +84,16 @@ ss3_catch()
 ss3_index <- function(csv = TRUE) {
   # IPHC
   iphc <- readRDS("data/generated/geostat-ind-iphc.rds") %>%
-    mutate(fleet = fleet_index["IPHC"])
+    mutate(fleet = fleet_index["Iphc"])
 
   # HBLL
   hbll <- readRDS("data/generated/geostat-ind-hbll-out.rds") %>%
-    mutate(fleet = fleet_index["HBLL"]) %>%
+    mutate(fleet = fleet_index["Hbll"]) %>%
     select(-survey_abbrev)
 
   # Synoptic Trawl
   syn <- readRDS("data/generated/geostat-ind-synoptic.rds") %>%
-    mutate(fleet = fleet_index["SYN"]) %>%
-    select(-survey_abbrev)
+    mutate(fleet = fleet_index["Syn"])
 
   ind <- rbind(hbll, iphc, syn) %>%
     mutate(month = 1) %>%
@@ -94,7 +106,7 @@ ss3_index <- function(csv = TRUE) {
 }
 ss3_index()
 
-ss3_length <- function(csv = TRUE, bin_size = 4) {
+ss3_length <- function(csv = TRUE, bin_size = 10, bin_range = c(20, 120)) {
 
   dtrawl <- readRDS("data/raw/survey-samples.rds")
   diphc <- read.csv("data/raw/IPHC_dogfish_lengths2021.csv") %>%
@@ -102,84 +114,80 @@ ss3_length <- function(csv = TRUE, bin_size = 4) {
     )
   dc <- readRDS("data/raw/commercial-samples.rds")
 
-  # Will naively sum all trawl lengths together
+  # Will naively sum all trawl lengths together for trawl
   lengths_survey <- dtrawl %>%
     filter(survey_abbrev %in% c("SYN WCHG", "SYN HS", "SYN QCS", "SYN WCVI")) %>%
-    mutate(survey_abbrev = "SYN") %>%
+    mutate(survey_abbrev = "Syn") %>%
     select(year, length, sex, survey_abbrev, specimen_id, age, usability_code)
 
   lengths_iphc <- diphc %>%
     mutate(sex = ifelse(sex == "F", 2, 1),
-           survey_abbrev = "IPHC") %>%
+           survey_abbrev = "Iphc") %>%
     select(year, length, sex, survey_abbrev) %>%
     mutate(specimen_id = 1:n(),
            age = NA,
            usability_code = 1)
 
+  # Separate by fleet and sampling_desc
   lengths_comm <- dc |>
     filter(!grepl("4B", major_stat_area_name)) |>
-    filter(sampling_desc %in% "UNSORTED") |>
     filter(gear_desc %in% c("BOTTOM TRAWL", "LONGLINE", "MIDWATER TRAWL")) %>%
     rename(survey_abbrev = gear_desc) %>%
-    select(year, length, sex, survey_abbrev, specimen_id, age, usability_code)
+    select(year, length, sex, survey_abbrev, specimen_id, age, usability_code, sampling_desc)
 
-  # Plot by sampling desc
-  g <- dc %>%
-    filter(!grepl("4B", major_stat_area_name)) |>
-    #filter(sampling_desc %in% "UNSORTED") |>
-    filter(gear_desc %in% c("BOTTOM TRAWL", "LONGLINE", "MIDWATER TRAWL")) %>%
-    filter(sex %in% c(1, 2)) %>%
-    ggplot(aes(length, #..ndensity..,
-               group = sex, colour = factor(sex))) +
-    facet_grid(vars(sampling_desc), vars(gear_desc), scales = "free_y") +
-    geom_freqpoly()
+  f1 <- lengths_comm %>%
+    filter(survey_abbrev == "BOTTOM TRAWL", sampling_desc == "KEEPERS") %>%
+    mutate(survey_abbrev = "Bottom Trawl Landings") %>%
+    select(-sampling_desc)
 
-  g <- dc %>%
-    filter(!grepl("4B", major_stat_area_name)) |>
-    #filter(sampling_desc %in% "UNSORTED") |>
-    filter(gear_desc %in% c("BOTTOM TRAWL", "LONGLINE", "MIDWATER TRAWL")) %>%
-    filter(sex %in% c(1, 2)) %>%
-    group_by(year, gear_desc, sampling_desc, sex) %>%
-    summarise(n = n()) %>%
-    ggplot(aes(year, n,
-               group = sex, colour = factor(sex))) +
-    facet_grid(vars(sampling_desc), vars(gear_desc), scales = "free_y") +
-    geom_line() +
-    geom_point()
+  f2 <- lengths_comm %>%
+    filter(survey_abbrev == "BOTTOM TRAWL", sampling_desc == "DISCARDS") %>%
+    mutate(survey_abbrev = "Bottom Trawl Discards") %>%
+    select(-sampling_desc)
+
+  f3 <- lengths_comm %>%
+    filter(survey_abbrev == "MIDWATER TRAWL", sampling_desc == "UNSORTED") %>%
+    mutate(survey_abbrev = "Midwater Trawl") %>%
+    select(-sampling_desc)
+
+  f4 <- lengths_comm %>%
+    filter(survey_abbrev == "LONGLINE", sampling_desc == "KEEPERS") %>%
+    mutate(survey_abbrev = "Longline Landings") %>%
+    select(-sampling_desc)
 
 
+  length_all <- rbind(lengths_survey, lengths_iphc, f1, f2, f3, f4) %>%
+    filter(!is.na(length), sex %in% 1:2, usability_code %in% c(0, 1, 2, 6)) %>%
+    mutate(length = pmax(length, min(bin_range)) %>% pmin(max(bin_range)))
 
-  lengths_all <- rbind(lengths_survey, lengths_iphc, lengths_comm) %>%
-    mutate(species_common_name = unique(dc$species_common_name)) %>%
-    gfplot::tidy_lengths_raw(sample = "survey",
-                             survey = c("SYN", "IPHC", "BOTTOM TRAWL", "LONGLINE", "MIDWATER TRAWL"),
-                             bin_size = bin_size)
+  #range(length_all$length)
+  #hist(length_all$length)
 
-  #g <- gfplot::plot_lengths(lengths_all, show_year = "all", bin_size = bin_size)
+  bin_all <- seq(min(bin_range), max(bin_range), bin_size)
 
-  bin_all <- seq(min(lengths_all$length_bin),
-                 max(lengths_all$length_bin),
-                 by = bin_size)
+  comp <- length_all %>%
+    mutate(bin = bin_all[findInterval(length, bin_all)]) %>%
+    summarise(n = n(), .by = c(year, bin, sex, survey_abbrev)) %>%
+    mutate(sex = ifelse(sex == 1, "M", "F"))
 
-  length_format <- lapply(unique(lengths_all$survey_abbrev), function(ff) {
+  length_format <- lapply(unique(comp$survey_abbrev), function(ff) {
 
-    dat <- lengths_all %>%
-      filter(survey_abbrev == ff) %>%
-      mutate(n = total * proportion)
+    dat <- comp %>%
+      filter(survey_abbrev == ff)
 
-    dat_full <- expand.grid(length_bin = bin_all,
+    dat_full <- expand.grid(bin = bin_all,
                             year = unique(dat$year),
                             sex = c("F", "M"))
 
-    left_join(dat_full, dat, by = c("year", "length_bin", "sex")) %>%
+    left_join(dat_full, dat, by = c("year", "bin", "sex")) %>%
       group_by(year) %>%
-      mutate(total = na.omit(total) %>% unique(),
-             n = ifelse(is.na(n), 0, n),
+      mutate(n = ifelse(is.na(n), 0, n),
+             N = sum(n),
              month = 1,
-             sex2 = 3, # 0 for independent sex ratio, 3 constrains sex ratio
+             sex2 = 3, # 3 constrains sex ratio
              partition = 0, # 0 = combined, 1 = discard, 2 = retain
-             fleet = fleet_index[stringr::str_to_sentence(ff) %>% grep(names(fleet_index))]) %>%
-      reshape2::dcast(year + month + fleet + sex2 + partition + total ~ sex + length_bin,
+             fleet = fleet_index[ff]) %>%
+      reshape2::dcast(year + month + fleet + sex2 + partition + N ~ sex + bin,
                       value.var = "n")
 
   }) %>%
@@ -213,7 +221,7 @@ ss3_m <- function(max_obs_age, linf = NA, k = NA) {
 }
 
 ss3_m(73, 97.4, 0.05) # Female M = 0.073
-ss3_m(70, 83.7, 0.08) # Male   M = 0.077
+ss3_m(70, 83.7, 0.08) # Male   M = 0.076
 
 #
 ss3_maturity_slope <- function(l95 = 115.1, l50 = 97.6) {
@@ -221,3 +229,16 @@ ss3_maturity_slope <- function(l95 = 115.1, l50 = 97.6) {
   log(1/0.95 - 1)/x
 }
 ss3_maturity_slope()
+
+
+# Compare fecundity
+len <- seq(40, 120, 5)
+f1 <- -9.96 + 0.176 * len # Wood 1979 - use this one
+
+f2 <- -14.7 + 0.214 * len # Taylor 2009
+f2 <- -13.24 + 0.2 * len # Taylor 2009
+f2 <- -15.5 + 0.214 * len # Taylor 2009
+
+plot(len, f1, typ = 'o', ylim = c(0, 12))
+lines(len, f2, typ = 'o', col = 2)
+
