@@ -201,6 +201,22 @@ g <- d %>%
   geom_vline(xintercept = 1996, linetype = 2)
 ggsave("figs/proportion-discards-outside.png", g, width = 4, height = 2.5)
 
+g <- d %>%
+  filter(area != "4B") %>%
+  filter(gear != "Trap") %>%
+  group_by(year, area, gear) %>%
+  summarise(p_discard = sum(discarded_kg)/sum(landed_kg + discarded_kg)) %>%
+  ggplot(aes(x = year, y = p_discard)) +
+  facet_wrap(vars(gear), scales = "fixed") +
+  geom_line() +
+  #geom_point(shape = 1) +
+  #geom_line(colour = "grey50", linewidth = 0.5) +
+  #coord_cartesian(expand = FALSE) +
+  theme_pbs() +
+  labs(x = "Year", y = "Proportion discards") +
+  geom_vline(xintercept = 1996, linetype = 2)
+ggsave("figs/proportion-discards-outside-gear.png", g, width = 6, height = 4)
+
 
 ## Inside only ----
 g <- d %>%
