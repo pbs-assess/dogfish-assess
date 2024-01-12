@@ -157,7 +157,7 @@ test <- d_website |>
   mutate(data = "website")
 both <- rbind(test2, test)
 ggplot(both, aes(year, count, group = data, colour = data)) +
-  geom_line(size = 2)
+  geom_line(size = 2) + geom_point(size = 4)
 
 
 # Add Hook Competition ----
