@@ -75,8 +75,7 @@ iphc_stations <- filter(iphc_stations,
 iphc_stations2a <- filter(iphc_stations, iphc.reg.area..group. == "2B")
 station <- iphc_stations2a$station
 iphc_coast2 <- iphc_coast |>
-  filter(station %in% station)
-iphc_coast2 <- iphc_coast2 |>
+  filter(station %in% station) |>
   inner_join(iphc_latlongs,
              by = c("station" = "station", "year" = "year"), relationship = "many-to-many")
 x <- iphc_coast2 |> select(station, year, date)
@@ -84,11 +83,24 @@ x[duplicated(x), ] #so there are a couple stations that have been fished twice i
 #these pairs pose a problem for the next step that does not have a date associated with it.
 #we can drop these points or assume that the hook values are the same
 #i dropped them
+# If you want to add them back in, you can bind_rows this to the iphc_coast2
+year2019_stations <- 
+iphc_coast |>
+  filter(station %in% station) |>
+  filter(year == 2019 & station %in% c(2107, 2099)) |>
+  mutate(lat = round(lat, digits = 4), lon = round(lon, digits = 4)) |>
+  inner_join(iphc_latlongs |>
+    mutate(lat = round(beginlat, digits = 4), lon = round(beginlon, digits = 4)),
+             by = c("station" = "station", "year" = "year", 'lat' = 'lat', 'lon' = 'lon'))
+
 iphc_coast2 <- iphc_coast2 |>  #for julian date
   filter(station !=2107 & year !=2019) |>
   filter(station != 2099 & year != 2019) |>
   inner_join(iphc_hksobs) |> #for hook information
-  distinct(.keep_all = TRUE)
+  distinct(.keep_all = TRUE) |>
+  bind_rows(year2019_stations)
+
+
 
 # check for duplicate years and stations
 iphc_coast2[duplicated(iphc_coast2), ]
@@ -157,7 +169,7 @@ test <- d_website |>
   mutate(data = "website")
 both <- rbind(test2, test)
 ggplot(both, aes(year, count, group = data, colour = data)) +
-  geom_line(size = 2)
+  geom_line(size = 2) + geom_point(size = 4)
 
 
 # Add Hook Competition ----
