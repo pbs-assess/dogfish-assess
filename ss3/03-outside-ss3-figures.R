@@ -4,10 +4,11 @@ library(tidyverse)
 source("ss3/ss3_functions.R")
 
 # Compare SS models
-ss_home <- here::here("ss3")
+#ss_home <- here::here("ss3")
+ss_home <- "C:/users/qhuynh/Desktop/dogfish"
 
-mods <- c("model4a_estH_dwLen", "model4b_estH_dwLen_lowM", "model4d_estH_dwLen_recdev", "model4e_estH_dwLen_exIPHC_recdev")
-model_name <- c("(1) M = 0.07", "(2) M = 0.06", "(3) Est rec dev", "(4) rec dev + exIPHC")
+mods <- c("m37_flatselsurv_dw", "m66_flatselsurv_dw")
+model_name <- c("(1) Catch-1937", "(2) Catch-1966")
 
 multi_rep <- lapply(mods, function(x) {
   r4ss::SS_output(file.path(ss_home, x),
@@ -15,8 +16,8 @@ multi_rep <- lapply(mods, function(x) {
                   printstats = FALSE,
                   hidewarn = TRUE)
 })
-saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_03.21.2023.rds"))
-multi_rep <- readRDS(file = file.path(ss_home, "multi_rep_03.21.2023.rds"))
+saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_01.10.2024.rds"))
+multi_rep <- readRDS(file = file.path(ss_home, "multi_rep_01.10.2024.rds"))
 
 ### Tables
 likelihoods <- lapply(1:length(mods), function(i) {
@@ -27,12 +28,12 @@ likelihoods <- lapply(1:length(mods), function(i) {
   return(x)
 }) %>%
   Reduce(dplyr::left_join, .)
-readr::write_excel_csv(likelihoods, file = "ss3/tables/likelihoods.csv")
+readr::write_excel_csv(likelihoods, file = "tables/ss3_likelihoods.csv")
 
 # Parameters R0, steepness, reference points
 pars_report <- Map(pars_fn, multi_rep, model_name) %>%
   Reduce(left_join, .)
-readr::write_excel_csv(pars_report, file = "ss3/tables/pars_report.csv")
+readr::write_excel_csv(pars_report, file = "tables/ss3_pars.csv")
 
 ### r4ss Plot comparisons
 multi_rep %>%
@@ -97,13 +98,14 @@ g1 <- multi_rep[[1]]$endgrowth %>%
   ggplot(aes(int_Age, `Len_Mat`)) +
   #geom_point() +
   geom_line() +
-  labs(x = "Age", y = "Maturity")
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Age", y = NULL)
 
 g2 <- multi_rep[[1]]$biology %>%
   ggplot(aes(Len_mean, Mat)) +
   #geom_point() +
   geom_line() +
-  labs(x = "Length", y = "Maturity")
+  labs(x = "Length", y = "Maturity (77)")
 g <- cowplot::plot_grid(g2, g1)
 ggsave("figs/ss3/maturity.png", g, height = 2, width = 6)
 
@@ -142,14 +144,24 @@ g <- cowplot::plot_grid(g2, g1)
 ggsave("figs/ss3/spawning_age.png", g, height = 2, width = 6)
 
 # Selectivity
-g <- SS3_sel(multi_rep, model_name)
+mat_age <- data.frame(
+  variable = multi_rep[[1]]$endgrowth %>% filter(Sex == 1) %>% pull(int_Age),
+  value = multi_rep[[1]]$endgrowth %>% filter(Sex == 1) %>% pull(Len_Mat)
+)
+g <- SS3_sel(multi_rep, model_name) +
+  geom_line(data = mat_age, colour = 1, linetype = 2)
 ggsave("figs/ss3/sel_age.png", g, height = 6, width = 6)
 
-g <- SS3_sel(multi_rep, model_name, type = "Lsel")
+mat_len <- data.frame(
+  variable = multi_rep[[1]]$biology %>% pull(Len_mean),
+  value = multi_rep[[1]]$biology %>% pull(Mat)
+)
+g <- SS3_sel(multi_rep, model_name, type = "Lsel") +
+  geom_line(data = mat_len, colour = 1, linetype = 2)
 ggsave("figs/ss3/sel_len.png", g, height = 6, width = 6)
 
 # Mean length
-fleet_int <- c(1:4, 6)
+fleet_int <- c(1:8)
 g <- Map(SS3_lencomp, multi_rep, model_name, MoreArgs = list(fleet = fleet_int)) %>%
   bind_rows() %>%
   mutate(FleetName = factor(FleetName, levels = multi_rep[[1]]$FleetNames[fleet_int])) %>%
@@ -165,37 +177,44 @@ g <- Map(SS3_lencomp, multi_rep, model_name, MoreArgs = list(fleet = fleet_int))
   guides(colour = "none")
 ggsave("figs/ss3/mean_length.png", g, height = 6, width = 6)
 
-
 # Length comps
-heights <- c(6, 6, 4, 5, NA, 8) + 1
-xlim <- list(c(50, 125),
-             c(25, 100),
-             c(0, 125),
-             c(40, 100),
-             NA,
-             c(30, 110))
+heights <- c(4, 5, 6, 4, NA, 6, NA, 8) + 1
+
+xlim <- c(20, 130)
+
 for(ff in fleet_int) {
   len <- Map(SS3_lencomp, multi_rep, model_name, MoreArgs = list(fleet = ff, mean_length = FALSE)) %>%
-    bind_rows() %>%
-    mutate(Obs = ifelse(Sex == "Male", -1 * Obs, Obs),
-           Exp = ifelse(Sex == "Male", -1 * Exp, Exp))
+    bind_rows()
 
-  g <- len %>%
-    filter(scen == model_name[1]) %>%
-    ggplot(aes(Bin, Obs, fill = Sex)) +
-    geom_col(colour = "grey60", width = 4, alpha = 0.75) +
-    geom_line(data = len, aes(y = Exp, linetype = Sex, colour = scen)) +
-    facet_wrap(vars(Yr), ncol = 4) +
-    scale_y_continuous(labels = abs) +
-    theme(legend.position = "bottom",
-          panel.spacing = unit(0, "in")) +
-    scale_fill_manual(values = c("grey80", "white")) +
-    xlim(xlim[[ff]]) +
-    labs(x = "Length", y = "Proportion", colour = "Model") +
-    guides(colour = guide_legend(nrow = 2)) +
-    ggtitle(unique(len$FleetName))
-  ggsave(paste0("figs/ss3/len_comp_fleet_", ff, ".png"), g, height = heights[ff], width = 6)
+  if (nrow(len)) {
+    len <- len %>%
+      mutate(Obs = ifelse(Sex == "Male", -1 * Obs, Obs),
+             Exp = ifelse(Sex == "Male", -1 * Exp, Exp),
+             Bin = Bin + 5)
+
+    g <- len %>%
+      filter(scen == model_name[1]) %>%
+      ggplot(aes(Bin, Obs, fill = Sex)) +
+      geom_col(colour = "grey60", width = 10, alpha = 0.75) +
+      geom_line(data = len, aes(y = Exp, linetype = Sex, colour = scen)) +
+      facet_wrap(vars(Yr), ncol = 4) +
+      scale_y_continuous(labels = abs) +
+      theme(legend.position = "bottom",
+            panel.spacing = unit(0, "in")) +
+      scale_fill_manual(values = c("grey80", "white")) +
+      coord_cartesian(xlim = c(20, 130)) +
+      labs(x = "Length", y = "Proportion", colour = "Model") +
+      guides(colour = guide_legend(nrow = 2)) +
+      ggtitle(unique(len$FleetName))
+    ggsave(paste0("figs/ss3/len_comp_fleet_", ff, ".png"), g, height = heights[ff], width = 6)
+  }
 }
+
+# Numbers at age
+g <- SS3_N(multi_rep, model_name)
+ggsave("figs/ss3/N_age.png", g, height = 4, width = 6)
+
+# Steepness
 
 # Exploitation and apical F
 g <- SS3_F(multi_rep, model_name)
@@ -221,6 +240,7 @@ ggsave("figs/ss3/yieldcurve_F.png", g, height = 3, width = 5)
 
 g <- SS3_yieldcurve(multi_rep, model_name, xvar = "SB0")
 ggsave("figs/ss3/yieldcurve_depletion.png", g, height = 3, width = 6)
+
 
 
 # Compare unfished vs. current length comp in a single OM

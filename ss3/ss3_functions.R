@@ -366,7 +366,7 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
 }
 
 
-.SS3_sel <- function(replist, scenario = "OM 1", fleet = c(1:4, 6),
+.SS3_sel <- function(replist, scenario = "OM 1", fleet = 1:8,
                      scale_max_1 = FALSE,
                      type = c("Asel2", "Asel", "Lsel"),
                      fleet_name = NULL) {
@@ -379,7 +379,7 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
     out <- replist$sizeselex %>%
       filter(Yr == replist$endyr, Factor == type, Fleet %in% fleet) %>%
       mutate(FleetName = fleet_name[Fleet] %>% factor(levels = fleet_name[fleet])) %>%
-      select(Factor, FleetName, Fleet, Sex, as.character(replist$lbins + 2)) %>%
+      select(Factor, FleetName, Fleet, Sex, as.character(replist$lbins + 5)) %>%
       reshape2::melt(id.var = c("Fleet", "FleetName", "Factor", "Sex")) %>%
       mutate(variable = as.character(variable) %>% as.numeric(), scen = scenario)
 
@@ -424,14 +424,12 @@ SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"),
 .SS3_F <- function(replist, scenario = "OM 1") {
 
   out <- replist$exploitation %>%
-    mutate(BottomTrawl = BottomTrawl + Trawl_3565 + Trawl_6695,
-           HookLine = HookLine + LL_3565) %>%
-    select(Yr, F_std, BottomTrawl, MidwaterTrawl, HookLine) %>%
+    select(Yr, F_std, replist$FleetNames[replist$IsFishFleet]) %>%
     mutate(F_std = ifelse(is.na(F_std), 0, F_std),
            FMSY = replist$derived_quants %>% filter(Label == "annF_MSY") %>% pull(Value),
            scen = scenario,
            F_FMSY = F_std/FMSY) %>%
-    filter(Yr <= 2022)
+    filter(Yr <= 2023)
 
   out
 }
@@ -503,7 +501,7 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
       } else {
 
         g <- out %>%
-          select(Yr, BottomTrawl, MidwaterTrawl, HookLine, scen) %>%
+          select(Yr, replist[[1]]$FleetNames[replist[[1]]$IsFishFleet], scen) %>%
           reshape::melt(id.vars = c("Yr", "scen")) %>%
           ggplot(aes(Yr, value, colour = variable, linetype = variable)) +
           geom_line() +
@@ -684,6 +682,142 @@ SS3_lencomp <- function(replist, scenario = "OM 1", fleet = 7, mean_length = TRU
     return(comp %>% mutate(scen = scenario, Sex = ifelse(Sex == 1, "Female", "Male")))
   }
 }
+
+.SS3_N <- function(replist, scenario = "OM 1", age = c(0, 15, 30, 45, 60)) {
+  dat <- replist$natage %>%
+    filter(Era == "TIME", `Beg/Mid` == "B") %>%
+    select(Yr, Sex, as.character(age)) %>%
+    reshape2::melt(id.vars = c("Yr", "Sex")) %>%
+    mutate(Sex = ifelse(Sex == 1, "Female", "Male"),
+           scen = scenario)
+  dat
+}
+
+SS3_N <- function(x, scenario, age = c(0, 15, 30, 45, 60)) {
+
+  dat <- Map(.SS3_N, replist = x, scenario = scenario, MoreArgs = list(age = age)) %>%
+    bind_rows()
+
+  g <- ggplot(dat, aes(Yr, log(value), colour = variable)) +
+    geom_line() +
+    facet_grid(vars(scen), vars(Sex)) +
+    gfplot::theme_pbs() +
+    labs(x = "Year", y = "log(Abundance)", colour = "Age")
+  g
+}
+
+
+# Steepness
+SS3_steep <- function(replist) {
+
+  B0 <- replist$derived_quants$Value[replist$derived_quants$Label == "SSB_Virgin"]
+  R0 <- replist$derived_quants$Value[replist$derived_quants$Label == "Recr_unfished"]
+
+  S0 <- R0/B0
+  #phi0 <- 1/S0
+
+  z0 <- -log(S0)
+  zfrac <- replist$parameters$Value[replist$parameters$Label == "SR_surv_zfrac"]
+  beta <- replist$parameters$Value[replist$parameters$Label == "SR_surv_Beta"]
+  h <- 0.2 * exp(z0 * zfrac * (1 - 0.2^beta))
+  hmax <- 0.2 * exp(z0)
+  return(c("h" = h, "hmax" = hmax))
+}
+
+
+SS3_prof <- function(x, val, variable) {
+  dat <- lapply(1:length(x), function(i) {
+    mutate(x[[i]]$recruit, value = val[i]) %>%
+      filter(era %in% c("Fixed", "Main"))
+  }) %>%
+    bind_rows() %>%
+    mutate(dep = SpawnBio/SpawnBio[1], .by = value)
+
+  g <- ggplot(dat, aes(Yr, {{ variable }}, colour = factor(value))) +
+    geom_line()
+  g
+}
+
+SS3_likelihoods <- function(x, scenario, by_fleet = FALSE) {
+
+  if (by_fleet) {
+    res <- lapply(1:length(x), function(i) {
+      out <- x[[i]][["likelihoods_by_fleet"]] %>%
+        filter(!is.na(ALL)) %>%
+        select(!ALL) %>%
+        reshape2::melt(id.vars = c("Label"))
+      colnames(out)[3] <- scenario[i]
+      return(out)
+    })
+
+  } else {
+    res <- lapply(1:length(x), function(i) {
+      out <- x[[i]][["likelihoods_used"]] %>%
+        mutate(Component = rownames(.)) %>%
+        select(Component, values)
+      colnames(out)[2] <- scenario[i]
+      return(out)
+    })
+  }
+
+  Reduce(dplyr::left_join, res)
+}
+
+SS3_prof_like <- function(x, par, xval = c("par", "steep", "dep"), component = c("Survey", "Length_comp"), by_fleet = TRUE) {
+  xval <- match.arg(xval)
+
+  if (by_fleet) {
+    like <- SS3_likelihoods(x, par, by_fleet = by_fleet) %>%
+      rename(Fleet = variable, Component = Label) %>%
+      reshape2::melt(id.vars = c("Fleet", "Component")) %>%
+      mutate(variable = variable %>% as.character() %>% as.numeric()) %>%
+      mutate(value = value - min(value), .by = c(Component, Fleet))
+  } else {
+    like <- SS3_likelihoods(x, par, by_fleet = by_fleet) %>%
+      reshape2::melt(id.vars = "Component") %>%
+      mutate(variable = variable %>% as.character() %>% as.numeric()) %>%
+      mutate(value = value - min(value), .by = Component)
+  }
+
+  if (xval == "steep") {
+    hdf <- lapply(x, SS3_steep) %>%
+      bind_rows() %>%
+      mutate(variable = par)
+
+    like <- left_join(like, hdf, by = "variable") %>%
+      mutate(variable = h)
+  } else if (xval == "dep") {
+
+    ddf <- SS3_B(x, par, type = "SSB0") %>%
+      getElement("data") %>%
+      filter(ddf, Yr == max(Yr)) %>%
+      select(scen, y) %>%
+      rename(variable = scen, dep = y)
+
+    like <- left_join(like, ddf, by = "variable") %>%
+      mutate(variable = dep)
+  }
+
+  if (by_fleet) {
+    g <- like %>%
+      filter(Component %in% component) %>%
+      ggplot(aes(variable, value, colour = Fleet)) +
+      geom_line() +
+      geom_point() +
+      facet_wrap(vars(Component)) + #geom_line(data = like %>% filter(Component == "TOTAL"), linewidth = 1, colour = "black") +
+      labs(y = "Change in likelihood", colour = "Fleet")
+  } else {
+    g <- like %>%
+      filter(Component %in% component) %>%
+      ggplot(aes(variable, value, colour = Component)) +
+      geom_line(linetype = 2) +
+      geom_point() +
+      geom_line(data = like %>% filter(Component == "TOTAL"), linewidth = 1, colour = "black") +
+      labs(y = "Change in likelihood", colour = "Component")
+  }
+  g
+}
+
 
 
 
