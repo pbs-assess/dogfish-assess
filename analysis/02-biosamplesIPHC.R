@@ -52,6 +52,17 @@ d %>%
   facet_wrap(vars(year))
 ggsave("figs/biosample-iphc.png", width = 6, height = 4, dpi = 150)
 
+# Annual length comp using gfplot function
+lengths_iphc <- d %>%
+  drop_na(length) %>%
+  mutate(survey_abbrev = "IPHC FISS", usability_code = 0,
+         specimen_id = 1:n(),
+         species_common_name = "dogfish", age = NA,
+         sex = ifelse(sex == "F", 2, 1)) %>%
+  gfplot::tidy_lengths_raw(survey = "IPHC FISS")
+g <- gfplot::plot_lengths(lengths_iphc, show_year = "all")
+ggsave("figs/lengths-iphc.png", g, width = 4, height = 6)
+
 ## Get coordinates of each IPHC station to coordinates,
 ## Plot length comp by latitude band (48-50 = WCVI, 50-52 = Central Coast, 52-56 = North Coast)
 ## To do: match coordinates to area (3CD, etc.)
