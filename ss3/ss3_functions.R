@@ -367,6 +367,7 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
 
 
 .SS3_sel <- function(replist, scenario = "OM 1", fleet = 1:8,
+                     bin_width = 5,
                      scale_max_1 = FALSE,
                      type = c("Asel2", "Asel", "Lsel"),
                      fleet_name = NULL) {
@@ -379,7 +380,7 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
     out <- replist$sizeselex %>%
       filter(Yr == replist$endyr, Factor == type, Fleet %in% fleet) %>%
       mutate(FleetName = fleet_name[Fleet] %>% factor(levels = fleet_name[fleet])) %>%
-      select(Factor, FleetName, Fleet, Sex, as.character(replist$lbins + 5)) %>%
+      select(Factor, FleetName, Fleet, Sex, as.character(replist$lbins + 0.5 * bin_width)) %>%
       reshape2::melt(id.var = c("Fleet", "FleetName", "Factor", "Sex")) %>%
       mutate(variable = as.character(variable) %>% as.numeric(), scen = scenario)
 
@@ -404,9 +405,9 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
   return(out)
 }
 
-SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"), scale_max_1 = FALSE) {
+SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"), bin_width, scale_max_1 = FALSE) {
   type <- match.arg(type)
-  out <- Map(.SS3_sel, replist = x, scenario = sc, MoreArgs = list(type = type, fleet_name = fleet_name, scale_max_1 = scale_max_1)) %>%
+  out <- Map(.SS3_sel, replist = x, scenario = sc, MoreArgs = list(type = type, fleet_name = fleet_name, bin_width = bin_width, scale_max_1 = scale_max_1)) %>%
     bind_rows() %>%
     mutate(Sex = ifelse(Sex == 1, "Female", "Male"))
 

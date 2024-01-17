@@ -16,8 +16,8 @@ multi_rep <- lapply(mods, function(x) {
                   printstats = FALSE,
                   hidewarn = TRUE)
 })
-saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_01.10.2024.rds"))
-multi_rep <- readRDS(file = file.path(ss_home, "multi_rep_01.10.2024.rds"))
+saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_01.17.2024.rds"))
+multi_rep <- readRDS(file = file.path(ss_home, "multi_rep_01.17.2024.rds"))
 
 ### Tables
 likelihoods <- lapply(1:length(mods), function(i) {
@@ -59,20 +59,21 @@ ggsave("figs/ss3/index_fit.png", g, height = 4, width = 6)
 
 # Plot SR
 g <- SS3_SR(multi_rep, model_name) +
-  labs(x = "Spawning output")
+  labs(x = "Spawning output (pup production)")
 ggsave("figs/ss3/srr.png", g, height = 4, width = 6)
 
 # Plot recruitment
-g <- SS3_recruitment(multi_rep, model_name)
+g <- SS3_recruitment(multi_rep, model_name) +
+  labs(y = "Recruitment (age 0)")
 ggsave("figs/ss3/recruitment.png", g, height = 4, width = 6)
 
-g <- SS3_recruitment(multi_rep, model_name, dev = TRUE)
-ggsave("figs/ss3/recruit_dev.png", g, height = 4, width = 6)
+#g <- SS3_recruitment(multi_rep, model_name, dev = TRUE)
+#ggsave("figs/ss3/recruit_dev.png", g, height = 4, width = 6)
 
 # Plot SSB
 g <- SS3_B(multi_rep, model_name) +
   guides(linetype = 'none') +
-  labs(y = "Spawning output")
+  labs(y = "Female spawning output")
 ggsave("figs/ss3/spawning_est.png", g, height = 4, width = 6)
 
 g <- SS3_B(multi_rep, model_name, type = "SSB0") +
@@ -148,7 +149,7 @@ mat_age <- data.frame(
   variable = multi_rep[[1]]$endgrowth %>% filter(Sex == 1) %>% pull(int_Age),
   value = multi_rep[[1]]$endgrowth %>% filter(Sex == 1) %>% pull(Len_Mat)
 )
-g <- SS3_sel(multi_rep, model_name) +
+g <- SS3_sel(multi_rep, model_name, bin_width = 5) +
   geom_line(data = mat_age, colour = 1, linetype = 2)
 ggsave("figs/ss3/sel_age.png", g, height = 6, width = 6)
 
@@ -195,14 +196,14 @@ for(ff in fleet_int) {
     g <- len %>%
       filter(scen == model_name[1]) %>%
       ggplot(aes(Bin, Obs, fill = Sex)) +
-      geom_col(colour = "grey60", width = 10, alpha = 0.75) +
+      geom_col(colour = "grey60", width = 5, alpha = 0.75) +
       geom_line(data = len, aes(y = Exp, linetype = Sex, colour = scen)) +
       facet_wrap(vars(Yr), ncol = 4) +
       scale_y_continuous(labels = abs) +
       theme(legend.position = "bottom",
             panel.spacing = unit(0, "in")) +
       scale_fill_manual(values = c("grey80", "white")) +
-      coord_cartesian(xlim = c(20, 130)) +
+      coord_cartesian(xlim = c(30, 120)) +
       labs(x = "Length", y = "Proportion", colour = "Model") +
       guides(colour = guide_legend(nrow = 2)) +
       ggtitle(unique(len$FleetName))
@@ -244,13 +245,13 @@ ggsave("figs/ss3/yieldcurve_depletion.png", g, height = 3, width = 6)
 
 
 # Compare unfished vs. current length comp in a single OM
-g <- lapply(c(1:4, 6), function(ff) {
+g <- lapply(c(1:4, 6, 8), function(ff) {
   SS3_lencomp(multi_rep[[1]], fleet = ff, mean_length = FALSE, ghost = TRUE) %>%
     group_by(FleetName) %>%
     filter(Yr %in% range(Yr)) %>%
     mutate(Exp = ifelse(Sex == "Male", -1 * Exp, Exp)) %>%
     ggplot(aes(Bin, Exp, fill = Sex)) +
-    geom_col(colour = "grey60", width = 4, alpha = 0.75) +
+    geom_col(colour = "grey60", width = 10, alpha = 0.75) +
     #geom_line(data = len, aes(y = Exp, linetype = Sex, colour = scen)) +
     facet_grid(vars(FleetName), vars(Yr)) +
     scale_y_continuous(labels = abs) +
@@ -263,5 +264,5 @@ g <- lapply(c(1:4, 6), function(ff) {
 })
 
 g2 <- ggpubr::ggarrange(plotlist = g, ncol = 1, common.legend = TRUE)
-ggsave("figs/ss3/len_comp_1937.png", g2, height = 8, width = 4)
+ggsave("figs/ss3/len_comp_1937.png", g2, height = 10, width = 6)
 

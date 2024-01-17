@@ -9,7 +9,7 @@ source("analysis/utils-VAST.R")
 ## Biological samples ----
 d <- readRDS("data/raw/survey-samples.rds") %>%
   filter(grepl("SYN", survey_abbrev)) %>%
-  filter(sex != 0, !is.na(length)) %>%
+  filter(sex %in% c(1, 2), !is.na(length)) %>%
   mutate(sex = ifelse(sex == 1, "M", "F"))
 
 ## Set data ----
@@ -526,26 +526,28 @@ plot_PCA(fit, L = c("L_epsilon1_cf", "L_epsilon2_cf"))
 plot_PCA(fit, L = c("L_omega1_cf", "L_omega2_cf"))
 
 
-# Variance calculations for proportions
-comp_SE <- calculate_SE(fit)
-
-# Effective sample size
-tau <- comp_SE %>%
-  summarize(Nmed = calculate_Neff(p, SE_p, median),
-            Nmean = calculate_Neff(p, SE_p, mean),
-            .by = Time)
+# Variance calculations for proportions for effective SE
+#comp_SE <- calculate_SE(fit)
+#tau <- comp_SE %>%
+#  summarize(Nmed = calculate_Neff(p, SE_p, median),
+#            Nmean = calculate_Neff(p, SE_p, mean),
+#            .by = Time)
 
 # Make SS3 data frame
-ss_comp <- left_join(len_std, tau, by = c("year" = "Time")) %>%
-  mutate(value = round(Nmed * p, 2)) %>%
-  mutate(month = 1, fleet = 6, partition = 0, total = round(Nmed, 1)) %>%
-  reshape2::dcast(year + month + fleet + partition + total ~ Category, value.var = "value", fill = 0)
+N_nom <- len_nom %>%
+  filter(usability_code %in% c(0, 1, 2, 6)) %>%
+  summarise(total = sum(n), .by = year)
+
+dat_full <- expand.grid(year = unique(len_std$year),
+                        sex = c("F", "M"),
+                        bin = len_bin) %>%
+  mutate(Category = paste0(sex, "_", bin))
+
+ss_comp <- left_join(dat_full, len_std, by = c("year", "Category", "sex")) %>%
+  left_join(N_nom, by = "year") %>%
+  mutate(Category = factor(Category, levels = c(paste0("F_", len_bin), paste0("M_", len_bin)))) %>%
+  mutate(value = round(total * p, 2)) %>%
+  mutate(month = 1, fleet = 8, partition = 0) %>%
+  reshape2::dcast(year + month + fleet + partition + total ~ Category, value.var = "value", fill = 0) %>%
+  filter(!is.na(total))
 readr::write_csv(ss_comp, file = "data/ss3/ss3-length-synoptic-std.csv")
-
-ss_comp_nom <- len_nom %>%
-  mutate(total = sum(n), .by = year) %>%
-  mutate(category = paste0(sex, "_", bin) %>% factor(levels = DF_categories),
-         month = 1, fleet = 6, partition = 0) %>%
-  reshape2::dcast(year + month + fleet + partition + total ~ category, value.var = "n", fill = 0)
-readr::write_csv(ss_comp_nom, file = "data/ss3/ss3-length-synoptic-nom.csv")
-

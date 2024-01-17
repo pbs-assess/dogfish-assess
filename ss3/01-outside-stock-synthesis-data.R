@@ -105,7 +105,7 @@ ss3_index <- function(csv = TRUE) {
 }
 ss3_index()
 
-ss3_length <- function(csv = TRUE, bin_size = 10, bin_range = c(20, 120)) {
+ss3_length <- function(csv = TRUE, bin_size = 5, bin_range = c(35, 115)) {
 
   dtrawl <- readRDS("data/raw/survey-samples.rds")
   diphc <- read.csv("data/raw/IPHC_dogfish_lengths2021.csv") %>%
