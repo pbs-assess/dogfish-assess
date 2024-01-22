@@ -6,11 +6,17 @@ theme_set(gfplot::theme_pbs())
 
 # setwd("C:/Users/tcarruth/Documents/GitHub/dogfish-assess")
 
-s <- readRDS("data/raw/survey-sets_2023.rds")
 # built in data/raw/pull-raw-data.R
-#s <- readRDS("data/raw/survey-sets.rds")
+s <- readRDS("data/raw/survey-sets.rds")
 d <- dplyr::filter(s, grepl("HBLL OUT", survey_abbrev))
 d <- sdmTMB::add_utm_columns(d, utm_crs = 32609)
+d <- d |>
+  mutate(date2 = as.Date(time_deployed, format = "%Y-%m-%d H:M:S")) |>
+  mutate(dmy = lubridate::ymd(date2)) |>
+  mutate(julian = lubridate::yday(dmy))
+
+ggplot(d, aes(year, julian, colour = survey_abbrev)) +
+  geom_jitter(pch = 21, alpha = 0.3)
 
 ggplot(d, aes(X, Y, size = density_ppkm2)) +
   geom_point(pch = 21, alpha = 0.3) +
@@ -69,7 +75,8 @@ d <- left_join(d, select(hll, c(Pit, Ait, fishing_event_id, year)),
   by = c("year" = "year", "fishing_event_id" = "fishing_event_id")
 )
 
-d$offset <- log(d$hook_count / d$Ait)
+d$offset_hk <- log(d$hook_count / d$Ait)
+d$offset <- log(d$hook_count)
 stopifnot(sum(is.na(d$offset)) == 0L)
 
 
@@ -133,7 +140,7 @@ strata <- d %>%
 index_design <- d %>%
   select(-area_km2) %>%
   left_join(strata, by = "grouping_code") %>%
-  select(catch_count, offset, hook_count, Ait, year, survey_abbrev, grouping_code, area_km2) %>%
+  select(catch_count, offset, offset_hk, hook_count, Ait, year, survey_abbrev, grouping_code, area_km2) %>%
   mutate(cpue = catch_count/exp(offset)) %>%
   summarize(n = n(),
             nsamp = unique(area_km2)/sum(exp(offset)) * n,
@@ -166,8 +173,8 @@ ggsave("figs/hbll_out/hbll_index_design.png", g, height = 4, width = 6)
 mesh <- make_mesh(d, c("X", "Y"), cutoff = 12)
 plot(mesh)
 mesh$mesh$n
-# Plot mesh ----
 
+# Plot mesh ----
 g <- local({
   mesh_m <- mesh$mesh
   mesh_m$loc <- 1e3 * mesh_m$loc
@@ -182,11 +189,13 @@ ggsave("figs/hbll_out/hbll_out_mesh.png", g, width = 5, height = 6)
 
 # Call sdm
 fit_nb2 <- sdmTMB(
+  #catch_count ~ 1 + poly(log(depth_m), 2L) + julian,
   catch_count ~ 1 + poly(log(depth_m), 2L),
   family = nbinom2(link = "log"),
   data = d,
   mesh = mesh,
-  offset = "offset", # hook competition offset
+  offset = "offset_hk", # hook competition offset
+  #offset = "offset", # NO hook competition offset
   time = "year",
   spatiotemporal = "rw",
   spatial = "on",
@@ -195,10 +204,20 @@ fit_nb2 <- sdmTMB(
   extra_time = 2013L,
   control = sdmTMBcontrol(newton_loops = 1L)
 )
+#with offset_hk
 saveRDS(fit_nb2, file = "data/generated/hbll-out-sdmTMB.rds")
 fit_nb2 <- readRDS("data/generated/hbll-out-sdmTMB.rds")
+#without hk
+saveRDS(fit_nb2, file = "data/generated/hbll-out-sdmTMB_nohk.rds")
+fit_nb2_nohk <- readRDS("data/generated/hbll-out-sdmTMB_nohk.rds")
+
+#with julian and no hk
+saveRDS(fit_nb2, file = "data/generated/hbll-out-sdmTMB-julian.rds")
+fit_nb2_julian <- readRDS("data/generated/hbll-out-sdmTMB-julian.rds")
+
 
 sanity(fit_nb2)
+sanity(fit_nb2_nohk)
 plot_anisotropy(fit_nb2)
 fit_nb2
 fit_nb2$sd_report
@@ -216,7 +235,8 @@ fit_nb2$sd_report
 g <- gfplot::hbll_grid$grid
 g <- rename(g, latitude = Y, longitude = X, depth_m = depth)
 g <- add_utm_columns(g, utm_crs = 32609)
-
+meanjulian <- mean(d$julian)
+g <- g |> mutate(julian = round(meanjulian, 0))
 ggplot(g, aes(X, Y, fill = depth_m, colour = depth_m)) +
   geom_tile(width = 2, height = 2) +
   coord_fixed() +
@@ -234,8 +254,25 @@ survs <- select(d, year, survey_abbrev) |> distinct()
 ind <- left_join(ind, survs, by = join_by(year))
 # ind <- left_join(ind, survs, by = "year")
 
+p_nb2_nohk <- predict(fit_nb2_nohk, newdata = grid, return_tmb_object = TRUE)
+ind_nohk <- get_index(p_nb2_nohk, bias_correct = TRUE)
+survs <- select(d, year, survey_abbrev) |> distinct()
+ind_nohk <- left_join(ind_nohk, survs, by = join_by(year))
+
+p_nb2_julian <- predict(fit_nb2_julian, newdata = grid, return_tmb_object = TRUE)
+ind_julian <- get_index(p_nb2_julian, bias_correct = TRUE)
+survs <- select(d, year, survey_abbrev) |> distinct()
+ind_julian <- left_join(ind_julian, survs, by = join_by(year))
+
 ggplot() +
-  geom_pointrange(data = ind_save, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
+  #geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
+  geom_pointrange(data = ind_julian, aes(year, est, ymin = lwr, ymax = upr), colour = "black") +
+  geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "red") +
+  coord_cartesian(ylim = c(0, NA))
+
+ggplot() +
+  geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
+  geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "red") +
   coord_cartesian(ylim = c(0, NA))
 
 ind_save <- dplyr::filter(ind, !is.na(survey_abbrev))
