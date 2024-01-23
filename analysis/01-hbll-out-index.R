@@ -187,15 +187,19 @@ g <- local({
 })
 ggsave("figs/hbll_out/hbll_out_mesh.png", g, width = 5, height = 6)
 
+range(d$julian)
+d |> filter(year == 2006) |> summarize(mean = mean(julian))
+d$julian_centre <- d$julian - 236
+
 # Call sdm
 fit_nb2 <- sdmTMB(
-  #catch_count ~ 1 + poly(log(depth_m), 2L) + julian,
-  catch_count ~ 1 + poly(log(depth_m), 2L),
+  catch_count ~ 1 + poly(log(depth_m), 2L) + poly(julian_centre,2L),
+  #catch_count ~ 1 + poly(log(depth_m), 2L),
   family = nbinom2(link = "log"),
   data = d,
   mesh = mesh,
-  offset = "offset_hk", # hook competition offset
-  #offset = "offset", # NO hook competition offset
+  #offset = "offset_hk", # hook competition offset
+  offset = "offset", # NO hook competition offset
   time = "year",
   spatiotemporal = "rw",
   spatial = "on",
@@ -207,6 +211,7 @@ fit_nb2 <- sdmTMB(
 #with offset_hk
 saveRDS(fit_nb2, file = "data/generated/hbll-out-sdmTMB.rds")
 fit_nb2 <- readRDS("data/generated/hbll-out-sdmTMB.rds")
+
 #without hk
 saveRDS(fit_nb2, file = "data/generated/hbll-out-sdmTMB_nohk.rds")
 fit_nb2_nohk <- readRDS("data/generated/hbll-out-sdmTMB_nohk.rds")
@@ -215,9 +220,13 @@ fit_nb2_nohk <- readRDS("data/generated/hbll-out-sdmTMB_nohk.rds")
 saveRDS(fit_nb2, file = "data/generated/hbll-out-sdmTMB-julian.rds")
 fit_nb2_julian <- readRDS("data/generated/hbll-out-sdmTMB-julian.rds")
 
-
 sanity(fit_nb2)
 sanity(fit_nb2_nohk)
+sanity(fit_nb2_julian)
+AIC(fit_nb2_julian)
+AIC(fit_nb2_nohk)
+AIC(fit_nb2)
+
 plot_anisotropy(fit_nb2)
 fit_nb2
 fit_nb2$sd_report
@@ -235,8 +244,7 @@ fit_nb2$sd_report
 g <- gfplot::hbll_grid$grid
 g <- rename(g, latitude = Y, longitude = X, depth_m = depth)
 g <- add_utm_columns(g, utm_crs = 32609)
-meanjulian <- mean(d$julian)
-g <- g |> mutate(julian = round(meanjulian, 0))
+g <- g |> mutate(julian_centre = 0)
 ggplot(g, aes(X, Y, fill = depth_m, colour = depth_m)) +
   geom_tile(width = 2, height = 2) +
   coord_fixed() +
@@ -275,17 +283,21 @@ ggplot() +
   geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "red") +
   coord_cartesian(ylim = c(0, NA))
 
-ind_save <- dplyr::filter(ind, !is.na(survey_abbrev))
+ind_hk <- dplyr::filter(ind, !is.na(survey_abbrev))
+ind_nohk <- dplyr::filter(ind_nohk, !is.na(survey_abbrev))
+ind_julian <- dplyr::filter(ind_julian, !is.na(survey_abbrev))
 
-saveRDS(ind_save, file = "data/generated/geostat-ind-hbll-out.rds")
-ind_save <- readRDS("data/generated/geostat-ind-hbll-out.rds")
-#saveRDS(ind_save, file = "data/generated/geostat-ind-hbll-out-hook-compet.rds")
-#ind_save_hk <- readRDS("data/generated/geostat-ind-hbll-out-hook-compet.rds")
+saveRDS(ind_nohk, file = "data/generated/geostat-ind-hbll-out.rds")
+ind_nohk <- readRDS("data/generated/geostat-ind-hbll-out.rds")
+saveRDS(ind_hk, file = "data/generated/geostat-ind-hbll-out-hook-compet.rds")
+ind_hk <- readRDS("data/generated/geostat-ind-hbll-out-hook-compet.rds")
+#saveRDS(ind_julian, file = "data/generated/geostat-ind-hbll-out-hook-compet-julian.rds")
+#ind_julian <- readRDS("data/generated/geostat-ind-hbll-out-hook-compet-julian.rds")
 
-# x <- ggplot(ind_save_hk, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
+# x <- ggplot(ind_hk, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
 #   geom_pointrange() +
 #   coord_cartesian(ylim = c(0, NA))
-# x + geom_pointrange(data = ind_save_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "black")
+# x + geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "black")
 
 
 
@@ -304,7 +316,7 @@ ggsave("figs/hbll_out/prediction_grid_depth.png", gg, height = 4, width = 4, dpi
 rb_fill <- scale_fill_gradient2(high = "red", low = "blue", mid = "grey90")
 rb_col <- scale_colour_gradient2(high = "red", low = "blue", mid = "grey90")
 
-gg <- ggplot(p_nb2$data, aes(longitude, latitude, fill = omega_s, colour = omega_s)) +
+gg <- ggplot(p_nb2_julian$data, aes(longitude, latitude, fill = omega_s, colour = omega_s)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   geom_tile(width = 0.025, height = 0.025) +
@@ -313,7 +325,7 @@ gg <- ggplot(p_nb2$data, aes(longitude, latitude, fill = omega_s, colour = omega
 ggsave("figs/hbll_out/prediction_grid_omega.png", gg, height = 4, width = 4, dpi = 600)
 
 # Epsilon ----
-gg <- ggplot(p_nb2$data, aes(longitude, latitude, fill = epsilon_st, colour = epsilon_st)) +
+gg <- ggplot(p_nb2_julian$data, aes(longitude, latitude, fill = epsilon_st, colour = epsilon_st)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   facet_wrap(vars(year)) +
