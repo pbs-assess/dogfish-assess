@@ -294,10 +294,10 @@ ind_hk <- readRDS("data/generated/geostat-ind-hbll-out-hook-compet.rds")
 #saveRDS(ind_julian, file = "data/generated/geostat-ind-hbll-out-hook-compet-julian.rds")
 #ind_julian <- readRDS("data/generated/geostat-ind-hbll-out-hook-compet-julian.rds")
 
-# x <- ggplot(ind_hk, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
-#   geom_pointrange() +
-#   coord_cartesian(ylim = c(0, NA))
-# x + geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "black")
+x <- ggplot(ind_hk, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
+  geom_pointrange() +
+  coord_cartesian(ylim = c(0, NA))
+x + geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "black")
 
 
 
@@ -338,7 +338,7 @@ gg <- ggplot(p_nb2_julian$data, aes(longitude, latitude, fill = epsilon_st, colo
 ggsave("figs/hbll_out/prediction_grid_eps.png", gg, height = 6, width = 5, dpi = 600)
 
 # log-density ----
-gg <- ggplot(p_nb2$data, aes(longitude, latitude, fill = est, colour = est)) +
+gg <- ggplot(p_nb2_julian$data, aes(longitude, latitude, fill = est, colour = est)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   facet_wrap(vars(year)) +
@@ -352,15 +352,15 @@ gg <- ggplot(p_nb2$data, aes(longitude, latitude, fill = est, colour = est)) +
 ggsave("figs/hbll_out/prediction_grid_density.png", gg, height = 6, width = 5, dpi = 600)
 
 # Index ----
-gg <- ggplot(ind_save, aes(year, est)) +
+gg <- ggplot(ind_julian, aes(year, est)) +
   geom_point() +
   geom_linerange(aes(ymin = lwr, ymax = upr)) +
   labs(x = "Year", y = "HBLL Index")
 ggsave("figs/hbll_out/hbll_index.png", gg, height = 3, width = 4)
 
 # Marginal effect of depth ----
-marginal_depth <- visreg::visreg(fit_nb2, xvar = "depth_m", breaks = seq(0, 270, 10),
-                                 data = fit_nb2$data,
+marginal_depth <- visreg::visreg(fit_nb2_julian, xvar = "depth_m", breaks = seq(0, 270, 10),
+                                 data = fit_nb2_julian$data,
                                  plot = FALSE)
 
 gg <- plot(marginal_depth, gg = TRUE,
