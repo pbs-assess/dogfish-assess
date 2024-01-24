@@ -243,6 +243,60 @@ plot_anisotropy(fit_nb2)
 fit_nb2
 fit_nb2$sd_report
 
+# Censored Poisson -----
+# Note on where pstar comes from:
+# Needs gfsynopsis to run this, but pstar for dogfish = 1 
+# See Watson et al. 2023 Figure 6:
+# pstar_list <- gfsynopsis::get_pstar(
+#   survey_dat = d, 
+#   gam_formula = formula(catch ~ -1 + s(prop_removed) + fyear + offset(log(hook_count))), 
+#   survey_type = "hbll_outside", 
+#   prop_removed_min = NULL, h = 0.005, 
+#   pstar_cache = NULL, save_out = FALSE)
+# if (nrow(pstar_list$pstar_df) == 0) {
+#   pstar <- 1
+# } else {
+#   pstar <- pluck(pstar_list, 'pstar_df', 'pstar')
+# }
+
+pstar <- 1
+d <- d |> 
+  mutate(obs_id = as.factor(seq(1, n()))) |> # Account for variance constraint when using Poisson
+  mutate(prop_removed = (1 - count_bait_only / hook_count))
+  # Provide upper bound on censored distribution
+upr <- sdmTMB:::get_censored_upper(
+  prop_removed = d$prop_removed, 
+  n_catch = d$catch_count, 
+  n_hooks = d$hook_count, 
+  pstar = pstar)
+
+fit_cpois <- sdmTMB(
+  formula = catch_count ~ 1 + poly(log(depth_m), 2L),
+  family = sdmTMB::censored_poisson(link = "log"),
+  data = d,
+  mesh = mesh,
+  offset = "offset", # log(hook_count)
+  time = "year",
+  spatiotemporal = "rw",
+  spatial = "on",
+  silent = FALSE,
+  anisotropy = TRUE,
+  extra_time = 2013L, 
+  control = sdmTMB::sdmTMBcontrol(censored_upper = d$upr)
+)
+
+saveRDS(fit_cpois, file = "data/generated/hbll-out-sdmTMB_cpois.rds")
+fit_cpois <- readRDS("data/generated/hbll-out-sdmTMB_cpois.rds")
+
+sanity(fit_cpois)
+AIC(fit_nb2)
+AIC(fit_cpois)
+
+plot_anisotropy(cpois)
+fit_cpois$sd_report
+
+# ----
+
 # fit_dg <- update(fit_nb2, family = delta_gamma())
 # sanity(fit_dg)
 # plot_anisotropy(fit_dg)
