@@ -38,6 +38,7 @@ hll <- hookll %>%
   mutate(hooksfishing = sum(count_target_species + count_non_target_species +
     count_empty_hooks + count_bait_only -
     count_bent_broken))
+range(hll$hooksfishing)
 
 ggplot(hll, aes(count_bait_only)) +
   geom_histogram() +
@@ -71,9 +72,19 @@ range(hll$Ait)
 ggplot(hll, aes(Pit, Ait, group = year, col = year)) +
   geom_point()
 
-d <- left_join(d, select(hll, c(Pit, Ait, fishing_event_id, year)),
-  by = c("year" = "year", "fishing_event_id" = "fishing_event_id")
+#d <- left_join(d, select(hll, c(Pit, Ait, fishing_event_id, year)),
+#  by = c("year" = "year", "fishing_event_id" = "fishing_event_id")
+#)
+
+d <- left_join(d, hll,
+               by = c("year" = "year", "fishing_event_id" = "fishing_event_id")
 )
+
+ggplot(d, aes(count_target_species, catch_count)) + geom_point()
+ggplot(d, aes(hook_count, hooksfishing )) + geom_point() + facet_wrap(~year)
+ggplot(d, aes(catch_count, count_target_species )) + geom_point() + facet_wrap(~year)
+ggplot(d, aes(hook_count, count_bait_only  )) + geom_point() + facet_wrap(~year)
+d |> filter(count_bait_only > hook_count)
 
 d$offset_hk <- log(d$hook_count / d$Ait)
 d$offset <- log(d$hook_count)
@@ -273,9 +284,9 @@ survs <- select(d, year, survey_abbrev) |> distinct()
 ind_julian <- left_join(ind_julian, survs, by = join_by(year))
 
 ggplot() +
-  #geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
+  geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
   geom_pointrange(data = ind_julian, aes(year, est, ymin = lwr, ymax = upr), colour = "black") +
-  geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "red") +
+  geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "grey80", alpha = 0.8) +
   coord_cartesian(ylim = c(0, NA))
 
 ggplot() +
