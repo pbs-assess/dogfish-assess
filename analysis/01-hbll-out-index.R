@@ -297,6 +297,9 @@ AIC(fit_cpois)
 plot_anisotropy(fit_cpois)
 fit_cpois$sd_report
 
+AIC(fit_nb2, fit_nb2_julian, fit_nb2_nohk, fit_cpois) |>
+  arrange(AIC)
+
 # ----
 
 # fit_dg <- update(fit_nb2, family = delta_gamma())
@@ -345,6 +348,25 @@ p_cpois <- predict(fit_cpois, newdata = grid, return_tmb_object = TRUE, re_form_
 ind_cpois <- get_index(p_cpois, bias_correct = TRUE)
 survs <- select(d, year, survey_abbrev) |> distinct()
 ind_cpois <- left_join(ind_cpois, survs, by = join_by(year))
+
+indexes <- bind_rows(list(
+  mutate(ind, type = "NB2 ICR hook competition"),
+  mutate(ind_nohk, type = "NB2 no hook competition"),
+  mutate(ind_julian, type = "NB2 hook competition + day of year"),
+  mutate(ind_cpois, type = "Censored Poisson hook competition"))
+)
+gg <- group_by(indexes, type) |>
+  mutate(lwr = lwr/est[1], upr = upr/est[1], est = est / est[1]) |>
+  ggplot(aes(year, est, colour = type, fill = type)) +
+  # geom_line() +
+  # geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, colour = NA) + ylim(0, NA) +
+  geom_pointrange(aes(ymin = lwr, ymax = upr), alpha = 1, position = position_dodge(width = 0.7), pch = 21, fill = NA) +
+  ylim(0, NA) +
+  coord_cartesian(expand = F) +
+  labs(colour = "Model", fill = "Model", y = "Scaled index", x = "Year") +
+  scale_colour_brewer(palette = "Dark2") +
+  theme(legend.position = c(0.7, 0.8))
+ggsave("figs/hbll_out/index_model_comparison.png", width = 7, height = 4)
 
 ggplot() +
   geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
