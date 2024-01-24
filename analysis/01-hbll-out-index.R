@@ -294,7 +294,7 @@ sanity(fit_cpois)
 AIC(fit_nb2)
 AIC(fit_cpois)
 
-plot_anisotropy(cpois)
+plot_anisotropy(fit_cpois)
 fit_cpois$sd_report
 
 # ----
