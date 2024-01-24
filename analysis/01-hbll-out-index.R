@@ -240,6 +240,8 @@ AIC(fit_nb2_nohk)
 AIC(fit_nb2)
 
 plot_anisotropy(fit_nb2)
+plot_anisotropy(fit_nb2_julian)
+plot_anisotropy(fit_nb2_nohk)
 fit_nb2
 fit_nb2$sd_report
 
