@@ -204,8 +204,8 @@ d$julian_centre <- d$julian - 236
 
 # Call sdm
 fit_nb2 <- sdmTMB(
-  catch_count ~ 1 + poly(log(depth_m), 2L) + poly(julian_centre,2L),
-  #catch_count ~ 1 + poly(log(depth_m), 2L),
+  #catch_count ~ 1 + poly(log(depth_m), 2L) + poly(julian_centre,2L),
+  catch_count ~ 1 + poly(log(depth_m), 2L),
   family = nbinom2(link = "log"),
   data = d,
   mesh = mesh,
@@ -264,6 +264,8 @@ ggplot(g, aes(X, Y, fill = depth_m, colour = depth_m)) +
 
 yrs <- sort(union(unique(d$year), fit_nb2$extra_time))
 grid <- sdmTMB::replicate_df(g, time_name = "year", time_values = yrs)
+grid$offset <- 0
+grid$offset_hk <- 0
 # grid <- purrr::map_dfr(yrs, ~ tibble(g, year = .x))
 
 ## Make index ----
@@ -278,14 +280,14 @@ ind_nohk <- get_index(p_nb2_nohk, bias_correct = TRUE)
 survs <- select(d, year, survey_abbrev) |> distinct()
 ind_nohk <- left_join(ind_nohk, survs, by = join_by(year))
 
-p_nb2_julian <- predict(fit_nb2_julian, newdata = grid, return_tmb_object = TRUE)
-ind_julian <- get_index(p_nb2_julian, bias_correct = TRUE)
-survs <- select(d, year, survey_abbrev) |> distinct()
-ind_julian <- left_join(ind_julian, survs, by = join_by(year))
+# p_nb2_julian <- predict(fit_nb2_julian, newdata = grid, return_tmb_object = TRUE)
+# ind_julian <- get_index(p_nb2_julian, bias_correct = TRUE)
+# survs <- select(d, year, survey_abbrev) |> distinct()
+# ind_julian <- left_join(ind_julian, survs, by = join_by(year))
 
 ggplot() +
   geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
-  geom_pointrange(data = ind_julian, aes(year, est, ymin = lwr, ymax = upr), colour = "black") +
+  #geom_pointrange(data = ind_julian, aes(year, est, ymin = lwr, ymax = upr), colour = "black") +
   geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "grey80", alpha = 0.8) +
   coord_cartesian(ylim = c(0, NA))
 
