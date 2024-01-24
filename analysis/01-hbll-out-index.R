@@ -271,7 +271,7 @@ upr <- sdmTMB:::get_censored_upper(
   pstar = pstar)
 
 fit_cpois <- sdmTMB(
-  formula = catch_count ~ 1 + poly(log(depth_m), 2L),
+  formula = catch_count ~ 1 + poly(log(depth_m), 2L) + (1 | obs_id),
   family = sdmTMB::censored_poisson(link = "log"),
   data = d,
   mesh = mesh,
