@@ -10,6 +10,10 @@ library(gfdata)
 # note 2020 fishing was completed in July and August, whereas it is usually May to August.
 # also 2021 and 2022 have reduced WCVI sampling.
 
+#this is downloaded from the IPHC FISS website
+#https://www.iphc.int/data/fiss-survey-raw-survey-data/
+#the search parameters included 1. all years, 2, 2B, 3. purpose code = "Standard Grid",
+#6. Spiny Dogfish,
 # catch <- read.csv("~/Downloads/Non-Pacific halibut data_raw.csv")
 # stations <- read.csv("~/Downloads/Map select_standardgrid.csv")
 # latlongs <- read.csv("~/Downloads/Set and Pacific halibut data_raw.csv") |>
@@ -72,19 +76,20 @@ iphc_stations <- filter(iphc_stations,
 #   distinct()
 
 # fixed - bring datasets together
-iphc_stations2a <- filter(iphc_stations, iphc.reg.area..group. == "2B")
-station <- iphc_stations2a$station
+station <- iphc_stations$station
 iphc_coast2 <- iphc_coast |>
   filter(station %in% station) |>
   inner_join(iphc_latlongs,
              by = c("station" = "station", "year" = "year"), relationship = "many-to-many")
 x <- iphc_coast2 |> select(station, year, date)
-x[duplicated(x), ] #so there are a couple stations that have been fished twice in the same year
+x[duplicated(x), ]
+#there are a couple stations that have been fished twice in the same year
 #these pairs pose a problem for the next step that does not have a date associated with it.
 #we can drop these points or assume that the hook values are the same
 #i dropped them
+
 # If you want to add them back in, you can bind_rows this to the iphc_coast2
-year2019_stations <- 
+year2019_stations <-
 iphc_coast |>
   filter(station %in% station) |>
   filter(year == 2019 & station %in% c(2107, 2099)) |>
@@ -93,17 +98,17 @@ iphc_coast |>
     mutate(lat = round(beginlat, digits = 4), lon = round(beginlon, digits = 4)),
              by = c("station" = "station", "year" = "year", 'lat' = 'lat', 'lon' = 'lon'))
 
-iphc_coast2 <- iphc_coast2 |>  #for julian date
+iphc_coast2 <- iphc_coast2 |>
   filter(station !=2107 & year !=2019) |>
   filter(station != 2099 & year != 2019) |>
   inner_join(iphc_hksobs) |> #for hook information
   distinct(.keep_all = TRUE) |>
   bind_rows(year2019_stations)
 
-
-
 # check for duplicate years and stations
+test<- dplyr::select(iphc_coast2, year, station )
 iphc_coast2[duplicated(iphc_coast2), ]
+test[duplicated(test), ]
 
 iphc_coast3 <- iphc_coast2 %>%
   filter(eff == "Y") %>%
@@ -132,7 +137,7 @@ iphc_coast4 <- add_utm_columns(iphc_coast3,
   mutate(UTM.lat.m = UTM.lat.m * 1000, UTM.lon.m = UTM.lon.m * 1000) |>
   distinct(year, station, N_it20, .keep_all = TRUE)
 
-x <- filter(iphc_coast4, station == 2099 & year == 2019) #Two sets that day or is this a mistake?
+filter(iphc_coast4, station == 2099 & year == 2019) #Two sets that day catches are different
 saveRDS(iphc_coast4, "data/generated/IPHC_coastdata_nosog_gfdata.rds")
 
 # Check of the data  ------------------------------------------------------
@@ -180,25 +185,31 @@ ggplot(both, aes(year, count, group = data, colour = data)) +
 
 d <- readRDS("data/generated/IPHC_coastdata_nosog_gfdata.rds") |>
   mutate(depth_m = exp(depth_m_log)) |>
-  mutate(hooksobserved = as.numeric(hooksobserved), hooksfished = as.numeric(hooksfished), station = as.character(station))
+  mutate(hooksobserved = as.numeric(hooksobserved),
+         hooksfished = as.numeric(hooksfished),
+         station = as.character(station)) |>
+  drop_na(hooksobserved)
 
 h <- readRDS("data/raw/iphc-2023-fiss-hadj.rds") |>
   filter(Year >= 1998, Effective == "Y", Purpose == "SG") |>
   select(year = Year, station = Station, bait = Bait, hookobserved = `Hooks Observed`, purpose = Purpose, hadj = h.adj, date = Date) |>
   mutate(hadj = as.numeric(hadj), bait = as.numeric(bait), hookobserved = as.numeric(hookobserved),
-         station = as.character(station))
+         station = as.character(station)) |>
+  drop_na(hookobserved)
 
 h$bait[h$bait == 0] <- 1
 h <- h[h$hookobserved > 0, ]
-prop_bait_hooks <- h$bait / h$hookobserved
-range(prop_bait_hooks)
-hook_adjust_factor <- -log(prop_bait_hooks) / (1 - prop_bait_hooks)
-plot(hook_adjust_factor, h$hadj)
+
+h$prop_bait_hooks <- h$bait / h$hookobserved
+range(h$prop_bait_hooks)
+h$hook_adjust_factor <- -log(h$prop_bait_hooks) / (1 - h$prop_bait_hooks)
+plot(h$hook_adjust_factor, h$hadj)
 abline(0, 1)
-range(hook_adjust_factor)
-h$hook_adjust_factor <- hook_adjust_factor
+range(h$hook_adjust_factor)
 h$date <- lubridate::as_date(h$date)
 d$date <- lubridate::dmy(d$date)
+
+ggplot(h, aes(prop_bait_hooks, hook_adjust_factor)) + geom_point()
 
 d <- left_join(d, select(h, -hookobserved), by = join_by(year, station, date)) |>
   filter(iphc.reg.area %in% "2B")
@@ -235,19 +246,16 @@ stopifnot(sum(is.na(d$depth_m_log)) == 0L)
 stopifnot(sum(is.na(d$N_it20)) == 0L)
 stopifnot(sum(is.na(d$E_it20)) == 0L)
 
-#d <- filter(d, year <= 2021) # hook adj. not ready for 2022
 d <- filter(d, !is.na(purpose)) # a few in 2021!?
 stopifnot(sum(is.na(d$hook_adjust_factor)) == 0L)
 
-# d$offset <- log(d$hooksobserved2)
+d$offset <- log(d$hooksobserved)
+d$offset_hk <- log(d$hooksfished / d$hook_adjust_factor) # hook comp
+stopifnot(sum(is.na(d$offset_hk)) == 0L)
 stopifnot(sum(is.na(d$hooksobserved)) == 0L)
 
-d$offset <- log(d$hooksfished / d$hook_adjust_factor) # hook comp
-#d$offset <- log(d$hooksobserved / d$hook_adjust_factor) # hook comp
-#d$offset <- log(d$hooksobserved) # no hook comp
-stopifnot(sum(is.na(d$offset)) == 0L)
-
 saveRDS(d, "data/generated/IPHC_coastdata_nosog_gfdata_hk.rds")
+
 
 ## Figures for report - data and hook adjustment ----
 coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
@@ -334,21 +342,22 @@ ggsave("figs/iphc/iphc_mesh.png", g, width = 5, height = 6)
 
 # Call sdm
 d <- readRDS("data/generated/IPHC_coastdata_nosog_gfdata_hk.rds")
-d$numobs <- ifelse(is.na(d$N_it20) == TRUE, d$N_it, d$N_it20)
-d |> filter(N_it20) |> group_by(year) |> tally()
+d$numobs <- ifelse(is.na(d$N_it) == TRUE, d$N_it20, d$N_it)
 
 fit_iphc_nb2 <- sdmTMB(
-  numobs ~ 0 + poly(depth_m_log, 2L), #should this be N_it or N_it20, previously was N_it20
+  numobs ~ 0 + poly(depth_m_log, 2L), #this is both N_it20 or N_it, offset accounts for hooks observed
   family = nbinom2(link = "log"),
   time_varying = ~1,
   data = d,
   mesh = mesh,
   time = "year",
   offset = "offset",
+  #offset = "offset_hk",
   spatiotemporal = "ar1",
   spatial = "on",
   silent = TRUE,
   anisotropy = TRUE,
+  extra_time = c(2019),
   control = sdmTMBcontrol(newton_loops = 1L)
 )
 saveRDS(fit_iphc_nb2, file = "data/generated/iphc-nb2-sdmTMB_gfdata.rds")
