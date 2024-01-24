@@ -204,31 +204,32 @@ d$julian_centre <- d$julian - 236
 
 # Call sdm
 fit_nb2 <- sdmTMB(
-  catch_count ~ 1 + poly(log(depth_m), 2L) + poly(julian_centre,2L),
-  #catch_count ~ 1 + poly(log(depth_m), 2L),
+  catch_count ~ 1 + poly(log(depth_m), 2L),
   family = nbinom2(link = "log"),
   data = d,
   mesh = mesh,
-  #offset = "offset_hk", # hook competition offset
-  offset = "offset", # NO hook competition offset
+  offset = "offset_hk", # hook competition offset
   time = "year",
   spatiotemporal = "rw",
   spatial = "on",
-  silent = TRUE,
+  silent = FALSE,
   anisotropy = TRUE,
-  extra_time = 2013L,
-  control = sdmTMBcontrol(newton_loops = 1L)
+  extra_time = 2013L
 )
+
+fit_nb2_nohk <- update(fit_nb2, offset = "offset")
+fit_nb2_julian <- update(fit_nb2, formula = catch_count ~ 1 + poly(log(depth_m), 2L) + poly(julian_centre,2L))
+
 #with offset_hk
 saveRDS(fit_nb2, file = "data/generated/hbll-out-sdmTMB.rds")
 fit_nb2 <- readRDS("data/generated/hbll-out-sdmTMB.rds")
 
 #without hk
-saveRDS(fit_nb2, file = "data/generated/hbll-out-sdmTMB_nohk.rds")
+saveRDS(fit_nb2_nohk, file = "data/generated/hbll-out-sdmTMB_nohk.rds")
 fit_nb2_nohk <- readRDS("data/generated/hbll-out-sdmTMB_nohk.rds")
 
 #with julian and no hk
-saveRDS(fit_nb2, file = "data/generated/hbll-out-sdmTMB-julian.rds")
+saveRDS(fit_nb2_julian, file = "data/generated/hbll-out-sdmTMB-julian.rds")
 fit_nb2_julian <- readRDS("data/generated/hbll-out-sdmTMB-julian.rds")
 
 sanity(fit_nb2)
