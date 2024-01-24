@@ -313,6 +313,7 @@ g <- gfplot::hbll_grid$grid
 g <- rename(g, latitude = Y, longitude = X, depth_m = depth)
 g <- add_utm_columns(g, utm_crs = 32609)
 g <- g |> mutate(julian_centre = 0)
+g$obs_id <- 1L
 ggplot(g, aes(X, Y, fill = depth_m, colour = depth_m)) +
   geom_tile(width = 2, height = 2) +
   coord_fixed() +
@@ -339,6 +340,11 @@ p_nb2_julian <- predict(fit_nb2_julian, newdata = grid, return_tmb_object = TRUE
 ind_julian <- get_index(p_nb2_julian, bias_correct = TRUE)
 survs <- select(d, year, survey_abbrev) |> distinct()
 ind_julian <- left_join(ind_julian, survs, by = join_by(year))
+
+p_cpois <- predict(fit_cpois, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
+ind_cpois <- get_index(p_cpois, bias_correct = TRUE)
+survs <- select(d, year, survey_abbrev) |> distinct()
+ind_cpois <- left_join(ind_cpois, survs, by = join_by(year))
 
 ggplot() +
   geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
