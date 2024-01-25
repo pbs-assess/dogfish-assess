@@ -261,7 +261,10 @@ fit_nb2$sd_report
 #   pstar <- pluck(pstar_list, 'pstar_df', 'pstar')
 # }
 
-pstar <- 1
+pstar <- 0.8
+#pstar <- 0.95
+#pstar <- 1
+mesh_cutoff <- 50
 d <- d |>
   mutate(obs_id = as.factor(seq(1, n()))) |> # Account for variance constraint when using Poisson
   mutate(prop_removed = (1 - count_bait_only / hook_count))
@@ -273,11 +276,12 @@ d$upr <- sdmTMB:::get_censored_upper(
   pstar = pstar)
 
 fit_cpois <- sdmTMB(
-  formula = catch_count ~ 1 + poly(log(depth_m), 2L) + (1 | obs_id),
+  #formula = catch_count ~ 1 + poly(log(depth_m), 2L) + (1 | obs_id),
+  formula = catch_count ~ 1 + (1 | obs_id),
   family = sdmTMB::censored_poisson(link = "log"),
   data = d,
-  mesh = mesh,
-  offset = "offset", # log(hook_count)
+  mesh = make_mesh(d, c("X", "Y"), cutoff = mesh_cutoff),
+  offset = d$log_hook_count,
   time = "year",
   spatiotemporal = "rw",
   spatial = "on",
@@ -287,8 +291,10 @@ fit_cpois <- sdmTMB(
   control = sdmTMB::sdmTMBcontrol(censored_upper = d$upr)
 )
 
-saveRDS(fit_cpois, file = "data/generated/hbll-out-sdmTMB_cpois.rds")
-fit_cpois <- readRDS("data/generated/hbll-out-sdmTMB_cpois.rds")
+saveRDS(fit_cpois, file = paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", pstar, "_mesh=", mesh_cutoff, ".rds"))
+fit_cpois_1  <- readRDS(paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", 1, "_mesh=", mesh_cutoff, ".rds")) #readRDS("data/generated/hbll-out-sdmTMB_cpois-pstar=1.rds")
+fit_cpois_95 <- readRDS(paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", 0.95, "_mesh=", mesh_cutoff, ".rds")) #readRDS("data/generated/hbll-out-sdmTMB_cpois-pstar=0.95.rds")
+fit_cpois_80 <- readRDS(paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", 0.8, "_mesh=", mesh_cutoff, ".rds")) #readRDS("data/generated/hbll-out-sdmTMB_cpois-pstar=0.8.rds")
 
 sanity(fit_cpois)
 AIC(fit_nb2)
@@ -341,13 +347,26 @@ ind_julian <- get_index(p_nb2_julian, bias_correct = TRUE)
 survs <- select(d, year, survey_abbrev) |> distinct()
 ind_julian <- left_join(ind_julian, survs, by = join_by(year))
 
-p_cpois <- predict(fit_cpois, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
-ind_cpois <- get_index(p_cpois, bias_correct = TRUE)
+p_cpois_1 <- predict(fit_cpois_1, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
+ind_cpois_1 <- get_index(p_cpois_1, bias_correct = TRUE)
 survs <- select(d, year, survey_abbrev) |> distinct()
-ind_cpois <- left_join(ind_cpois, survs, by = join_by(year))
+ind_cpois_1 <- left_join(ind_cpois_1, survs, by = join_by(year))
+
+p_cpois_95 <- predict(fit_cpois_95, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
+ind_cpois_95 <- get_index(p_cpois_95, bias_correct = TRUE)
+survs <- select(d, year, survey_abbrev) |> distinct()
+ind_cpois_95 <- left_join(ind_cpois_95, survs, by = join_by(year))
+
+p_cpois_80 <- predict(fit_cpois_80, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
+ind_cpois_80 <- get_index(p_cpois_80, bias_correct = TRUE)
+survs <- select(d, year, survey_abbrev) |> distinct()
+ind_cpois_80 <- left_join(ind_cpois_80, survs, by = join_by(year))
+beepr::beep()
+#saveRDS(ind_cpois_80, file = "data/generated/geostat-ind-hbll-out_ind_cpois_80.rds")
 
 ggplot() +
   geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
+  geom_pointrange(data = ind_cpois_1, aes(year, est, ymin = lwr, ymax = upr), colour = "orange") +
   geom_pointrange(data = ind_julian, aes(year, est, ymin = lwr, ymax = upr), colour = "black") +
   geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "grey80", alpha = 0.8) +
   coord_cartesian(ylim = c(0, NA))
