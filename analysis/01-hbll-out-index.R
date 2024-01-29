@@ -262,9 +262,9 @@ fit_nb2$sd_report
 #   pstar <- pluck(pstar_list, 'pstar_df', 'pstar')
 # }
 
-pstar <- 0.8
+#pstar <- 0.8
 #pstar <- 0.95
-#pstar <- 1
+pstar <- 1
 mesh_cutoff <- 50
 d <- d |>
   mutate(obs_id = as.factor(seq(1, n()))) |> # Account for variance constraint when using Poisson
@@ -373,8 +373,8 @@ beepr::beep()
 indexes <- bind_rows(list(
   mutate(ind, type = "NB2 ICR hook competition"),
   mutate(ind_nohk, type = "NB2 no hook competition"),
-  mutate(ind_julian, type = "NB2 hook competition + day of year"),
-  mutate(ind_cpois, type = "Censored Poisson hook competition"))
+  #mutate(ind_julian, type = "NB2 hook competition + day of year"),
+  mutate(ind_cpois_1, type = "Censored Poisson hook competition"))
 )
 gg <- group_by(indexes, type) |>
   mutate(lwr = lwr/est[1], upr = upr/est[1], est = est / est[1]) |>
@@ -390,16 +390,7 @@ gg <- group_by(indexes, type) |>
 ggsave("figs/hbll_out/index_model_comparison.png", width = 7, height = 4)
 
 ggplot() +
-  geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
-  #geom_pointrange(data = ind_julian, aes(year, est, ymin = lwr, ymax = upr), colour = "black") +
-  geom_pointrange(data = ind_cpois_1, aes(year, est, ymin = lwr, ymax = upr), colour = "orange") +
-  geom_pointrange(data = ind_julian, aes(year, est, ymin = lwr, ymax = upr), colour = "black") +
-  geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "grey80", alpha = 0.8) +
-  coord_cartesian(ylim = c(0, NA))
-
-ggplot() +
-  geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
-  geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "red") +
+  geom_pointrange(data = indexes, aes(year, est, ymin = lwr, ymax = upr, colour = type, group = type)) +
   coord_cartesian(ylim = c(0, NA))
 
 ind_hk <- dplyr::filter(ind, !is.na(survey_abbrev))
