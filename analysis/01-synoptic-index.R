@@ -76,7 +76,15 @@ gg <- d %>%
 ggsave("figs/synoptic/cpue_depth_time.png", gg, height = 5, width = 6)
 
 ## Design-based index ----
+# QH: area_km2 should be the strata area (unique to each grouping code) so that I can calculate the area-weighted index
+# The field was in survey-sets.rds but is missing in survey-sets_2023.rds
 index_design <- d %>%
+  left_join(
+    readRDS("data/raw/survey-sets.rds") %>%
+      select(grouping_code, area_km2) %>%
+      filter(!duplicated(grouping_code)),
+    by = "grouping_code"
+  ) %>%
   mutate(cpue = catch_weight/area_swept,
          catch_expand = area_km2 * cpue) %>% #where did this area_km2 value come from? I cahnged to area_swept
   summarize(index_strat = mean(catch_expand),
