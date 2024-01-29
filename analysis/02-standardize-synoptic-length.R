@@ -547,7 +547,7 @@ ss_comp <- left_join(dat_full, len_std, by = c("year", "Category", "sex")) %>%
   left_join(N_nom, by = "year") %>%
   mutate(Category = factor(Category, levels = c(paste0("F_", len_bin), paste0("M_", len_bin)))) %>%
   mutate(value = round(total * p, 2)) %>%
-  mutate(month = 1, fleet = 8, partition = 0) %>%
-  reshape2::dcast(year + month + fleet + partition + total ~ Category, value.var = "value", fill = 0) %>%
+  mutate(month = 1, fleet = 8, partition = 0, sex2 = 3) %>%
+  reshape2::dcast(year + month + fleet + sex2 + partition + total ~ Category, value.var = "value", fill = 0) %>%
   filter(!is.na(total))
 readr::write_csv(ss_comp, file = "data/ss3/ss3-length-synoptic-std.csv")
