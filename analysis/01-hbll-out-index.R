@@ -262,7 +262,10 @@ fit_nb2$sd_report
 #   pstar <- pluck(pstar_list, 'pstar_df', 'pstar')
 # }
 
-pstar <- 1
+pstar <- 0.8
+#pstar <- 0.95
+#pstar <- 1
+mesh_cutoff <- 50
 d <- d |>
   mutate(obs_id = as.factor(seq(1, n()))) |> # Account for variance constraint when using Poisson
   mutate(prop_removed = (1 - count_bait_only / hook_count))
@@ -274,11 +277,12 @@ d$upr <- sdmTMB:::get_censored_upper(
   pstar = pstar)
 
 fit_cpois <- sdmTMB(
-  formula = catch_count ~ 1 + poly(log(depth_m), 2L) + (1 | obs_id),
+  #formula = catch_count ~ 1 + poly(log(depth_m), 2L) + (1 | obs_id),
+  formula = catch_count ~ 1 + (1 | obs_id),
   family = sdmTMB::censored_poisson(link = "log"),
   data = d,
-  mesh = mesh,
-  offset = "offset", # log(hook_count)
+  mesh = make_mesh(d, c("X", "Y"), cutoff = mesh_cutoff),
+  offset = d$log_hook_count,
   time = "year",
   spatiotemporal = "rw",
   spatial = "on",
@@ -288,8 +292,10 @@ fit_cpois <- sdmTMB(
   control = sdmTMB::sdmTMBcontrol(censored_upper = d$upr)
 )
 
-saveRDS(fit_cpois, file = "data/generated/hbll-out-sdmTMB_cpois.rds")
-fit_cpois <- readRDS("data/generated/hbll-out-sdmTMB_cpois.rds")
+saveRDS(fit_cpois, file = paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", pstar, "_mesh=", mesh_cutoff, ".rds"))
+fit_cpois_1  <- readRDS(paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", 1, "_mesh=", mesh_cutoff, ".rds")) #readRDS("data/generated/hbll-out-sdmTMB_cpois-pstar=1.rds")
+fit_cpois_95 <- readRDS(paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", 0.95, "_mesh=", mesh_cutoff, ".rds")) #readRDS("data/generated/hbll-out-sdmTMB_cpois-pstar=0.95.rds")
+fit_cpois_80 <- readRDS(paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", 0.8, "_mesh=", mesh_cutoff, ".rds")) #readRDS("data/generated/hbll-out-sdmTMB_cpois-pstar=0.8.rds")
 
 sanity(fit_cpois)
 AIC(fit_nb2)
@@ -297,6 +303,9 @@ AIC(fit_cpois)
 
 plot_anisotropy(fit_cpois)
 fit_cpois$sd_report
+
+AIC(fit_nb2, fit_nb2_julian, fit_nb2_nohk, fit_cpois) |>
+  arrange(AIC)
 
 # ----
 
@@ -344,14 +353,47 @@ ind_nohk <- left_join(ind_nohk, survs, by = join_by(year))
 # survs <- select(d, year, survey_abbrev) |> distinct()
 # ind_julian <- left_join(ind_julian, survs, by = join_by(year))
 
-p_cpois <- predict(fit_cpois, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
-ind_cpois <- get_index(p_cpois, bias_correct = TRUE)
+p_cpois_1 <- predict(fit_cpois_1, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
+ind_cpois_1 <- get_index(p_cpois_1, bias_correct = TRUE)
 survs <- select(d, year, survey_abbrev) |> distinct()
-ind_cpois <- left_join(ind_cpois, survs, by = join_by(year))
+ind_cpois_1 <- left_join(ind_cpois_1, survs, by = join_by(year))
+
+p_cpois_95 <- predict(fit_cpois_95, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
+ind_cpois_95 <- get_index(p_cpois_95, bias_correct = TRUE)
+survs <- select(d, year, survey_abbrev) |> distinct()
+ind_cpois_95 <- left_join(ind_cpois_95, survs, by = join_by(year))
+
+p_cpois_80 <- predict(fit_cpois_80, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
+ind_cpois_80 <- get_index(p_cpois_80, bias_correct = TRUE)
+survs <- select(d, year, survey_abbrev) |> distinct()
+ind_cpois_80 <- left_join(ind_cpois_80, survs, by = join_by(year))
+beepr::beep()
+#saveRDS(ind_cpois_80, file = "data/generated/geostat-ind-hbll-out_ind_cpois_80.rds")
+
+indexes <- bind_rows(list(
+  mutate(ind, type = "NB2 ICR hook competition"),
+  mutate(ind_nohk, type = "NB2 no hook competition"),
+  mutate(ind_julian, type = "NB2 hook competition + day of year"),
+  mutate(ind_cpois, type = "Censored Poisson hook competition"))
+)
+gg <- group_by(indexes, type) |>
+  mutate(lwr = lwr/est[1], upr = upr/est[1], est = est / est[1]) |>
+  ggplot(aes(year, est, colour = type, fill = type)) +
+  # geom_line() +
+  # geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, colour = NA) + ylim(0, NA) +
+  geom_pointrange(aes(ymin = lwr, ymax = upr), alpha = 1, position = position_dodge(width = 0.7), pch = 21, fill = NA) +
+  ylim(0, NA) +
+  coord_cartesian(expand = F) +
+  labs(colour = "Model", fill = "Model", y = "Scaled index", x = "Year") +
+  scale_colour_brewer(palette = "Dark2") +
+  theme(legend.position = c(0.7, 0.8))
+ggsave("figs/hbll_out/index_model_comparison.png", width = 7, height = 4)
 
 ggplot() +
   geom_pointrange(data = ind, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbrev)) +
   #geom_pointrange(data = ind_julian, aes(year, est, ymin = lwr, ymax = upr), colour = "black") +
+  geom_pointrange(data = ind_cpois_1, aes(year, est, ymin = lwr, ymax = upr), colour = "orange") +
+  geom_pointrange(data = ind_julian, aes(year, est, ymin = lwr, ymax = upr), colour = "black") +
   geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "grey80", alpha = 0.8) +
   coord_cartesian(ylim = c(0, NA))
 
