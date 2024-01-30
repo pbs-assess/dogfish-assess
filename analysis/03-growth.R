@@ -9,15 +9,15 @@ library(gfplot)
 #see paper Taylor et al Spine based ageing
 datnwus <- readxl::read_excel("data/raw/NWFSC_Dogfish_2021_age_data_foranalysis.xlsx")|>
   dplyr::select(Age1, SampleYear, Sex, NaturalLength, Age_Ketchen, Age_Exponential) |>
-  drop_na(Age_Exponential, Age_Ketchen, NaturalLength,SampleYear, Sex) |>
+  drop_na(Age1, Age_Exponential, Age_Ketchen, NaturalLength,SampleYear, Sex) |>
   filter(Sex %in% c(1,2)) |>
   mutate(length = 1.02 * NaturalLength, # convert to TL extended (see Tribuzio and Gerseva for refs)
          sex = ifelse(Sex == 1, "Male", "Female")) |>
-  rename(Age = Age1)
+  rename(Age = Age_Ketchen)
 
 ggplot(datnwus, aes(Age, length)) + facet_wrap(~sex, scales = "free") + geom_smooth() + geom_point()
 ggplot(datnwus, aes(Age_Exponential, length)) + facet_wrap(~sex, scales = "free") + geom_smooth() + geom_point()
-ggplot(datnwus, aes(Age_Ketchen, length)) + facet_wrap(~sex, scales = "free") + geom_smooth() + geom_point()
+ggplot(datnwus, aes(Age1, length)) + facet_wrap(~sex, scales = "free") + geom_smooth() + geom_point()
 
 #data from Jackie/DFO
 #these were aged using the Ketchen method
@@ -34,11 +34,11 @@ ggplot(dat, aes(Age, length)) + facet_wrap(~sex, scales = "free") + geom_smooth(
 
 # combine to visualise ----------------------------------------------------
 dat2 <- dat |> dplyr::select(sex, Age, length) |> mutate(type = "DFO")
-datnwus2 <- datnwus |> dplyr::select(sex, Age, length) |> mutate(type = "nwus1")
-datnwus3 <- datnwus |> dplyr::select(sex, Age_Ketchen, length) |> rename (Age =  Age_Ketchen) |> mutate(type = "nwus_Ketchen")
+datnwus2 <- datnwus |> dplyr::select(sex, Age, length) |> mutate(type = "nwus_ketchen")
+datnwus3 <- datnwus |> dplyr::select(sex, Age1, length) |> rename (Age =  Age1) |> mutate(type = "nwus1")
 datnwus4 <- datnwus |> dplyr::select(sex, Age_Exponential , length) |> rename (Age =  Age_Exponential ) |> mutate(type = "nwus_exponential")
 datc <- rbind(datnwus2, datnwus3, datnwus4)
-datc <- rbind(dat2, datnwus3)
+datc <- rbind(dat2, datnwus2)
 
 ggplot(datc, aes(Age, length, colour = type)) +
   facet_wrap(~sex, scales = "free") + geom_smooth() + geom_point(alpha = 0.5)
