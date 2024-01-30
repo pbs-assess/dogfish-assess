@@ -22,12 +22,6 @@ dsets <- readRDS("data/raw/survey-sets.rds") %>%
          cpue_set = catch_weight/area_swept * 1e3 * 1e3) # kg/km^2
 
 
-
-
-
-
-
-
 ## Create length comp from expanded numbers ----
 len_bin <- seq(35, 115, 5)
 dbin2 <- expand_comp(d, dsets, len_bin = len_bin)
@@ -35,55 +29,49 @@ saveRDS(dbin2, file = "data/raw/synoptic_cpue_length.rds")
 dbin2 <- readRDS("data/raw/synoptic_cpue_length.rds")
 
 
-## Figures stratified index and individual sets by bin and sex ----
-# By area
+## Figures stratified index and individual sets by aggregated bin, sex, and area ----
 # "X" indicates years when there zero catch rates at a given size bin in a survey location
-index_bin <- dbin2 %>%
+bin_agg <- bin_label <- seq(30, 200, 20)
+bin_agg <- c(35, 50, 75, 100)
+bin_label <- c("35 - 50 cm", "50 - 75 cm", "75 - 100 cm", "100+ cm")
+index_bin_agg <- dbin2 %>%
+  mutate(bin_large = .env$bin_label[findInterval(.data$bin %>% as.character() %>% as.numeric(), .env$bin_agg)]) %>%
+  mutate(cpue = sum(cpue), .by = c(year, sex, bin_large, grouping_code, area_km2, area_swept, survey_abbrev, fishing_event_id)) %>%
   summarize(cpue_strat = mean(area_km2 * cpue),
             var_strat = var(area_km2 * cpue),
             n = n(),
             nsamp = unique(area_km2)/sum(area_swept) * n * 1e3 * 1e3, # Number of sampling units per stratum
-            .by = c(year, sex, bin, grouping_code, survey_abbrev)) %>%
+            .by = c(year, sex, bin_large, grouping_code, survey_abbrev)) %>%
+  mutate(var_strat = ifelse(is.na(var_strat), 0, var_strat)) %>% # CPUE = 0 with one set in a stratum
   #mutate(p_area = area_km2/sum(area_km2), .by = c(year, sex, bin, survey_abbrev)) %>%
   summarize(Abundance = sum(cpue_strat),
             Var = sum(nsamp * (nsamp - n)/n * var_strat)/sum(nsamp)/sum(nsamp), # See SimSurvey appendix
-            .by = c(year, sex, bin, survey_abbrev)) %>%
-  mutate(SE = sqrt(Var), CV = SE/Abundance) %>%
-  mutate(est = Abundance/geom_mean(Abundance),
-         lwr = (Abundance - 2 * SE)/geom_mean(Abundance),
-         upr = (Abundance + 2 * SE)/geom_mean(Abundance),
-         .by = bin) %>%
-  mutate(est = log1p(est), lwr = log1p(pmax(lwr, 0)), upr = log1p(upr))
+            .by = c(year, sex, bin_large, survey_abbrev)) %>%
+  mutate(SE = sqrt(Var),
+         CV = SE/Abundance,
+         bin_large = factor(.data$bin_large, labels = .env$bin_label)) %>%
+  mutate(est = Abundance,
+         lwr = exp(log(est) - 2 * CV),
+         upr = exp(log(est) + 2 * CV))
 
-g <- index_bin %>%
-  filter(Abundance > 0, bin %in% len_bin[1:9]) %>%
+g <- index_bin_agg %>%
+  filter(Abundance > 0, survey_abbrev != "SYN WCHG") %>%
   ggplot(aes(year, est, shape = sex, colour = sex)) +
   geom_line(linewidth = 0.1) +
   geom_point() +
-  geom_linerange(aes(ymin = lwr, ymax = upr)) +
-  geom_point(data = index_bin %>% filter(Abundance == 0, bin %in% len_bin[1:9]), shape = 4) +
+  geom_linerange(aes(y = est, ymin = lwr, ymax = upr)) +
+  geom_point(data = index_bin_agg %>% filter(Abundance == 0, survey_abbrev != "SYN WCHG"), shape = 4) +
   theme(panel.spacing = unit(0, "in"),
         legend.position = "bottom") +
-  facet_grid(vars(bin), vars(survey_abbrev)) +
-  labs(x = "Year", y = "log(Relative abundance + 1)", colour = "Sex", shape = "Sex") +
+  facet_grid(vars(bin_large), vars(survey_abbrev), scales = "free_y") +
+  #facet_grid(vars(survey_abbrev), vars(bin_large), scales = "free_y") +
+  labs(x = "Year", y = "SYN Index", colour = "Sex", shape = "Sex") +
   scale_shape_manual(values = c(1, 16)) +
-  coord_cartesian(ylim = c(0, 4))
-ggsave("figs/synoptic_length/strat_index_length1.png", g, height = 7, width = 6)
+  coord_cartesian(expand = FALSE)
+ggsave("figs/synoptic_length/strat_index_large_bin.png", g, height = 6, width = 6)
 
-g <- index_bin %>%
-  filter(Abundance > 0, !bin %in% len_bin[1:9]) %>%
-  ggplot(aes(year, est, shape = sex, colour = sex)) +
-  geom_line(linewidth = 0.1) +
-  geom_point() +
-  geom_linerange(aes(ymin = lwr, ymax = upr)) +
-  geom_point(data = index_bin %>% filter(Abundance == 0, !bin %in% len_bin[1:9]), shape = 4) +
-  theme(panel.spacing = unit(0, "in"),
-        legend.position = "bottom") +
-  facet_grid(vars(bin), vars(survey_abbrev)) +
-  labs(x = "Year", y = "log(Relative abundance + 1)", colour = "Sex", shape = "Sex") +
-  scale_shape_manual(values = c(1, 16)) +
-  coord_cartesian(ylim = c(0, 4))
-ggsave("figs/synoptic_length/strat_index_length2.png", g, height = 6.5, width = 6)
+# Catch rate by depth
+
 
 
 coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
@@ -115,16 +103,14 @@ dsets_samp <- left_join(
   dsets,
   d %>% summarize(nlength = n(), .by = fishing_event_id)
 ) %>%
-  mutate(not_samp = catch_weight > 0 & is.na(nlength))
+  select(year, survey_abbrev, fishing_event_id, cpue_set, nlength, catch_weight) %>%
+  mutate(samp = catch_weight == 0 | !is.na(nlength))
 
-pnot_samp <- dsets_samp %>%
-  summarize(p = mean(not_samp) %>% round(2) %>% format(), .by = year)
-
-g <- ggplot(dsets_samp, aes(longitude, latitude, colour = not_samp)) +
+g <- ggplot(dsets_samp, aes(longitude, latitude, colour = samp)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   geom_point(alpha = 0.1) +
-  geom_label(data = pnot_samp, inherit.aes = FALSE, aes(label = p), x = -Inf, y = -Inf,
+  geom_label(data = p_samp, inherit.aes = FALSE, aes(label = p), x = -Inf, y = -Inf,
              hjust = "inward", vjust = "inward") +
   facet_wrap(vars(year)) +
   theme(panel.spacing = unit(0, "in"),
@@ -140,16 +126,21 @@ g <- dsets_samp %>%
   filter(cpue_set < 1000,
          cpue_set > 0) %>%
   ggplot(aes(cpue_set, after_stat(ndensity))) +
-  geom_density(aes(fill = not_samp), alpha = 0.4) +
-  #geom_histogram(aes(fill = not_samp), alpha = 0.75, position = "dodge") +
+  geom_density(aes(fill = samp), alpha = 0.4) +
+  #geom_histogram(aes(fill = samp), alpha = 0.75, position = "dodge") +
   facet_wrap(vars(survey_abbrev)) +
   #coord_cartesian(xlim = c(0, 600)) +
-  labs(x = "CPUE", y = "Density of sets", fill = "Unsampled")
+  labs(x = "CPUE (Positive sets only)", y = "Set density", fill = "Sampled?")
 ggsave("figs/synoptic_length/sets_unsampled_hist.png", g, height = 4, width = 6)
 
-
-
-
+g <- dsets_samp %>%
+  filter(cpue_set > 0) %>%
+  summarise(p_samp = mean(samp), .by = c(year, survey_abbrev)) %>%
+  ggplot(aes(year, p_samp)) +
+  geom_col(width = 1, fill = 'grey80', colour = 'black') +
+  facet_wrap(vars(survey_abbrev)) +
+  labs(x = "Year", y = "Proportion of positive sets sampled")
+ggsave("figs/synoptic_length/sets_unsampled_year.png", g, height = 4, width = 6)
 
 
 
