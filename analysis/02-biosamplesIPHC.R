@@ -6,7 +6,11 @@ library(sf)
 
 d <- read.csv("data/raw/IPHC_dogfish_lengths2021.csv") %>%
   filter(reg_area == "2B", sex %in% c("F", "M")
-  )
+  ) |>
+  mutate(length_pcl = length # lengths are in precaudal length (PCL)
+  ) |>
+  mutate(length = length_pcl * 1.20) #see Tribuzio ref for the conversions to tail extended
+
 glimpse(d)
 
 

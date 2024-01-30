@@ -3,6 +3,24 @@ library(tidyverse)
 library(readxl)
 library(gfplot)
 
+#length is tail extended in cm
+
+#data from NW US survey in 2010, from Ian and Vladlena at NWFSC
+#see paper Taylor et al Spine based ageing
+datnwus <- readxl::read_excel("data/raw/NWFSC_Dogfish_2021_age_data_foranalysis.xlsx")|>
+  dplyr::select(Age1, SampleYear, Sex, NaturalLength, Age_Ketchen, Age_Exponential) |>
+  drop_na(Age_Exponential, Age_Ketchen, NaturalLength,SampleYear, Sex) |>
+  filter(Sex %in% c(1,2)) |>
+  mutate(length = 1.02 * NaturalLength, # convert to TL extended (see Tribuzio and Gerseva for refs)
+         sex = ifelse(Sex == 1, "Male", "Female")) |>
+  rename(Age = Age1)
+
+ggplot(datnwus, aes(Age, length)) + facet_wrap(~sex, scales = "free") + geom_smooth() + geom_point()
+ggplot(datnwus, aes(Age_Exponential, length)) + facet_wrap(~sex, scales = "free") + geom_smooth() + geom_point()
+ggplot(datnwus, aes(Age_Ketchen, length)) + facet_wrap(~sex, scales = "free") + geom_smooth() + geom_point()
+
+#data from Jackie/DFO
+#these were aged using the Ketchen method
 dat <- readxl::read_excel("data/raw/Age.Length.Data.xlsx") %>%
   filter(!is.na(Age),
          sex != 7,
@@ -11,7 +29,23 @@ dat <- readxl::read_excel("data/raw/Age.Length.Data.xlsx") %>%
          length = 0.1 * length, # convert to cm
          sex = ifelse(sex == 1, "Male", "Female"))
 
+ggplot(dat, aes(Age, length)) + facet_wrap(~sex, scales = "free") + geom_smooth() + geom_point()
+
+
+# combine to visualise ----------------------------------------------------
+dat2 <- dat |> dplyr::select(sex, Age, length) |> mutate(type = "DFO")
+datnwus2 <- datnwus |> dplyr::select(sex, Age, length) |> mutate(type = "nwus1")
+datnwus3 <- datnwus |> dplyr::select(sex, Age_Ketchen, length) |> rename (Age =  Age_Ketchen) |> mutate(type = "nwus_Ketchen")
+datnwus4 <- datnwus |> dplyr::select(sex, Age_Exponential , length) |> rename (Age =  Age_Exponential ) |> mutate(type = "nwus_exponential")
+datc <- rbind(datnwus2, datnwus3, datnwus4)
+datc <- rbind(dat2, datnwus3)
+
+ggplot(datc, aes(Age, length, colour = type)) +
+  facet_wrap(~sex, scales = "free") + geom_smooth() + geom_point(alpha = 0.5)
+
+
 #### Plot data
+#only works for DFO data
 # By Area
 g <- ggplot(dat, aes(Age, length, colour = sex)) +
   geom_point(alpha = 0.4) +
