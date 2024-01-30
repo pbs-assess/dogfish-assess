@@ -207,7 +207,31 @@ length(len[[2]])
 # Width of length bins
 len[[2]] %>% diff()
 
+# Size selectivity priors
+length_format <- readr::read_csv("data/ss3/ss3-length.csv") %>%
+  select(-month, -sex2, -partition, -N) %>%
+  reshape2::melt(id.vars = c("year", "fleet")) %>%
+  mutate(sex = as.character(variable) %>% strsplit("_") %>% sapply(getElement, 1),
+         len = as.character(variable) %>% strsplit("_") %>% sapply(getElement, 2) %>% as.numeric()) %>%
+  summarise(value = sum(value), .by = c(fleet, sex, len)) %>%
+  mutate(p = value/sum(value), .by = c(fleet, sex))
 
+L5_f <- function(len, p) len[sum(cumsum(p) <= 0.05)]
+Ldome_f <- function(len, p) len[which.max(cumsum(p) >= 0.95)]
+
+sel_prior <- length_format %>%
+  summarise(L5 = L5_f(len, p),
+            LFS = len[which.max(p)], .by = c(sex, fleet),
+            Ldome = Ldome_f(len, p)) %>%
+  arrange(fleet, sex) %>%
+  mutate(asc_stdev = 0.5 * (LFS - L5),
+         asc_mu = log(asc_stdev^2),
+         asc_sd = 0.3,
+         LFS_cv = 0.3,
+         LFS_sd = LFS_cv * LFS,
+         dsc_stdev = 0.5 * (Ldome - LFS),
+         dsc_mu = log(dsc_stdev^2),
+         dsc_sd = 0.3)
 
 # Natural mortality predictors
 # max age of 73 and 70 for F/M
