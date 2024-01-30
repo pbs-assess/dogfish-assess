@@ -68,12 +68,45 @@ ggsave("figs/synoptic/cpue_hist.png", gg, height = 6, width = 5)
 
 gg <- d %>%
   mutate(cpue = 100 * catch_weight/area_swept) %>%
-  ggplot(aes(log(depth_m), log(cpue + 1))) +
-  geom_point(alpha = 0.5) +
-  facet_wrap(vars(year)) +
-  labs(x = "log-depth (m)", y = "log(CPUE + 1)") +
-  theme(panel.spacing = unit(0, "in"))
-ggsave("figs/synoptic/cpue_depth_time.png", gg, height = 5, width = 6)
+  filter(cpue < quantile(cpue, 0.99), .by = year) %>%
+  filter(survey_abbrev == "SYN WCVI") %>%
+  ggplot(aes(depth_m, log1p(cpue), colour = survey_abbrev, fill = survey_abbrev)) +
+  facet_wrap(vars(year), scales = "free_y", ncol = 4) +
+  geom_point(alpha = 0.25, shape = 21) +
+  scale_x_continuous(trans = "log", breaks = c(20, 50, 150, 400)) +
+  #scale_x_continuous(trans = "log", breaks = seq(3, 7, 1) %>% exp() %>% floor()) +
+  theme_bw() +
+  theme(legend.position = "bottom", strip.background = element_blank()) +
+  labs(x = "Depth (m)", y = "log(CPUE + 1)") +
+  ggtitle("SYN WCVI")
+ggsave("figs/synoptic/cpue_depth_year_wcvi.png", gg, height = 6, width = 6)
+
+gg <- d %>%
+  mutate(cpue = 100 * catch_weight/area_swept) %>%
+  #filter(cpue < quantile(cpue, 0.975), .by = year) %>%
+  filter(survey_abbrev == "SYN WCVI") %>%
+  ggplot(aes(depth_m, log1p(cpue), colour = survey_abbrev, fill = survey_abbrev)) +
+  facet_wrap(vars(year), scales = "free_y", ncol = 4) +
+  geom_point(alpha = 0.25, shape = 21) +
+  scale_x_continuous(trans = "log", breaks = c(20, 50, 150, 400)) +
+  #scale_x_continuous(trans = "log", breaks = seq(3, 7, 1) %>% exp() %>% floor()) +
+  theme_bw() +
+  theme(legend.position = "bottom", strip.background = element_blank()) +
+  labs(x = "Depth (m)", y = "log(CPUE + 1)") +
+  ggtitle("SYN WCVI")
+ggsave("figs/synoptic/cpue_depth_year_wcvi.png", gg, height = 4, width = 6)
+
+gg <- d %>%
+  mutate(cpue = 100 * catch_weight/area_swept) %>%
+  filter(cpue > 0) %>%
+  filter(survey_abbrev != "SYN WCHG") %>%
+  mutate(md = mean(depth_m), .by = c(year, survey_abbrev)) %>%
+  ggplot(aes(year, md, colour = survey_abbrev)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Year", y = "Mean depth of positive sets", colour = "Survey")
+ggsave("figs/synoptic/cpue_mean_depth.png", gg, height = 3, width = 5)
+
 
 ## Design-based index ----
 # QH: area_km2 should be the strata area (unique to each grouping code) so that I can calculate the area-weighted index
