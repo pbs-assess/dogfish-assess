@@ -3,30 +3,135 @@
 
 ## Length-age relationship
 
-To develop the growth curve, length-at-age has been determined from spine samples have been collected from various surveys, tag returns, and some fisheries (Table \@ref(tab:summary-age); @mcfarlane2009). 
-As such, these data do not reflect any size or age selection in a fishery.
+Mean length-at-age was modeled as a Schnute function, where the predicted length of sample $i$ is:
 
-```{r len-age, fig.cap="Estimated von Bertalanffy growth parameters for Dogfish."}
-knitr::include_graphics(here::here("figs/length-age-vb.png"))
+$$
+\hat{L}_i = \left(\hat{L}_1^p + (\hat{L}_2^p - \hat{L}_1^p)\dfrac{1 - \exp(-\hat{k}[a_i - a_1])}{1 - \exp(-\hat{k}[a_2 - a_1])}\right)^{1/p}
+$$
+
+where $a_1$ and $a_2$ are two specified reference ages, $L_1$ and $L_2$ are the length corresponding to the reference ages, $k$ is a growth coefficient, and the caret symbol denotes an estimate.
+
+By visual inspection, the data do not indicate that there was an inflection in the growth trajectory (Figure \@ref(fig:age-samp-area)). 
+Therefore, the $p$ parameter was fixed to 1 which reduces the growth equation to the von Bertalanffy model,
+
+$$
+\hat{L}_i = \hat{L}_{\infty}(1 - \exp(-\hat{k}[a_i - \hat{a}_0]))
+$$
+
+where 
+
+$$
+L_{\infty} = \left(\dfrac{L_2^p\exp(ka_2) - L_1^p\exp(ka_1)}{\exp(ka_2) - \exp(ka_1)}\right)^{1/p}
+$$
+
+$$
+a_0 = -\dfrac{1}{k}\log\left(\dfrac{L_2^p\exp(ka_2) - L_1^p\exp(ka_1)}{L_2^p - L_1^p}\right) + a_1 + a_2
+$$
+
+Length-at-age were estimated by maximum likelihood with a lognormal distribution. The log-likelihood $\mathcal{L}$ was:
+
+$$
+\mathcal{L} = \sum_i \left[-\log(\hat{\sigma_L}) - 0.5\left(\dfrac{\log(L_i) - \log(\hat{L}_i)}{\hat{\sigma_L}}\right)^2\right]
+$$
+
+where $\sigma_L$ is the residual standard deviation.
+
+For Pacific Spiny Dogfish, $a_1$ and $a_2$ were set to 0 and 999, respectively. 
+Separate growth curves were fitted for females and males.
+
+Age samples collected from various surveys, tag returns, and some fisheries (Table \@ref(tab:summary-age); @mcfarlane2009).
+As such, these data mostly do not reflect any size or age selection in a fishery (Jackie King, DFO, pers. comm. 2023).
+
+Samples collected in Canadian waters do not appear to have samples of smaller dogfish (Figure \@ref(fig:age-samp-area)).
+Thus, we also considered age samples collected from the U.S. West Coast Groundfish Bottom Trawl (WCGBT) survey in 2010 by the Northwest Fisheries Science Center (NWFSC).
+
+Age determination for Pacific Spiny Dogfish is based on counts of annular rings on dorsal spines [@ketchen1975]. 
+However, ages of older animals are frequently underestimated as the bands wear and become indistinguishable.
+A correction factor developed by @ketchen1975 is added based on an exponential relationship between spine size and ring count of younger dogfish whose bands have not degraded.
+
+Even then, the ages of older females remains underestimated as it is believed that pregnancy inhibits spine growth [@taylor2013_growth].
+For example, the cluster of large (>95 cm) females in 3C are likely to be much older than estimated (Figure \@ref(fig:age-samp-area)).
+
+Four growth models were fitted to evaluate the sensitivity of the various sampling and age determination factors:
+
+1. Fitted with only samples in Canadian waters
+2. Same as 1, and added the 2010 NWFSC samples
+3. Same as 2, and excluded large females using a threshold of 95 cm for DFO samples (based on the length of 50 percent maturity) and 80 cm for the NWFSC samples [@gertseva2021].
+4. Same as 3, and excluded samples in inside waters (4B) for both sexes.
+
+Inclusion of the NWFSC samples reduced the magnitude of the $t_0$ parameter and reduced the length at age of the youngest dogfish for both sexes (Table \@ref(tab:vb-est), Figure \@ref(fig:vb-curve)).
+Excluding the large females in Model 3 reduced the asymptotic length, albeit modestly.
+When the samples in 4B are excluded, there is a small reduction in asymptotic length and an increase in the $k$ parameter for females.
+The asymptotic length of males is smaller than of females, while males tend to reach the asymptotic length more quickly with age (based on the $k$ parameter).
+There is high variability in length-at-age between individual samples and the estimated relationship.
+
+Tagging studies show that most dogfish in inside waters do not frequently migrate and mix with those in outside waters and vice versa [@macfarlane2003].
+Therefore, Model 4 is believed to be the best descriptor of growth for Outside Spiny Dogfish.
+
+## Length-weight relationship
+
+The length-weight function is of the form:
+
+$$
+W_i = a L_i ^ b,
+$$
+
+where $W_i$ and $L_i$ are the weight and length for fish $i$, respectively. Parameters $a$ and $b$ are estimated using maximum likelihood using the Student-t distribution in log-space:
+
+$$
+\log (W_i) \sim \operatorname{Student-t}(df = 3, \log(\hat{a}) + \hat{b} \log(L_i), \hat{\sigma}_W),
+$$
+
+The degrees of freedom of the Student-t distribution was set to 3 to be robust to outliers.
+
+Estimates for Outside Spiny Dogfish are presented in Figure \@ref(fig:len-wt).
+
+## Maturity-length relationship
+
+The maturity relationship was estimated with respect to size with a binomial generalized linear model. The predicted probability $p$ that sample $i$ is a mature animal is modeled as
+
+\begin{align}
+\hat{p}_i &= \dfrac{1}{1 + \exp(-\hat{y}_i)}\\ 
+\hat{y}_i &= \hat{\beta}_0 + \hat{\beta}_1 L_i + \hat{\beta}_2 F_i
+\end{align}
+
+where $L_i$ is the length of sample $i$, $F_i$ is a categorical variable for sex, and $\beta$ are estimated coefficients and intercept terms.
+
+The log-likelihood is 
+
+$$
+\mathcal{L} = \sum_i
+\begin{cases}
+\log(\hat{p}_i) & \textrm{sample } i \textrm{ is mature}\\
+\log(1-\hat{p_i}) & \textrm{otherwise}
+\end{cases}
+$$
+
+
+Two aspects of female maturity was evaluated here. 
+
+First, maturity on the basis on the presence of mature gonads (ova size 5-10 mm and thickened uterii >10 mm, code 55 in the biological samples) indicated that the size of 50 and 95 percent maturity at 86.3 and 96.2 cm, respectively (Figure \@ref(fig:mat-len)). 
+
+Second, maturity on the basis of bearing pups (code 77 in the biological samples) indicated that the size of 50 and 95 percent pregnancy at 97.6 and 115.1 cm, respectively.
+This definition of maturity is relevant for the spawning output of the population and is considered in the population model.
+
+The male maturity ogive, on the basis of mature gonads, was estimated with the size of 50 and 95 percent maturity at 67.9 and 74.1 cm, respectively.
+
+
+```{r age-samp-area, fig.cap="Length-at-age samples by area and sex. The NWFSC samples were collected from the U.S. West Coast Groundfish Bottom Trawl survey in 2010. Horizontal dotted lines indicate 80 and 95 cm which are the length of 50 percent maturity for females in U.S. and Canadian waters, respectively."}
+knitr::include_graphics(here::here("figs/length-age-area.png"))
 ```
 
-```{r age-resid, fig.cap="Residual from the fitted von Bertalanffy growth curve. Colors identify age samples by area."}
-knitr::include_graphics(here::here("figs/length-age-residual.png"))
+```{r vb-curve, fig.cap="A comparison of four von Bertalanffy growth curves (coloured lines) considered in this study. Points show all length-at-age samples used to fit Model 2. However, a subset were used to fit the other three models."}
+knitr::include_graphics(here::here("figs/length-age-comparison.png"))
 ```
-
 
 ```{r summary-age, results="asis"}
-dat <- readxl::read_excel(here::here("data/raw/Age.Length.Data.xlsx")) %>%
-  filter(!is.na(Age),
-         sex != 7,
-         !is.na(length)) %>%
-  rename(Year = `Sample year`) %>%
-  mutate(Area = ifelse(Area == "4A", "4B", Area),
-         #length = 0.1 * length, # convert to cm
-         sex = ifelse(sex == 1, "Male", "Female")) %>%
-  summarise(n = n(), .by = c(Year, Area)) %>%
-  reshape2::dcast(list("Year", "Area"), fill = 0, value.var = "n")
+dat <- readr::read_csv(here::here("data/generated/age-samples-summary.csv"))
 dat$Total <- rowSums(dat[, -1])
+dat$Year <- as.character(dat$Year)
+dat <- rbind(dat, c("Total", rowSums(dat[, -1])))
+colnames(dat) <- ifelse(grepl("DFO", colnames(dat)), substr(colnames(dat), 7, 8), colnames(dat))
 
 csasdown::csas_table(
   dat,
@@ -35,19 +140,23 @@ csasdown::csas_table(
 )
 ```
 
+```{r vb-est, results="asis"}
+vb_est <- readr::read_csv(here::here("data/generated/vb-estimates.csv")) %>%
+  mutate(Parameter = paste0("$", Parameter, "$"))
 
-## Length-weight relationship
+csasdown::csas_table(
+  vb_est,
+  format = "latex",
+  col.names = c("Model", "Parameter", "Female Estimate", "Male Estimate"),
+  align = c("l", "l", "r", "r"),
+  caption = "Estimates of von Bertalanffy growth parameters by sex."
+)
+```
+
 
 ```{r len-wt, fig.cap="Weight-at-length by sex estimated from biological samples collected in the surveys in British Columbia."}
 knitr::include_graphics(here::here("figs/length-weight-survey.png"))
 ```
-
-## Maturity-length relationship
-
-The female maturity ogive is estimated with the size of 50 and 95 percent maturity at 86.3 and 96.2 cm, respectively (Figure \@ref(fig:mat-len)).
-The pregnancy ogive is estimated with the size of 50 and 95 percent pregnancy at 97.6 and 115.1 cm, respectively.
-
-The male maturity ogive is estimated with the size of 50 and 95 percent maturity at 67.9 and 74.1 cm, respectively.
 
 ```{r mat-len, fig.cap="Maturity ogives estimated from biological samples collected in the trawl surveys in Outside waters. Maturity status is classified based on macroscopic evaluation of gonads. Maturity code 55 indicates maturing females based on ova size 5-10 mm and thickened uterii (>10 mm). Maturity code 77 indicates pup bearing females (yolk sac pups). Maturity code 30 indicates maturing males based on testes color and clasper development (extended past anal fins). Lines and points indicate the estimated and observed proportions."}
 knitr::include_graphics(here::here("figs/maturity-outside-survey-compare.png"))
