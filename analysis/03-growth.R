@@ -78,82 +78,99 @@ g <- ggplot(dat_all, aes(Age, length, colour = sex)) +
   labs(x = "Age", y = "Length (cm)", colour = "Sex")
 ggsave("figs/length-age-year.png", g, height = 4, width = 6)
 
-# Samples by area and year
-dat_all %>%
+# Samples by area and year - save for ResDoc
+dat_sumry <- dat_all %>%
   summarise(n = n(), .by = c(Year, type)) %>%
-  reshape2::acast(list("Year", "type"), fill = 0)
+  reshape2::dcast(list("Year", "type"), fill = 0)
+readr::write_excel_csv(dat_sumry, file = "data/generated/age-samples-summary.csv")
 
 #### Fit growth models
+# Function to standardize predictions
+calc_pred <- function(m, a = seq(0, 80, 0.25)) {
+  linf <- m$pars$linf
+  k <- m$pars$k
+  t0 <- m$pars$t0
+  m$predictions <- data.frame(age = a) %>%
+    mutate(length = linf * (1 - exp(-k * (a - t0))))
+  return(m)
+}
+
 
 # Model 1 - All DFO samples
-vb_f <- dat_all %>%
+vb_f1 <- dat_all %>%
   filter(sex == "Female", grepl("DFO", type)) %>%
   mutate(sex = 2,
          specimen_id = 1:n()) %>%
   rename(age = Age) %>%
   gfplot::fit_vb(usability_codes = NULL,
                  sex = "female",
-                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5))
+                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5)) %>%
+  calc_pred()
 
-vb_m <- dat_all %>%
+vb_m1 <- dat_all %>%
   filter(sex == "Male", grepl("DFO", type)) %>%
   mutate(sex = 1,
          specimen_id = 1:n()) %>%
   rename(age = Age) %>%
   gfplot::fit_vb(usability_codes = NULL,
                  sex = "male",
-                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5))
+                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5)) %>%
+  calc_pred()
 
-g <- gfplot::plot_growth(object_f = vb_f,
-                         object_m = vb_m,
+g <- gfplot::plot_growth(object_f = vb_f1,
+                         object_m = vb_m1,
                          lab_x = 0.4,
                          lab_x_gap = 0.35,
                          pt_alpha = 0.8,
                          col = c(Female = "black", Male = "black"),
                          french = FALSE,
-                         jitter = TRUE) +
+                         jitter = FALSE) +
   facet_wrap(vars(sex)) +
   guides(col = "none", lty = "none") +
   theme(panel.spacing = unit(0, "in")) +
+  coord_cartesian(xlim = c(0, 78), ylim = c(0, 125), expand = FALSE) +
   ggtitle("DFO samples")
 ggsave("figs/length-age-vb-dfo.png", g, height = 3, width = 6)
 
 
 # Model 2 - DFO + NWFSC samples
-vb_f <- dat_all %>%
+vb_f2 <- dat_all %>%
   filter(sex == "Female") %>%
   mutate(sex = 2,
          specimen_id = 1:n()) %>%
   rename(age = Age) %>%
   gfplot::fit_vb(usability_codes = NULL,
                  sex = "female",
-                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5))
+                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5)) %>%
+  calc_pred()
 
-vb_m <- dat_all %>%
+vb_m2 <- dat_all %>%
   filter(sex == "Male") %>%
   mutate(sex = 1,
          specimen_id = 1:n()) %>%
   rename(age = Age) %>%
   gfplot::fit_vb(usability_codes = NULL,
                  sex = "male",
-                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5))
+                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5)) %>%
+  calc_pred()
 
-g <- gfplot::plot_growth(object_f = vb_f,
-                         object_m = vb_m,
+g <- gfplot::plot_growth(object_f = vb_f2,
+                         object_m = vb_m2,
                          lab_x = 0.4,
                          lab_x_gap = 0.35,
                          pt_alpha = 0.8,
                          col = c(Female = "black", Male = "black"),
                          french = FALSE,
-                         jitter = TRUE) +
+                         jitter = FALSE) +
   facet_wrap(vars(sex)) +
   guides(col = "none", lty = "none") +
   theme(panel.spacing = unit(0, "in")) +
+  coord_cartesian(xlim = c(0, 78), ylim = c(0, 125), expand = FALSE) +
   ggtitle("DFO + NWFSC samples")
 ggsave("figs/length-age-vb-dfo-nwfsc.png", g, height = 3, width = 6)
 
 # Model 3 - DFO + NWFSC samples - ex pregnant female
-vb_f <- dat_all %>%
+vb_f3 <- dat_all %>%
   filter(sex == "Female") %>%
   filter(ifelse(grepl("DFO", type), ifelse(grepl("4B", type), TRUE, length < 95),
                 length < 80)) %>%
@@ -162,19 +179,52 @@ vb_f <- dat_all %>%
   rename(age = Age) %>%
   gfplot::fit_vb(usability_codes = NULL,
                  sex = "female",
-                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5))
+                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5)) %>%
+  calc_pred()
 
-vb_m <- dat_all %>%
+g <- gfplot::plot_growth(object_f = vb_f3,
+                         object_m = vb_m2,
+                         lab_x = 0.4,
+                         lab_x_gap = 0.35,
+                         pt_alpha = 0.8,
+                         col = c(Female = "black", Male = "black"),
+                         french = FALSE,
+                         jitter = FALSE) +
+  facet_wrap(vars(sex)) +
+  guides(col = "none", lty = "none") +
+  theme(panel.spacing = unit(0, "in")) +
+  coord_cartesian(xlim = c(0, 78), ylim = c(0, 125), expand = FALSE) +
+  ggtitle("DFO + NWFSC + exclude large females")
+ggsave("figs/length-age-vb-dfo-nwfsc-ex-large-female.png", g, height = 3, width = 6)
+
+
+
+# Model 4 - DFO + NWFSC samples - ex pregnant female - ex 4B
+vb_f4 <- dat_all %>%
+  filter(sex == "Female") %>%
+  filter(!grepl("4B", type)) %>%
+  filter(ifelse(grepl("DFO", type), length < 95, length < 80)) %>%
+  mutate(sex = 2,
+         specimen_id = 1:n()) %>%
+  rename(age = Age) %>%
+  gfplot::fit_vb(usability_codes = NULL,
+                 sex = "female",
+                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5)) %>%
+  calc_pred()
+
+vb_m4 <- dat_all %>%
   filter(sex == "Male") %>%
+  filter(!grepl("4B", type)) %>%
   mutate(sex = 1,
          specimen_id = 1:n()) %>%
   rename(age = Age) %>%
   gfplot::fit_vb(usability_codes = NULL,
                  sex = "male",
-                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5))
+                 tmb_inits = list(k = 0.1, linf = 100, log_sigma = log(0.2), t0 = -5)) %>%
+  calc_pred()
 
-g <- gfplot::plot_growth(object_f = vb_f,
-                         object_m = vb_m,
+g <- gfplot::plot_growth(object_f = vb_f4,
+                         object_m = vb_m4,
                          lab_x = 0.4,
                          lab_x_gap = 0.35,
                          pt_alpha = 0.8,
@@ -184,8 +234,68 @@ g <- gfplot::plot_growth(object_f = vb_f,
   facet_wrap(vars(sex)) +
   guides(col = "none", lty = "none") +
   theme(panel.spacing = unit(0, "in")) +
-  ggtitle("DFO + NWFSC + exclude large females")
-ggsave("figs/length-age-vb-dfo-nwfsc-ex-large-female.png", g, height = 3, width = 6)
+  coord_cartesian(xlim = c(0, 78), ylim = c(0, 125), expand = FALSE) +
+  ggtitle("DFO + NWFSC + exclude large females + exclude 4B")
+ggsave("figs/length-age-vb-dfo-nwfsc-ex-large-female-ex4B.png", g, height = 3, width = 6)
+
+#### Plot comparison
+name <- paste0("(", 1:4, ")") %>%
+  paste(c("DFO samples", "DFO + NWFSC", "DFO + NWFSC + exclude large female", "DFO + NWFSC + exclude large female + ex4B"))
+female <- lapply(1:4, function(i) {
+  get(paste0("vb_f", i)) %>%
+    getElement("predictions") %>%
+    mutate(sex = "Female", fit = name[i])
+}) %>%
+  bind_rows()
+male <- lapply(c(1, 2, 4), function(i) {
+  get(paste0("vb_m", i)) %>%
+    getElement("predictions") %>%
+    mutate(sex = "Male", fit = name[i])
+}) %>%
+  bind_rows()
+
+g <- rbind(female, male) %>%
+  ggplot(aes(age, length)) +
+  geom_point(data = dat_all, aes(Age, length), shape = 21, colour = "grey70", alpha = 0.8) +
+  geom_line(aes(linetype = fit, colour = fit), linewidth = 1) +
+  facet_wrap(vars(sex)) +
+  gfplot::theme_pbs() +
+  theme(legend.position = "bottom", panel.spacing = unit(0, "in")) +
+  coord_cartesian(xlim = c(0, 78), ylim = c(0, 125), expand = FALSE) +
+  labs(x = "Age (years)", y = "Length (cm)", linetype = "Model", colour = "Model") +
+  guides(linetype = guide_legend(ncol = 2))
+ggsave("figs/length-age-comparison.png", g, height = 3.5, width = 6)
+
+# Report growth parameters for Res Doc
+female_par <- lapply(1:4, function(i) {
+  p <- get(paste0("vb_f", i)) %>%
+    getElement("pars")
+  p$sigma <- exp(p$log_sigma)
+  pars <- p[c("linf", "k", "t0", "sigma")] %>% unlist() %>%
+    round(3)
+
+  data.frame(Model = name[i],
+             Parameter = c("L_{\\infty}", "k", "a_0", "\\sigma"),
+             Female = pars)
+}) %>%
+  bind_rows()
+
+male_par <- lapply(c(1, 2, 4), function(i) {
+  p <- get(paste0("vb_m", i)) %>%
+    getElement("pars")
+  p$sigma <- exp(p$log_sigma)
+  pars <- p[c("linf", "k", "t0", "sigma")] %>% unlist() %>%
+    round(3)
+
+  data.frame(Model = name[i],
+             Parameter = c("L_{\\infty}", "k", "a_0", "\\sigma"),
+             Male = pars)
+}) %>%
+  bind_rows()
+
+left_join(female_par, male_par) %>%
+  readr::write_excel_csv("data/generated/vb-estimates.csv")
+
 
 
 

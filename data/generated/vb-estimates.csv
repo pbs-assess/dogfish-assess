@@ -1,0 +1,17 @@
+﻿"Model","Parameter","Female","Male"
+"(1) DFO samples","L_{\infty}",97.384,83.733
+"(1) DFO samples","k",0.05,0.077
+"(1) DFO samples","a_0",-10.635,-11.075
+"(1) DFO samples","\sigma",0.184,0.147
+"(2) DFO + NWFSC","L_{\infty}",97.724,84.368
+"(2) DFO + NWFSC","k",0.058,0.089
+"(2) DFO + NWFSC","a_0",-5.726,-4.349
+"(2) DFO + NWFSC","\sigma",0.187,0.166
+"(3) DFO + NWFSC + exclude large female","L_{\infty}",93.227,NA
+"(3) DFO + NWFSC + exclude large female","k",0.054,NA
+"(3) DFO + NWFSC + exclude large female","a_0",-6.578,NA
+"(3) DFO + NWFSC + exclude large female","\sigma",0.146,NA
+"(4) DFO + NWFSC + exclude large female + ex4B","L_{\infty}",91.201,85.848
+"(4) DFO + NWFSC + exclude large female + ex4B","k",0.073,0.09
+"(4) DFO + NWFSC + exclude large female + ex4B","a_0",-4.052,-4.262
+"(4) DFO + NWFSC + exclude large female + ex4B","\sigma",0.141,0.162
