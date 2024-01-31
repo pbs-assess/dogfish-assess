@@ -112,7 +112,9 @@ ss3_length <- function(csv = TRUE, bin_size = 5, bin_range = c(35, 115)) {
   dtrawl <- readRDS("data/raw/survey-samples.rds")
   diphc <- read.csv("data/raw/IPHC_dogfish_lengths2021.csv") %>%
     filter(reg_area == "2B", sex %in% c("F", "M")
-    )
+    ) %>%
+    mutate(length_pcl = length, # Convert from pre-caudal length to length extended
+           length = length_pcl * 1.20)
   dc <- readRDS("data/raw/commercial-samples.rds")
 
   # Will naively sum all trawl lengths together for trawl
