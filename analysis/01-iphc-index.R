@@ -98,19 +98,19 @@ iphc_coast |>
     mutate(lat = round(beginlat, digits = 4), lon = round(beginlon, digits = 4)),
              by = c("station" = "station", "year" = "year", 'lat' = 'lat', 'lon' = 'lon'))
 
-iphc_coast2 <- iphc_coast2 |>
-  filter(station !=2107 & year !=2019) |>
-  filter(station != 2099 & year != 2019) |>
+iphc_coast3 <- iphc_coast2 |>
+  mutate(remove = ifelse(year == 2019 & station %in% c(2107, 2099), "remove", "keep")) |>
+  filter(remove != "remove") |>
   inner_join(iphc_hksobs) |> #for hook information
   distinct(.keep_all = TRUE) |>
   bind_rows(year2019_stations)
 
 # check for duplicate years and stations
-test<- dplyr::select(iphc_coast2, year, station )
-iphc_coast2[duplicated(iphc_coast2), ]
+test<- dplyr::select(iphc_coast3, year, station )
+iphc_coast3[duplicated(iphc_coast3), ]
 test[duplicated(test), ]
 
-iphc_coast3 <- iphc_coast2 %>%
+iphc_coast3 <- iphc_coast3 %>%
   filter(eff == "Y") %>%
   mutate(startlonfix = ifelse(beginlon > 0, beginlon * -1, beginlon)) %>%
   mutate(depth_m = 1.8288 * avgdepth..fm.) %>%
@@ -357,35 +357,29 @@ fit_iphc_nb2 <- sdmTMB(
   spatial = "on",
   silent = TRUE,
   anisotropy = TRUE,
-  extra_time = c(2019),
   control = sdmTMBcontrol(newton_loops = 1L)
 )
 saveRDS(fit_iphc_nb2, file = "data/generated/iphc-nb2-sdmTMB_gfdata.rds")
-#fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB.rds")
 fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 
+#check
 fit_iphc_nb2$data |> filter(N_it20 == 0) |> group_by(year) |> tally()
+
+#with hook comp
+# fit_iphc_nb2_whk <- update(fit_iphc_nb2,
+#                           formula =  numobs ~ 0 + poly(depth_m_log, 2L),
+#                           offset = "offset_hk")
+# saveRDS(fit_iphc_nb2_whk, file = "data/generated/iphc-nb2-sdmTMB_gfdata_wjulian.rds")
+# fit_iphc_nb2_whk <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata_wjulian.rds")
 
 # #with julian
 # ggplot(d, aes(year, julian)) + geom_point()
 # range(d$julian)
 # d$julian_small <- d$julian/100
-# fit_iphc_nb2_wjulian <- sdmTMB(
-#   numobs ~ 0 + poly(depth_m_log, 2L) + julian_small,
-#   family = nbinom2(link = "log"),
-#   time_varying = ~1,
-#   data = d,
-#   mesh = mesh,
-#   time = "year",
-#   offset = "offset",
-#   spatiotemporal = "ar1",
-#   spatial = "on",
-#   silent = TRUE,
-#   anisotropy = TRUE,
-#   control = sdmTMBcontrol(newton_loops = 1L)
-# )
+# fit_iphc_nb2_wjulian <- update(fit_iphc_nb2,
+#                               formula =  numobs ~ 0 + poly(depth_m_log, 2L) + julian_small)
 # saveRDS(fit_iphc_nb2_wjulian, file = "data/generated/iphc-nb2-sdmTMB_gfdata_wjulian.rds")
-# fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata_wjulian.rds")
+# fit_iphc_nb2_wjulian <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata_wjulian.rds")
 
 # fit_rw <- update(fit_iphc_nb2, spatiotemporal = "rw", time_varying = NULL,
 #   formula. = number_observed ~ 1 + poly(depth_m_log, 2L))
@@ -393,7 +387,6 @@ fit_iphc_nb2$data |> filter(N_it20 == 0) |> group_by(year) |> tally()
 fit_iphc_nb2
 fit_iphc_nb2$sd_report
 sanity(fit_iphc_nb2)
-fit_iphc_nb2$sd_report
 plot_anisotropy(fit_iphc_nb2)
 tidy(fit_iphc_nb2, conf.int = TRUE)
 tidy(fit_iphc_nb2, effects = "ran_pars", conf.int = TRUE)
@@ -423,7 +416,7 @@ ggplot(g, aes(UTM_lon, UTM_lat, colour = depth_m_log)) +
   coord_fixed() +
   scale_colour_viridis_c(trans = "sqrt", direction = -1)
 
-years <- sort(unique(d$year))
+years <- seq(1998, 2022,1)
 grid <- sdmTMB::replicate_df(g, "year", years)
 
 # p_rw <- predict(fit_rw, newdata = grid, return_tmb_object = TRUE)
@@ -434,10 +427,9 @@ ind <- get_index(p, bias_correct = TRUE)
 
 saveRDS(ind, file = "data/generated/geostat-ind-iphc_gfdata.rds")
 #saveRDS(ind, file = "data/generated/geostat-ind-iphc_gfdata_julian.rds")
-#ind_web <- readRDS("data/generated/geostat-ind-iphc.rds")
 ind <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds")
 #ind_julian <- readRDS("data/generated/geostat-ind-iphc_gfdata_julian.rds")
-# ind_withouthk <- readRDS("data/generated/geostat-ind-iphc_withouthk.rds")
+#ind_withouthk <- readRDS("data/generated/geostat-ind-iphc_withouthk.rds")
 
 # hk <- ggplot(ind, aes(year, log(est)), colour = "black") +
 #   geom_line()
