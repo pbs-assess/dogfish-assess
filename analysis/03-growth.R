@@ -31,6 +31,21 @@ dat <- readxl::read_excel("data/raw/Age.Length.Data.xlsx") %>%
 
 ggplot(dat, aes(Age, length)) + facet_wrap(~sex, scales = "free") + geom_smooth() + geom_point()
 
+# Maximum observed age in BC (exclude 4B)
+dat %>%
+  filter(Area != "4B") %>%
+  summarise(max(Age), .by = sex)
+
+filter(dat, sex == "Female", Age > 45, Area != "4B")   # Oldest female, 54, seen in 1982 in 5D
+filter(dat, sex == "Male", Age > 45, Area != "4B")   # Oldest male, 53, seen in 1982 in 5C
+
+# Include 4B
+dat %>%
+  summarise(max(Age), .by = sex)
+
+filter(dat, sex == "Female", Age > 65)   # Oldest female, 73, seen in 2004 in 4Bs
+filter(dat, sex == "Male", Age > 60)  # Oldest male, 70, seen in 1989 in 4B
+
 
 # combine to visualise ----------------------------------------------------
 dat2 <- dat |> dplyr::select(sex, Age, length, Area) |> mutate(type = "DFO")

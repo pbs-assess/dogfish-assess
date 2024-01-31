@@ -234,17 +234,22 @@ sel_prior <- length_format %>%
          dsc_sd = 0.3)
 
 # Natural mortality predictors
-# max age of 73 and 70 for F/M
 ss3_m <- function(max_obs_age, linf = NA, k = NA) {
   prior <- list(M_Hoenig = c(exp(1.48 - log(max_obs_age)), 0.06), # See Hamel (2015)
-                M_Then = c(exp(1.717 - 1.01 * log(max_obs_age)), 0.08), # Table 3 of Then et al 2015 (use log-log transformation, see Hamel 2015)
-                M_Then2 = c(4.899 * max_obs_age^-0.916, MSEtool::sdconv(1, 0.11)), # Non-linear least squares
-                M_Then_growth = c(4.118 * k^0.73 / linf^0.33))
+                M_Then_loglog = c(exp(1.717 - 1.01 * log(max_obs_age)), 0.08), # Table 3 of Then et al 2015 (use log-log transformation, see Hamel 2015)
+                M_Then_nls = c(4.899 * max_obs_age^-0.916, MSEtool::sdconv(1, 0.11)), # Non-linear least squares
+                M_Then_growth = c(4.118 * k^0.73 / linf^0.33),
+                Hamel = c(5.4/max_obs_age, 0.31))
   prior
 }
 
-ss3_m(73, 97.4, 0.05) # Female M = 0.073
-ss3_m(70, 83.7, 0.08) # Male   M = 0.076
+# Growth from M4 - Max age from outside waters
+ss3_m(54, 91.2, 0.07) # Female M = 0.10
+ss3_m(53, 85.8, 0.09) # Male   M = 0.10
+
+# Growth from M3 - Max age from inside waters
+ss3_m(73, 93.2, 0.05) # Female M = 0.073
+ss3_m(70, 84.4, 0.09) # Male   M = 0.077
 
 #
 ss3_maturity_slope <- function(l95 = 115.1, l50 = 97.6) {
