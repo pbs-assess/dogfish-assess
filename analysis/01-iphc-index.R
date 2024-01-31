@@ -261,20 +261,20 @@ saveRDS(d, "data/generated/IPHC_coastdata_nosog_gfdata_hk.rds")
 coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
   sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
 
-gg <- ggplot(d, aes(longitude, latitude, fill = bait/hooksobserved, colour = bait/hooksobserved)) +
-  geom_sf(data = coast, inherit.aes = FALSE) +
-  coord_sf(expand = FALSE) +
-  geom_point(pch = 21, alpha = 0.3) +
-  facet_wrap(vars(year)) +
-  scale_fill_viridis_c(option = "C", limits = c(0, 1)) +
-  scale_colour_viridis_c(option = "C", limits = c(0, 1)) +
-  theme(panel.spacing = unit(0, "in"),
-        legend.position = 'bottom',
-        axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  labs(x = "Longitude", y = "Latitude", fill = "Proportion baited hooks", colour = "Proportion baited hooks")
-ggsave("figs/iphc/baited_hooks.png", gg, height = 6, width = 5, dpi = 600)
+#gg <- ggplot(d, aes(longitude, latitude, fill = bait/hooksobserved, colour = bait/hooksobserved)) +
+#  geom_sf(data = coast, inherit.aes = FALSE) +
+#  coord_sf(expand = FALSE) +
+#  geom_point(pch = 21, alpha = 0.3) +
+#  facet_wrap(vars(year)) +
+#  scale_fill_viridis_c(option = "C", limits = c(0, 1)) +
+#  scale_colour_viridis_c(option = "C", limits = c(0, 1)) +
+#  theme(panel.spacing = unit(0, "in"),
+#        legend.position = 'bottom',
+#        axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+#  labs(x = "Longitude", y = "Latitude", fill = "Proportion baited hooks", colour = "Proportion baited hooks")
+#ggsave("figs/iphc/baited_hooks.png", gg, height = 6, width = 5, dpi = 600)
 
-gg <- ggplot(d, aes(longitude, latitude, fill = N_it20/exp(offset), colour = N_it20/exp(offset))) +
+gg <- ggplot(d, aes(longitude, latitude, fill = numobs/exp(offset), colour = numobs/exp(offset))) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   geom_point(pch = 21, alpha = 0.3) +
@@ -283,44 +283,19 @@ gg <- ggplot(d, aes(longitude, latitude, fill = N_it20/exp(offset), colour = N_i
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   scale_colour_viridis_c(trans = "log", breaks = c(0.006, 0.050, 0.37)) +
   scale_fill_viridis_c(trans = "log", breaks = c(0.006, 0.050, 0.37)) +
-  labs(x = "Longitude", y = "Latitude", fill = "Adjusted CPUE", colour = "Adjusted CPUE")
-ggsave("figs/iphc/adjusted_cpue.png", gg, height = 6, width = 5, dpi = 600)
+  labs(x = "Longitude", y = "Latitude", fill = "CPUE", colour = "CPUE")
+ggsave("figs/iphc/cpue.png", gg, height = 6, width = 5, dpi = 600)
 
 gg <- d %>%
-  mutate(cpue = N_it20/exp(offset)) %>%
+  mutate(cpue = numobs/exp(offset)) %>%
   ggplot(aes(x = cpue, y = after_stat(count))) +
-  geom_histogram(bins = 20, colour = 1, fill = "grey80") +
+  geom_histogram(binwidth = 0.25, colour = 1, fill = "grey80", linewidth = 0.25) +
   facet_wrap(vars(year), ncol = 5) +
-  theme(panel.spacing = unit(0, "in")) +
-  labs(x = "Adjusted CPUE", y = "Frequency") +
-  coord_cartesian(xlim = c(0, 0.5))
-ggsave("figs/iphc/adjusted_cpue_hist.png", gg, height = 5, width = 6)
-
-## Nominal index ----
-do_boot <- function(x, nsim = 250) {
-  boot_fn <- function(d, i) {
-    d <- d[i, ]
-    mean(d$N_it20/exp(d$offset))
-  }
-  boot_out <- lapply(unique(x$year), function(y) {
-    samps <- filter(x, year == y)
-    boot::boot(samps, boot_fn, R = nsim)
-  })
-  data.frame(year = unique(x$year),
-             index = sapply(boot_out, getElement, "t0"),
-             var = sapply(boot_out, function(i) var(i$t))) %>%
-    mutate(sd = sqrt(var), cv = sd/index)
-}
-index_boot <- do_boot(d)
-
-gg <- index_boot %>%
-  ggplot(aes(year, index)) +
-  geom_linerange(aes(ymin = index - 2 * sd, ymax = index + 2 * sd)) +
-  geom_point() +
-  #geom_line() +
-  expand_limits(y = 0) +
-  labs(x = "Year", y = "Index of abundance")
-ggsave("figs/iphc/iphc_index_nominal.png", gg, height = 4, width = 6)
+  theme(#panel.spacing = unit(0, "in"),
+        strip.background = element_blank()) +
+  labs(x = "CPUE", y = "Frequency") +
+  coord_cartesian(xlim = c(-0.125, 3), expand = FALSE)
+ggsave("figs/iphc/cpue_hist.png", gg, height = 5, width = 6)
 
 ## Fit sdm model ----
 mesh <- make_mesh(d, c("UTM_lon", "UTM_lat"), cutoff = 15)
@@ -573,12 +548,69 @@ gg <- ggplot(p$data, aes(longitude, latitude, fill = est, colour = est)) +
 ggsave("figs/iphc/prediction_grid_density.png", gg, height = 6, width = 5, dpi = 600)
 
 # Index ----
+# Compare geo-spatial index with nominal index (bootstrapped mean) ----
 gg <- ggplot(ind, aes(year, est)) +
   geom_point() +
   geom_linerange(aes(ymin = lwr, ymax = upr)) +
   labs(x = "Year", y = "IPHC Index") +
   expand_limits(y = 0)
 ggsave("figs/iphc/iphc_index.png", gg, height = 3, width = 4)
+
+do_boot <- function(x, nsim = 250) {
+  boot_fn <- function(d, i) {
+    d <- d[i, ]
+    mean(d$numobs/exp(d$offset))
+  }
+  boot_out <- lapply(unique(x$year), function(y) {
+    samps <- filter(x, year == y)
+    boot::boot(samps, boot_fn, R = nsim)
+  })
+  data.frame(year = unique(x$year),
+             index = sapply(boot_out, getElement, "t0"),
+             var = sapply(boot_out, function(i) var(i$t))) %>%
+    mutate(sd = sqrt(var), cv = sd/index)
+}
+index_boot_Nit <- d %>%
+  mutate(numobs = N_it) %>%
+  filter(!is.na(numobs)) %>%
+  do_boot()
+
+index_boot_Nit20 <- d %>%
+  mutate(numobs = N_it20) %>%
+  filter(!is.na(numobs)) %>%
+  do_boot()
+
+index_compare <- rbind(
+  ind %>% select(year, est, lwr, upr) %>% mutate(type = "Geospatial model"),
+  index_boot_Nit %>%
+    #mutate(lwr = exp(log(index) - 1.96 * sqrt(log(1 + sd^2))),
+    #       upr = exp(log(index) + 1.96 * sqrt(log(1 + sd^2)))) %>%
+    mutate(lwr = index - 1.96 * sd,
+           upr = index + 1.96 * sd) %>%
+    select(year, index, lwr, upr) %>%
+    rename(est = index) %>%
+    mutate(type = "Bootstrapped mean - all hooks"),
+  index_boot_Nit20 %>%
+    #mutate(lwr = exp(log(index) - 1.96 * sqrt(log(1 + sd^2))),
+    #       upr = exp(log(index) + 1.96 * sqrt(log(1 + sd^2)))) %>%
+    mutate(lwr = index - 1.96 * sd,
+           upr = index + 1.96 * sd) %>%
+    select(year, index, lwr, upr) %>%
+    rename(est = index) %>%
+    mutate(type = "Bootstrapped mean - 20 hooks")
+)
+
+gg <- index_compare %>%
+  ggplot(aes(year, est)) +
+  geom_linerange(aes(ymin = lwr, ymax = upr)) +
+  geom_point() +
+  geom_line(linetype = 2, linewidth = 0.1) +
+  facet_wrap(vars(type), ncol = 2, scales = "free_y") +
+  gfplot::theme_pbs() +
+  expand_limits(y = 0) +
+  labs(x = "Year", y = "Index of abundance")
+ggsave("figs/iphc/iphc_index_compare.png", gg, height = 5, width = 6)
+
 
 # Marginal effect of depth ----
 marginal_depth <- visreg::visreg(fit_iphc_nb2, xvar = "depth_m_log", breaks = seq(0, 500, 25),
