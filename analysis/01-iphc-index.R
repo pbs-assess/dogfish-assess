@@ -261,18 +261,18 @@ saveRDS(d, "data/generated/IPHC_coastdata_nosog_gfdata_hk.rds")
 coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
   sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
 
-#gg <- ggplot(d, aes(longitude, latitude, fill = bait/hooksobserved, colour = bait/hooksobserved)) +
-#  geom_sf(data = coast, inherit.aes = FALSE) +
-#  coord_sf(expand = FALSE) +
-#  geom_point(pch = 21, alpha = 0.3) +
-#  facet_wrap(vars(year)) +
-#  scale_fill_viridis_c(option = "C", limits = c(0, 1)) +
-#  scale_colour_viridis_c(option = "C", limits = c(0, 1)) +
-#  theme(panel.spacing = unit(0, "in"),
-#        legend.position = 'bottom',
-#        axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-#  labs(x = "Longitude", y = "Latitude", fill = "Proportion baited hooks", colour = "Proportion baited hooks")
-#ggsave("figs/iphc/baited_hooks.png", gg, height = 6, width = 5, dpi = 600)
+gg <- ggplot(d, aes(longitude, latitude, fill = bait/hooksobserved, colour = bait/hooksobserved)) +
+  geom_sf(data = coast, inherit.aes = FALSE) +
+  coord_sf(expand = FALSE) +
+  geom_point(pch = 21, alpha = 0.3) +
+  facet_wrap(vars(year)) +
+  scale_fill_viridis_c(option = "C", limits = c(0, 1)) +
+  scale_colour_viridis_c(option = "C", limits = c(0, 1)) +
+  theme(panel.spacing = unit(0, "in"),
+        legend.position = 'bottom',
+        axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+  labs(x = "Longitude", y = "Latitude", fill = "Proportion baited hooks", colour = "Proportion baited hooks")
+ggsave("figs/iphc/baited_hooks.png", gg, height = 6, width = 5, dpi = 600)
 
 gg <- ggplot(d, aes(longitude, latitude, fill = numobs/exp(offset), colour = numobs/exp(offset))) +
   geom_sf(data = coast, inherit.aes = FALSE) +

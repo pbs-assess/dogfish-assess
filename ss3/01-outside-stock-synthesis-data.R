@@ -81,12 +81,13 @@ ss3_catch <- function(csv = TRUE) {
 ss3_catch()
 
 ss3_index <- function(csv = TRUE) {
-  # IPHC
+  # IPHC - no hook competition
   iphc <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds") %>%
     mutate(fleet = fleet_index["Iphc"])
 
-  # HBLL
+  # HBLL - NB2 likelihood - no hook competition
   hbll <- readRDS("data/generated/geostat-ind-hbll-out.rds") %>%
+    filter(year != 2013) %>% # No survey in 2013
     mutate(fleet = fleet_index["Hbll"]) %>%
     select(-survey_abbrev)
 
@@ -97,7 +98,8 @@ ss3_index <- function(csv = TRUE) {
   ind <- rbind(hbll, iphc, syn) %>%
     mutate(month = 1) %>%
     select(year, month, fleet, est, se) %>%
-    arrange(fleet, year)
+    arrange(fleet, year) %>%
+    round(3)
 
   if (csv) write.csv(ind, file = "data/ss3/ss3-index.csv", row.names = FALSE)
 

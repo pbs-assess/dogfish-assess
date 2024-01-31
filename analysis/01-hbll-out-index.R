@@ -117,19 +117,19 @@ gg <- ggplot(d, aes(longitude, latitude, fill = catch_count/exp(offset), colour 
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   scale_colour_viridis_c(trans = "log", breaks = c(0.007, 0.05, 0.368, 2.72)) +
   scale_fill_viridis_c(trans = "log", breaks = c(0.007, 0.05, 0.368, 2.72)) +
-  labs(x = "Longitude", y = "Latitude", fill = "Adjusted CPUE", colour = "Adjusted CPUE")
-ggsave("figs/hbll_out/adjusted_cpue.png", gg, height = 6, width = 5, dpi = 600)
+  labs(x = "Longitude", y = "Latitude", fill = "CPUE", colour = "CPUE")
+ggsave("figs/hbll_out/cpue.png", gg, height = 6, width = 5, dpi = 600)
 
 gg <- d %>%
   mutate(cpue = catch_count/exp(offset)) %>%
-  filter(cpue <= 1) %>%
+  #filter(cpue <= 1) %>%
   ggplot(aes(x = cpue, y = after_stat(count))) +
-  geom_histogram(bins = 20, colour = 1, fill = "grey80") +
+  geom_histogram(binwidth = 0.025, linewidth = 0.1, colour = 1, fill = "grey80") +
   facet_wrap(vars(year)) +
-  theme(panel.spacing = unit(0, "in")) +
-  labs(x = "Adjusted CPUE", y = "Frequency") +
-  coord_cartesian(xlim = c(0, 1))
-ggsave("figs/hbll_out/adjusted_cpue_hist.png", gg, height = 4, width = 5)
+  #theme(panel.spacing = unit(0, "in")) +
+  labs(x = "CPUE", y = "Frequency") +
+  coord_cartesian(xlim = c(-0.0125, 0.35), expand = FALSE)
+ggsave("figs/hbll_out/cpue_hist.png", gg, height = 6, width = 6)
 
 gg <- d %>%
   mutate(cpue = catch_count/exp(offset)) %>%
@@ -139,7 +139,7 @@ gg <- d %>%
   labs(x = "Depth (m)", y = "log(CPUE + 1)") +
   theme(panel.spacing = unit(0, "in")) +
   coord_cartesian(xlim = c(0, 300))
-ggsave("figs/hbll_out/adjusted_cpue_depth_time.png", gg, height = 5, width = 6)
+ggsave("figs/hbll_out/cpue_depth_time.png", gg, height = 5, width = 6)
 
 
 ## Design-based index ----
@@ -170,12 +170,12 @@ g <- index_design %>%
   ggplot(aes(year, Biomass, linetype = survey_abbrev, shape = survey_abbrev)) +
   geom_linerange(aes(ymin = Biomass - 2 * SE, ymax = Biomass + 2 * SE)) +
   geom_point() +
-  geom_line() +
+  geom_line(linewidth = 0.1) +
   theme(panel.spacing = unit(0, "in"), legend.position = "bottom") +
   expand_limits(y = 0) +
   labs(x = "Year", y = "Index of abundance", linetype = "Survey", shape = "Survey") +
   scale_shape_manual(values = c(16, 1))
-ggsave("figs/hbll_out/hbll_index_design.png", g, height = 4, width = 6)
+ggsave("figs/hbll_out/hbll_index_design.png", g, height = 3, width = 4)
 
 
 
@@ -213,7 +213,7 @@ fit_nb2 <- sdmTMB(
   time = "year",
   spatiotemporal = "rw",
   spatial = "on",
-  silent = FALSE,
+  silent = TRUE,
   anisotropy = TRUE,
   extra_time = 2013L
 )
@@ -426,7 +426,7 @@ ggsave("figs/hbll_out/prediction_grid_depth.png", gg, height = 4, width = 4, dpi
 rb_fill <- scale_fill_gradient2(high = "red", low = "blue", mid = "grey90")
 rb_col <- scale_colour_gradient2(high = "red", low = "blue", mid = "grey90")
 
-gg <- ggplot(p_nb2_julian$data, aes(longitude, latitude, fill = omega_s, colour = omega_s)) +
+gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = omega_s, colour = omega_s)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   geom_tile(width = 0.025, height = 0.025) +
@@ -435,7 +435,7 @@ gg <- ggplot(p_nb2_julian$data, aes(longitude, latitude, fill = omega_s, colour 
 ggsave("figs/hbll_out/prediction_grid_omega.png", gg, height = 4, width = 4, dpi = 600)
 
 # Epsilon ----
-gg <- ggplot(p_nb2_julian$data, aes(longitude, latitude, fill = epsilon_st, colour = epsilon_st)) +
+gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = epsilon_st, colour = epsilon_st)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   facet_wrap(vars(year)) +
@@ -448,7 +448,7 @@ gg <- ggplot(p_nb2_julian$data, aes(longitude, latitude, fill = epsilon_st, colo
 ggsave("figs/hbll_out/prediction_grid_eps.png", gg, height = 6, width = 5, dpi = 600)
 
 # log-density ----
-gg <- ggplot(p_nb2_julian$data, aes(longitude, latitude, fill = est, colour = est)) +
+gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = est, colour = est)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   facet_wrap(vars(year)) +
@@ -462,15 +462,17 @@ gg <- ggplot(p_nb2_julian$data, aes(longitude, latitude, fill = est, colour = es
 ggsave("figs/hbll_out/prediction_grid_density.png", gg, height = 6, width = 5, dpi = 600)
 
 # Index ----
-gg <- ggplot(ind_julian, aes(year, est)) +
+gg <- ggplot(ind_nohk, aes(year, est)) +
   geom_point() +
   geom_linerange(aes(ymin = lwr, ymax = upr)) +
-  labs(x = "Year", y = "HBLL Index")
+  labs(x = "Year", y = "HBLL Index") +
+  expand_limits(y = 0) +
+  coord_cartesian(expand = FALSE)
 ggsave("figs/hbll_out/hbll_index.png", gg, height = 3, width = 4)
 
 # Marginal effect of depth ----
-marginal_depth <- visreg::visreg(fit_nb2_julian, xvar = "depth_m", breaks = seq(0, 270, 10),
-                                 data = fit_nb2_julian$data,
+marginal_depth <- visreg::visreg(fit_nb2_nohk, xvar = "depth_m", breaks = seq(0, 270, 10),
+                                 data = fit_nb2_nohk$data,
                                  plot = FALSE)
 
 gg <- plot(marginal_depth, gg = TRUE,
