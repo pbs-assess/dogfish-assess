@@ -163,9 +163,6 @@ ss3_length <- function(csv = TRUE, bin_size = 5, bin_range = c(35, 115)) {
     filter(!is.na(length), sex %in% 1:2, usability_code %in% c(0, 1, 2, 6)) %>%
     mutate(length = pmax(length, min(bin_range)) %>% pmin(max(bin_range)))
 
-  #range(length_all$length)
-  #hist(length_all$length)
-
   bin_all <- seq(min(bin_range), max(bin_range), bin_size)
 
   comp <- length_all %>%
@@ -198,7 +195,7 @@ ss3_length <- function(csv = TRUE, bin_size = 5, bin_range = c(35, 115)) {
     arrange(fleet, year)
 
   if (csv) write.csv(length_format, file = "data/ss3/ss3-length.csv", row.names = FALSE)
-  invisible(list(length_format, bin_all))
+  invisible(list(length_format, bin_all, comp))
 }
 len <- ss3_length()
 
@@ -252,8 +249,11 @@ ss3_m(54, 91.2, 0.07) # Female M = 0.10
 ss3_m(53, 85.8, 0.09) # Male   M = 0.10
 
 # Growth from M3 - Max age from inside waters
-ss3_m(73, 93.2, 0.05) # Female M = 0.073
+ss3_m(73, 93.2, 0.05) # Female M = 0.074
 ss3_m(70, 84.4, 0.09) # Male   M = 0.077
+
+# Max age of approximately 95 years from Macfarlane and King (200)
+ss3_m(95, 0, 0) #  M = 0.056
 
 #
 ss3_maturity_slope <- function(l95 = 115.1, l50 = 97.6) {
