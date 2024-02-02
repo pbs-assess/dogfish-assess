@@ -370,8 +370,15 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
                      bin_width = 5,
                      scale_max_1 = FALSE,
                      type = c("Asel2", "Asel", "Lsel"),
-                     fleet_name = NULL) {
+                     fleet_name = NULL,
+                     check_comp = TRUE) {
   type <- match.arg(type)
+
+  if (check_comp) {
+    fleet_lencomp <- unique(replist$lendbase$Fleet)
+    fleet_agecomp <- unique(replist$agedbase$Fleet)
+    fleet <- intersect(fleet, c(fleet_lencomp, fleet_agecomp))
+  }
 
   if(is.null(fleet_name)) fleet_name <- replist$FleetNames
 
@@ -424,13 +431,34 @@ SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"),
 
 .SS3_F <- function(replist, scenario = "OM 1") {
 
-  out <- replist$exploitation %>%
-    select(Yr, F_std, replist$FleetNames[replist$IsFishFleet]) %>%
-    mutate(F_std = ifelse(is.na(F_std), 0, F_std),
-           FMSY = replist$derived_quants %>% filter(Label == "annF_MSY") %>% pull(Value),
-           scen = scenario,
-           F_FMSY = F_std/FMSY) %>%
-    filter(Yr <= 2023)
+  total_catch <- replist$timeseries %>%
+    filter(Era == "TIME", Yr <= 2023) %>%
+    select(Yr, starts_with("dead(B)")) %>%
+    reshape2::melt(id.vars = c("Yr")) %>%
+    summarise(deadB = sum(value), .by = Yr)
+
+  hr_fleet <- replist$catch %>%
+    mutate(hr = ifelse(dead_bio, dead_bio/(dead_bio + vuln_bio), 0),
+           scen = scenario) %>%
+    select(Yr, hr, Fleet_Name) %>%
+    reshape2::dcast(list("Yr", "Fleet_Name"), value.var = "hr")
+
+  # Harvest rate
+  out <- replist$timeseries %>%
+    filter(Era == "TIME", Yr <= 2023) %>%
+    select(Yr, Bio_smry) %>%
+    left_join(total_catch, by = "Yr") %>%
+    left_join(hr_fleet, by = "Yr") %>%
+    mutate(F_std = deadB/Bio_smry, #total harvest rates
+           scen = scenario)
+
+  #out <- replist$exploitation %>%
+  #  select(Yr, F_std, replist$FleetNames[replist$IsFishFleet]) %>%
+  #  mutate(F_std = ifelse(is.na(F_std), 0, F_std),
+  #         FMSY = replist$derived_quants %>% filter(Label == "annF_MSY") %>% pull(Value),
+  #         scen = scenario,
+  #         F_FMSY = F_std/FMSY) %>%
+  #  filter(Yr <= 2023)
 
   out
 }
@@ -684,6 +712,41 @@ SS3_lencomp <- function(replist, scenario = "OM 1", fleet = 7, mean_length = TRU
   }
 }
 
+
+
+SS3_agecomp <- function(replist, scenario = "OM 1", fleet = 7, y) {
+  N <- replist$natage %>%
+    filter(`Beg/Mid` == "B", Era == "TIME", Yr %in% y) %>%
+    select(Yr, Sex, as.character(0:70)) %>%
+    reshape2::melt(id.vars = c("Yr", "Sex"))
+
+  sel <- replist$ageselex %>%
+    filter(Factor == "Asel2", Fleet == fleet, Yr %in% y) %>%
+    select(Yr, Sex, as.character(0:70)) %>%
+    reshape2::melt(id.vars = c("Yr", "Sex"), value.name = "sel")
+
+  Nvul <- full_join(N, sel, by = c("Yr", "Sex", "variable")) %>%
+    mutate(pred = value * sel, Age = as.character(variable) %>% as.numeric()) %>%
+    mutate(p = pred/sum(pred), .by = Yr) %>%
+    mutate(Sex = ifelse(Sex == 1, "Female", "Male")) %>%
+    mutate(p = ifelse(Sex == "Male", -1 * p, p)) %>%
+    mutate(FleetName = replist$FleetNames[fleet])
+
+  g <- ggplot(Nvul, aes(Age, p, fill = Sex)) +
+    geom_col(colour = "grey60", width = 1, alpha = 0.75) +
+    facet_grid(vars(FleetName), vars(Yr)) +
+    scale_y_continuous(labels = abs) +
+    theme(legend.position = "bottom",
+          panel.spacing = unit(0, "in")) +
+    scale_fill_manual(values = c("grey80", "white")) +
+    #xlim(xlim[[ff]]) +
+    labs(x = "Age", y = "Proportion") +
+    guides(colour = guide_legend(nrow = 2))
+
+  g
+}
+
+
 .SS3_N <- function(replist, scenario = "OM 1", age = c(0, 15, 30, 45, 60)) {
   dat <- replist$natage %>%
     filter(Era == "TIME", `Beg/Mid` == "B") %>%
@@ -699,11 +762,11 @@ SS3_N <- function(x, scenario, age = c(0, 15, 30, 45, 60)) {
   dat <- Map(.SS3_N, replist = x, scenario = scenario, MoreArgs = list(age = age)) %>%
     bind_rows()
 
-  g <- ggplot(dat, aes(Yr, log(value), colour = variable)) +
+  g <- ggplot(dat, aes(Yr, value, colour = variable)) +
     geom_line() +
     facet_grid(vars(scen), vars(Sex)) +
     gfplot::theme_pbs() +
-    labs(x = "Year", y = "log(Abundance)", colour = "Age")
+    labs(x = "Year", y = "Abundance", colour = "Age")
   g
 }
 
@@ -729,7 +792,7 @@ SS3_steep <- function(replist) {
 SS3_prof <- function(x, val, variable) {
   dat <- lapply(1:length(x), function(i) {
     mutate(x[[i]]$recruit, value = val[i]) %>%
-      filter(era %in% c("Fixed", "Main"))
+      filter(.data$era %in% c("Fixed", "Main"))
   }) %>%
     bind_rows() %>%
     mutate(dep = SpawnBio/SpawnBio[1], .by = value)
@@ -791,7 +854,7 @@ SS3_prof_like <- function(x, par, xval = c("par", "steep", "dep"), component = c
 
     ddf <- SS3_B(x, par, type = "SSB0") %>%
       getElement("data") %>%
-      filter(ddf, Yr == max(Yr)) %>%
+      filter(Yr == max(Yr)) %>%
       select(scen, y) %>%
       rename(variable = scen, dep = y)
 
