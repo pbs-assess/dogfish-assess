@@ -7,8 +7,32 @@ source("ss3/ss3_functions.R")
 #ss_home <- here::here("ss3")
 ss_home <- "C:/users/qhuynh/Desktop/dogfish"
 
-mods <- c("m37_IPHC_g4", "m37_IPHC_g2", "m37_IPHC_g4_M056", "m37_SYN_g4")
-model_name <- c("(1) IPHC index + Growth 4", "(2) IPHC + Growth 2", "(3) IPHC + M = 0.056", "(4) SYN + Growth 4")
+# Set A (fishing causes decline)
+mods <- c("A1", "A2", "A3") #c("m37_IPHC_g2_fixM074", "m37_SYN_g2_fixM074", "m37_HBLL_g2_fixM074")
+model_name <- c("(A1) IPHC", "(A2) SYN", "(A3) HBLL")
+
+# Set B (increasing M)
+mods <- c("B1", "B2", "B3") #c("m37_SYN_g2_fixM074", "m37_SYN_IPHC_g2_fixM074", "m37_SYN_IPHC_HBLL_g2_fixM074") %>%
+  #paste0("_incM2005")
+model_name <- c("(B1) SYN", "(B2) SYN + IPHC", "(B3) SYN + IPHC + HBLL")
+
+# Set B (rec dev)
+#mods <- c("m37_SYN_g2_fixM074_incM2005", "m37_SYN_g2_fixM074_incM2005_recdev")
+#model_name <- c("(B1) SYN", "(B4) SYN + rec dev")
+
+
+# Set C (low Q)
+mods <- c("C1", "C2", "C3") #c("m37_SYN_g2_fixM074_lowq2012",
+        #  "m37_SYN_HBLL_g2_fixM074_lowSYNHBLLq2012",
+        #  "m37_SYN_IPHC_HBLL_g2_fixM074_lowSYNIPHCHBLLq2012")
+model_name <- c("(C1) SYN",
+                "(C2) SYN + HBLL",
+                "(C3) SYN + HBLL + IPHC")
+
+# Set D (density-dependent M)
+mods <- c("D1")
+model_name <- c("(D1) IPHC")
+
 
 multi_rep <- lapply(mods, function(x) {
   r4ss::SS_output(file.path(ss_home, x),
@@ -16,10 +40,34 @@ multi_rep <- lapply(mods, function(x) {
                   printstats = FALSE,
                   hidewarn = TRUE)
 })
-saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_02.01.2024.rds"))
-multi_rep <- readRDS(file = file.path(ss_home, "multi_rep_02.01.2024.rds"))
+saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_02.05.2024.rds"))
+multi_rep <- readRDS(file = file.path(ss_home, "multi_rep_02.05.2024.rds"))
 
-multi_rep[[2]]$estimated_non_dev_parameters %>% View()
+# M change
+lapply(multi_rep, function(x) {
+  x$M_at_age %>% filter(Yr %in% c(1937, 2023)) %>% select(Sex, Yr, `0`)
+})
+
+# Steepness
+sapply(multi_rep, SS3_steep)
+
+# Q change
+lapply(multi_rep, function(x) {
+  x$cpue %>%
+    summarise(Delta_Q = min(Calc_Q/max(Calc_Q)), .by = Fleet)
+})
+
+# Density-dependent M
+lapply(multi_rep, function(x) {
+
+  browser()
+  r4ss::SSplotTimeseries(x, subplot = 4)
+  x$Natural_Mortality %>% View()
+  x$M_age %>% View()
+
+
+
+})
 
 ### Tables
 likelihoods <- lapply(1:length(mods), function(i) {
@@ -66,7 +114,8 @@ ggsave("figs/ss3/srr.png", g, height = 4, width = 6)
 
 # Plot recruitment
 g <- SS3_recruitment(multi_rep, model_name) +
-  labs(y = "Recruitment (age 0)")
+  labs(y = "Recruitment (age 0)") +
+  coord_cartesian(expand = FALSE)
 ggsave("figs/ss3/recruitment.png", g, height = 4, width = 6)
 
 #g <- SS3_recruitment(multi_rep, model_name, dev = TRUE)
@@ -93,8 +142,21 @@ ggsave("figs/ss3/bbmsy_est.png", g, height = 4, width = 6)
 
 g <- SS3_B(multi_rep, model_name, type = "B") +
   labs(linetype = 'Sex') +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") +
+  coord_cartesian(expand = FALSE)
 ggsave("figs/ss3/biomass_est.png", g, height = 5, width = 6)
+
+# Population fecundity
+g <- SS3_fecundity(multi_rep, model_name) +
+  coord_cartesian(ylim = c(0, 10))
+ggsave("figs/ss3/fecundity_hist.png", g, height = 3, width = 6)
+
+g <- SS3_fecundity(multi_rep, model_name, type = "mat") +
+  coord_cartesian(ylim = c(0, 0.1))
+ggsave("figs/ss3/fecundity_hist2.png", g, height = 3, width = 6)
+
+
+
 
 # Maturity at age/length
 gmodel <- c(4, 2)
@@ -123,6 +185,8 @@ g2 <- lapply(1:2, function(x) {
   labs(x = "Length", y = "Maturity")
 g <- cowplot::plot_grid(g2, g1, rel_widths = c(1, 1.25))
 ggsave("figs/ss3/maturity.png", g, height = 2, width = 6)
+
+
 
 # Fecundity at age/length
 g1 <- lapply(1:2, function(x) {
@@ -183,20 +247,11 @@ g <- cowplot::plot_grid(g2, g1, rel_widths = c(1, 1.25))
 ggsave("figs/ss3/spawning_age.png", g, height = 2, width = 6)
 
 # Selectivity at length (estimated)
-mat_len <- data.frame(
-  variable = multi_rep[[1]]$biology %>% pull(Len_mean),
-  value = multi_rep[[1]]$biology %>% pull(Mat)
-)
 g <- SS3_sel(multi_rep, model_name, type = "Lsel", bin_width = 5) +
-  geom_line(data = mat_len, colour = 1, linetype = 3) +
   coord_cartesian(xlim = c(40, 115), ylim = c(0, 1.1))
 ggsave("figs/ss3/sel_len.png", g, height = 6, width = 6)
 
 # Selectivity at age (converted from size based)
-#mat_age <- data.frame(
-#  variable = multi_rep[[1]]$endgrowth %>% filter(Sex == 1) %>% pull(int_Age),
-#  value = multi_rep[[1]]$endgrowth %>% filter(Sex == 1) %>% pull(Len_Mat)
-#)
 g <- SS3_sel(multi_rep, model_name, bin_width = 5)
   #geom_line(data = mat_age, colour = 1, linetype = 3)
 ggsave("figs/ss3/sel_age.png", g, height = 6, width = 6)
@@ -234,11 +289,15 @@ for(ff in fleet_int) {
              Exp = ifelse(Sex == "Male", -1 * Exp, Exp),
              Bin = Bin + 5)
 
+    len_N <- len %>%
+      summarise(N = unique(Nsamp_in), .by = c(Yr, FleetName))
+
     g <- len %>%
-      filter(scen == model_name[1]) %>%
-      ggplot(aes(Bin, Obs, fill = Sex)) +
-      geom_col(colour = "grey60", width = 5, alpha = 0.75) +
+      filter(scen == unique(len$scen)[1]) %>%
+      ggplot(aes(Bin, Obs)) +
+      geom_col(colour = "grey60", width = 5, alpha = 0.75, aes(fill = Sex)) +
       geom_line(data = len, aes(y = Exp, linetype = Sex, colour = scen)) +
+      geom_label(data = len_N, x = Inf, y = -Inf, hjust = "inward", vjust = "inward", aes(label = N)) +
       facet_wrap(vars(Yr), ncol = 4) +
       scale_y_continuous(labels = abs) +
       theme(legend.position = "bottom",
@@ -246,27 +305,68 @@ for(ff in fleet_int) {
       scale_fill_manual(values = c("grey80", "white")) +
       coord_cartesian(xlim = c(30, 120)) +
       labs(x = "Length", y = "Proportion", colour = "Model") +
-      guides(colour = guide_legend(nrow = 2)) +
+      guides(colour = guide_legend(nrow = 2), fill = "none", linetype = "none") +
       ggtitle(unique(len$FleetName))
     ggsave(paste0("figs/ss3/len_comp_fleet_", ff, ".png"), g, height = heights[ff], width = 6)
   }
 }
 
 # Numbers at age
-g <- SS3_N(multi_rep, model_name, age = seq(15, 60, 15)) +
-  theme(panel.spacing = unit(0, "in"))
+g <- SS3_N(multi_rep[1], model_name[1], age = seq(0, 40, 10))
+#ggsave("figs/ss3/N_age_B1.png", g, height = 2, width = 6)
+g2 <- g$data %>%
+  mutate(value = value/max(value), .by = c(variable, Sex, scen)) %>%
+  ggplot(aes(Yr, value, colour = variable)) +
+  geom_line() +
+  guides(colour = "none") +
+  gfplot::theme_pbs() +
+  facet_grid(vars(variable), vars(Sex)) +
+  labs(x = "Year", y = "Relative abundance") +
+  ggtitle(model_name[1])
+ggsave("figs/ss3/N_age_B1_rel.png", g2, height = 6, width = 4)
+
+
+
+g <- SS3_N(multi_rep[1], model_name[1], age = seq(0, 40, 10))
+ggsave("figs/ss3/N_age_B1.png", g, height = 2, width = 6)
+
+g <- SS3_N(multi_rep, model_name, age = seq(0, 40, 10))
 ggsave("figs/ss3/N_age.png", g, height = 6, width = 6)
+
+g <- SS3_N(multi_rep, model_name, age = seq(0, 40, 10)) +
+  coord_trans(y = "log") +
+  scale_y_continuous(breaks = c(1, 1000, 5000, 10000))
+ggsave("figs/ss3/N_age_log.png", g, height = 6, width = 6)
+
+g <- SS3_N(multi_rep, model_name, age = seq(0, 60, 10), sex_ratio = TRUE) +
+  coord_cartesian(ylim = c(0, 0.55), expand = FALSE)
+ggsave("figs/ss3/sex_ratio_age.png", g, height = 4, width = 6)
+
+# Compare with numbers at length
+g <- SS3_N(multi_rep, model_name, type = "length", len = seq(50, 115, 15))
+ggsave("figs/ss3/N_len.png", g, height = 6, width = 6)
+
+g <- SS3_N(multi_rep, model_name, type = "length", len = seq(50, 115, 15)) +
+  coord_trans(y = "log") +
+  scale_y_continuous(breaks = c(1, 1000, 5000, 10000))
+ggsave("figs/ss3/N_len_log.png", g, height = 6, width = 6)
+
+g <- SS3_N(multi_rep, model_name, type = "length", len = seq(50, 115, 15), sex_ratio = TRUE) +
+  coord_cartesian(ylim = c(0, 1), expand = FALSE)
+ggsave("figs/ss3/sex_ratio_len.png", g, height = 4, width = 6)
 
 
 # Exploitation and apical F
 g <- SS3_F(multi_rep, model_name) +
-  coord_cartesian(ylim = c(0, 0.31), expand = FALSE)
+  coord_cartesian(ylim = c(0, 0.25), expand = FALSE)
 ggsave("figs/ss3/harvest_rate_total.png", g, height = 4, width = 6)
 
 g <- SS3_F(multi_rep, model_name, type = "fleet") +
   labs(y = "Harvest rate") +
   coord_cartesian(ylim = c(0, 1), expand = FALSE)
 ggsave("figs/ss3/harvest_rate_fleet.png", g, height = 4, width = 6)
+
+g <- SS3_vuln(multi_rep, model_name)
 
 #g <- SS3_F(multi_rep, model_name, type = "FMSY") +
 #  labs(y = expression(U/U[MSY]))
@@ -323,17 +423,18 @@ for(i in 1:length(multi_rep)) {
 }
 
 # Sex ratio of size comps
+fleet_int = 1:8
 comps <- Map(SS3_lencomp, multi_rep, model_name, MoreArgs = list(fleet = fleet_int), mean_length = FALSE) %>%
   bind_rows() %>%
   mutate(FleetName = factor(FleetName, levels = multi_rep[[1]]$FleetNames[fleet_int]))
 ratio_exp <- comps %>%
   summarise(N = sum(Exp), .by = c(Yr, FleetName, Sex, scen)) %>%
-  mutate(p_female = N/sum(N), .by = c(Yr, FleetName)) %>%
+  mutate(p_female = N/sum(N), .by = c(Yr, FleetName, scen)) %>%
   filter(Sex == "Female")
 
 ratio_obs <- comps %>%
   summarise(N = sum(Obs), .by = c(Yr, FleetName, Sex, scen)) %>%
-  mutate(p_female = N/sum(N), .by = c(Yr, FleetName)) %>%
+  mutate(p_female = N/sum(N), .by = c(Yr, FleetName, scen)) %>%
   filter(Sex == "Female")
 
 g <- ggplot(ratio_exp, aes(Yr, p_female)) +
@@ -341,9 +442,11 @@ g <- ggplot(ratio_exp, aes(Yr, p_female)) +
   geom_line(data = ratio_obs %>% select(!scen), linetype = 3, linewidth = 0.1) +
   geom_line(aes(colour = scen)) +
   facet_wrap(vars(FleetName)) +
-  coord_cartesian(xlim = c(1975, 2025), ylim = c(0, 1), expand = FALSE) +
+  coord_cartesian(xlim = c(1975, 2025), ylim = c(0, 1.05), expand = FALSE) +
   gfplot::theme_pbs() +
-  labs(x = "Year", y = "Proportion female", colour = "Model")
-ggsave("figs/ss3/sex_ratio.png", g, height = 3, width = 5)
+  theme(legend.position = "bottom", panel.spacing = unit(0, "in")) +
+  labs(x = "Year", y = "Proportion female", colour = "Model") +
+  guides(colour = guide_legend(ncol = 2))
+ggsave("figs/ss3/sex_ratio_comp.png", g, height = 4.5, width = 5)
 
 

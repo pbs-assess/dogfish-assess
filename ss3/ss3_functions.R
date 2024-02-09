@@ -412,13 +412,32 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
   return(out)
 }
 
-SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"), bin_width, scale_max_1 = FALSE) {
+.SS3_mat <- function(replist, scenario, type = c("Asel2", "Asel", "Lsel")) {
+  type <- match.arg(type)
+
+  if (type == "Lsel") {
+    mat <- data.frame(
+      variable = replist$biology %>% pull(Len_mean),
+      value = replist$biology %>% pull(Mat)
+    )
+  } else {
+    mat <- data.frame(
+      variable = replist$endgrowth %>% filter(Sex == 1) %>% pull(int_Age),
+      value = replist$endgrowth %>% filter(Sex == 1) %>% pull(Len_Mat)
+    )
+  }
+
+  mutate(mat, scen = scenario)
+}
+
+SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"), bin_width, scale_max_1 = FALSE,
+                    do_mat = TRUE) {
   type <- match.arg(type)
   out <- Map(.SS3_sel, replist = x, scenario = sc, MoreArgs = list(type = type, fleet_name = fleet_name, bin_width = bin_width, scale_max_1 = scale_max_1)) %>%
     bind_rows() %>%
     mutate(Sex = ifelse(Sex == 1, "Female", "Male"))
 
-  ggplot(out, aes(variable, value, colour = FleetName, linetype = Sex)) +
+  g <- ggplot(out, aes(variable, value, colour = FleetName, linetype = Sex)) +
     geom_line() +
     coord_cartesian(ylim = c(0, 1)) +
     facet_grid(vars(FleetName), vars(scen)) +
@@ -427,6 +446,44 @@ SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"),
     guides(colour = "none") +
     theme(panel.spacing = unit(0, "in"),
           legend.position = "bottom")
+
+  if (do_mat) {
+
+    mat <- Map(.SS3_mat, replist = x, scenario = sc, MoreArgs = list(type = type)) %>%
+      bind_rows()
+    g <- g +
+      geom_line(data = mat, colour = "black", linetype = 2)
+
+  }
+
+  g
+}
+
+
+.SS3_vuln <- function(replist, scenario) {
+
+  vuln <- replist$catch %>%
+    select(Yr, vuln_num, Fleet_Name) %>%
+    reshape2::dcast(list("Yr", "Fleet_Name"), value.var = "vuln_num") %>%
+    mutate(scen = scenario)
+  return(vuln)
+}
+
+SS3_vuln <- function(x, scen) {
+  dat <- Map(.SS3_vuln, replist = x, scenario = scen) %>%
+    bind_rows() %>%
+    filter(Yr >= 1937)
+
+  g <- dat %>%
+    select(Yr, x[[1]]$FleetNames[x[[1]]$IsFishFleet], scen) %>%
+    reshape::melt(id.vars = c("Yr", "scen")) %>%
+    ggplot(aes(Yr, value, colour = variable, linetype = variable)) +
+    geom_line() +
+    facet_wrap(vars(scen)) +
+    gfplot::theme_pbs() +
+    labs(x = "Year", y = "Vulnerable abundance", colour = "Gear", linetype = "Gear")
+
+  g
 }
 
 .SS3_F <- function(replist, scenario = "OM 1") {
@@ -437,6 +494,7 @@ SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"),
     reshape2::melt(id.vars = c("Yr")) %>%
     summarise(deadB = sum(value), .by = Yr)
 
+  # Vuln_bio is calculated at midpoint of year
   hr_fleet <- replist$catch %>%
     mutate(hr = ifelse(dead_bio, dead_bio/(dead_bio + vuln_bio), 0),
            scen = scenario) %>%
@@ -444,6 +502,7 @@ SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"),
     reshape2::dcast(list("Yr", "Fleet_Name"), value.var = "hr")
 
   # Harvest rate
+  # Bio_smry is calculated at beginning of year
   out <- replist$timeseries %>%
     filter(Era == "TIME", Yr <= 2023) %>%
     select(Yr, Bio_smry) %>%
@@ -639,14 +698,14 @@ SS3_lencomp <- function(replist, scenario = "OM 1", fleet = 7, mean_length = TRU
   comp <- replist$lendbase %>%
     filter(Fleet %in% fleet) %>%
     mutate(FleetName = replist$FleetNames[Fleet]) %>%
-    select(Yr, Sex, Fleet, FleetName, Bin, Obs, Exp) %>%
+    select(Yr, Sex, Fleet, FleetName, Bin, Obs, Exp, Nsamp_in) %>%
     mutate(scen = scenario)
 
   if (ghost) {
     ghost_comp <- replist$ghostlendbase %>%
       filter(Fleet %in% fleet) %>%
       mutate(FleetName = replist$FleetNames[Fleet]) %>%
-      select(Yr, Sex, Fleet, FleetName, Bin, Obs, Exp) %>%
+      select(Yr, Sex, Fleet, FleetName, Bin, Obs, Exp, Nsamp_in) %>%
       mutate(scen = scenario)
     if (nrow(ghost_comp)) comp <- rbind(comp, ghost_comp)
   }
@@ -747,26 +806,66 @@ SS3_agecomp <- function(replist, scenario = "OM 1", fleet = 7, y) {
 }
 
 
-.SS3_N <- function(replist, scenario = "OM 1", age = c(0, 15, 30, 45, 60)) {
-  dat <- replist$natage %>%
-    filter(Era == "TIME", `Beg/Mid` == "B") %>%
-    select(Yr, Sex, as.character(age)) %>%
-    reshape2::melt(id.vars = c("Yr", "Sex")) %>%
-    mutate(Sex = ifelse(Sex == 1, "Female", "Male"),
-           scen = scenario)
+.SS3_N <- function(replist, scenario = "OM 1", type = c("age", "length"), age = c(0, 15, 30, 45, 60), len = seq(10, 115, 5)) {
+  if (type == "age") {
+
+    dat <- replist$natage %>%
+      filter(Era == "TIME", `Beg/Mid` == "B") %>%
+      select(Yr, Sex, as.character(age)) %>%
+      reshape2::melt(id.vars = c("Yr", "Sex")) %>%
+      mutate(Sex = ifelse(Sex == 1, "Female", "Male"),
+             scen = scenario)
+  } else {
+
+    dat <- replist$natlen %>%
+      filter(Era == "TIME", `Beg/Mid` == "B") %>%
+      select(Yr, Sex, as.character(len)) %>%
+      reshape2::melt(id.vars = c("Yr", "Sex")) %>%
+      mutate(Sex = ifelse(Sex == 1, "Female", "Male"),
+             scen = scenario)
+  }
   dat
 }
 
-SS3_N <- function(x, scenario, age = c(0, 15, 30, 45, 60)) {
+SS3_N <- function(x, scenario, type = c("age", "length"), age = c(0, 15, 30, 45, 60), len = seq(10, 115, 5), sex_ratio = FALSE) {
+  type <- match.arg(type)
 
-  dat <- Map(.SS3_N, replist = x, scenario = scenario, MoreArgs = list(age = age)) %>%
+  dat <- Map(.SS3_N, replist = x, scenario = scenario, MoreArgs = list(age = age, len = len, type = type)) %>%
     bind_rows()
 
-  g <- ggplot(dat, aes(Yr, value, colour = variable)) +
-    geom_line() +
-    facet_grid(vars(scen), vars(Sex)) +
-    gfplot::theme_pbs() +
-    labs(x = "Year", y = "Abundance", colour = "Age")
+  if (sex_ratio) {
+    ratio <- dat %>%
+      mutate(value = value/sum(value), .by = c(Yr, variable, scen)) %>%
+      filter(Sex == "Female")
+
+    g <- ggplot(ratio, aes(Yr, value, colour = variable)) +
+      geom_line() +
+      facet_wrap(vars(scen)) +
+      gfplot::theme_pbs() +
+      labs(x = "Year", y = "Proportion female", colour = ifelse(type == "age", "Age", "Length")) +
+      theme(panel.spacing = unit(0, "in"))
+
+    #ratio <- dat %>%
+    #  summarise(value = sum(value), .by = c(Yr, Sex, scen)) %>%
+    #  mutate(value = value/sum(value), .by = c(Yr, scen)) %>%
+    #  filter(Sex == "Female")
+
+    #g <- ggplot(ratio, aes(Yr, value)) +
+    #  geom_line() +
+    #  facet_wrap(vars(scen)) +
+    #  gfplot::theme_pbs() +
+    #  labs(x = "Year", y = "Proportion female", colour = "Age") +
+    #  theme(panel.spacing = unit(0, "in"))
+
+  } else {
+    g <- ggplot(dat, aes(Yr, value, colour = variable)) +
+      geom_line() +
+      facet_grid(vars(scen), vars(Sex)) +
+      gfplot::theme_pbs() +
+      labs(x = "Year", y = "Abundance", colour = ifelse(type == "age", "Age", "Length")) +
+      theme(panel.spacing = unit(0, "in"))
+
+  }
   g
 }
 
@@ -778,14 +877,68 @@ SS3_steep <- function(replist) {
   R0 <- replist$derived_quants$Value[replist$derived_quants$Label == "Recr_unfished"]
 
   S0 <- R0/B0
+  #stopifnot(S0 < 1) # Can happen if M is high, i.e., there's an upper bound on M!
+
   #phi0 <- 1/S0
 
   z0 <- -log(S0)
   zfrac <- replist$parameters$Value[replist$parameters$Label == "SR_surv_zfrac"]
   beta <- replist$parameters$Value[replist$parameters$Label == "SR_surv_Beta"]
+  M <- replist$parameters$Value[grepl("NatM_uniform_Fem_GP_1", replist$parameters$Label)]
+
   h <- 0.2 * exp(z0 * zfrac * (1 - 0.2^beta))
   hmax <- 0.2 * exp(z0)
-  return(c("h" = h, "hmax" = hmax))
+
+  return(c("h" = h, "hmax" = hmax, "S0" = S0, "M" = M))
+}
+
+# Population fecundity
+.SS3_fecundity <- function(replist, scen) {
+  NF <- replist$natage %>%
+    filter(Sex == 1, `Beg/Mid` == "B", Era == "TIME") %>%
+    select(Yr, as.character(0:70)) %>%
+    reshape2::melt(id.vars = "Yr") %>%
+    mutate(variable = as.character(variable) %>% as.integer())
+
+  mat <- replist$endgrowth %>%
+    filter(Sex == 1) %>%
+    select(int_Age, Len_Mat)
+
+  pups <- replist$recruit %>%
+    select(Yr, SpawnBio)
+
+  dat <- NF %>%
+    left_join(mat, by = c("variable" = "int_Age")) %>%
+    mutate(value_mature = Len_Mat * value) %>%
+    summarise(N_mature = sum(value_mature),
+              p_mature = sum(value_mature)/sum(value), .by = Yr) %>%
+    left_join(pups, by = c("Yr")) %>%
+    mutate(PPP = SpawnBio/N_mature) %>%
+    mutate(scen = scen)
+
+  return(dat)
+}
+
+SS3_fecundity <- function(x, scenario, type = c("PP", "mat")) { # PP = pup production, mat
+  type <- match.arg(type)
+
+  dat <- Map(.SS3_fecundity, replist = x, scen = scenario) %>%
+    bind_rows()
+
+  if (type == "PP") {
+    g <- ggplot(dat, aes(Yr, PPP)) +
+      labs(x = "Year", y = "Pups per mature female")
+  } else {
+    g <- ggplot(dat, aes(Yr, p_mature)) +
+      labs(x = "Year", y = "Proportion females mature")
+  }
+
+  g <- g +
+    facet_wrap(vars(scen)) +
+    geom_line() +
+    gfplot::theme_pbs()
+
+  g
 }
 
 
