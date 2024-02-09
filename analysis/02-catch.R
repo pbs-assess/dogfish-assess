@@ -8,9 +8,15 @@ dir.create("figs", showWarnings = FALSE)
 
 if (Sys.info()[["user"]] == "seananderson") {
   d <- readRDS("data/raw/catch.rds")
-  table(d$major_stat_area_name)
   # d_4b5abcde3cd <- tidy_catch_dogfish(d, areas = c("5[CDE]+", "5[AB]+", "4B"))
-  d_4b5abcde3cd <- tidy_catch_dogfish(d, areas = c("5[ABCDE3CD]+", "4B"))
+  d_4b5abcde3cd <- tidy_catch_dogfish(d, areas = c("5[ABCDE]+", "3[CD]+", "4B"))
+  d_4b5abcde3cd$area[d_4b5abcde3cd$area == "3CD"] <- "5ABCDE3CD"
+  d_4b5abcde3cd$area[d_4b5abcde3cd$area == "5ABCDE"] <- "5ABCDE3CD"
+  d_4b5abcde3cd <- group_by(d_4b5abcde3cd, year, species_common_name, area, gear) |>
+    summarise(
+      landed_kg = sum(landed_kg),
+      discarded_kg = sum(discarded_kg)
+    )
   saveRDS(d_4b5abcde3cd, file = "data/generated/catch-4B5ABCDE3CD-summarized.rds")
 }
 
