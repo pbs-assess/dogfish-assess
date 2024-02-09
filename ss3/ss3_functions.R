@@ -1037,6 +1037,19 @@ SS3_prof_like <- function(x, par, xval = c("par", "steep", "dep"), component = c
 
 
 
+SS3_retro <- function(ret) {
+  g1 <- SS3_prof(ret, abs(ypeel), SpawnBio) +
+    labs(x = "Year", y = "Spawning output", colour = "Years peeled") +
+    expand_limits(y = 0)
+  g2 <- SS3_prof(ret, abs(ypeel), pred_recr) +
+    labs(x = "Year", y = "Recruitment", colour = "Years peeled")
+  g3 <- SS3_prof(ret, abs(ypeel), dep) +
+    labs(x = "Year", y = "Spawning depletion", colour = "Years peeled") +
+    expand_limits(y = 0)
+  g <- ggpubr::ggarrange(g1, g2, g3, ncol = 1, common.legend = TRUE, legend = "bottom")
+  g
+}
+
 
 
 
