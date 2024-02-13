@@ -2,11 +2,20 @@
 
 # library -----------------------------------------------------------------
 library(tidyverse)
+#remotes::install_github("pbs-assess/gfdata")
+library(gfdata)
 
 # irec: load raw data -----------------------------------------------------------
 d <- readxl::read_excel("data/raw/iREC/iREC estimates Jul 2012 to Dec 2023 29012024.xlsx") |>
   filter(ITEM == "Dogfish")
+names(d) <- tolower(names(d))
 
+#how much was caught each year in tonnes?
+#convert pieces to weights by average weight of a dogfish 5lbs or 2.2 kg
+irec <- d |>
+  group_by(year) |>
+  summarise(catch_t = sum(estimate)*2.2/1000) #in pieces
+irec
 #see here for recreational management areas
 #https://www.researchgate.net/figure/DFO-management-areas-of-the-Pacific-Region-Fisheries-and-Oceans-Canada-2004_fig1_242162660
 
@@ -15,8 +24,7 @@ d <- readxl::read_excel("data/raw/iREC/iREC estimates Jul 2012 to Dec 2023 29012
 #Units are pieces for catches and licence days for effort. Zero estimates are not provided; these result when no catch is reported for a combination of month, area, method, species, mark status, and disposition. See worksheet "how estimates are calculated" for more information.
 
 # irec: summarise by year -------------------------------------------------------
-names(d) <- tolower(names(d))
-glimpse(d)
+
 
 unique(d$logistical_area)
 #"Barkley"            "Winter Harbour"     "Campbell River"     "Nanaimo"
@@ -24,6 +32,15 @@ unique(d$logistical_area)
 # "Central Coast"      "Haida Gwaii"        "Port Hardy"         "Port Renfrew"
 # "Sunshine Coast"     "Tofino"             "Kyuquot"            "Lower Fraser River"
 # "Port Alberni"
+
+
+d |>
+  group_by(year) |>
+  summarise(sum = sum(estimate)) #in pieces
+
+d |>
+  group_by(year) |>
+  summarise(sum = sum(estimate)*2.2/1000) #in pieces
 
 
 d |>
@@ -173,6 +190,14 @@ d2 <- d |>
   mutate(effort = 1)
 d2
 
+#how much was caught each year in tonnes?
+d2 |>
+  group_by(year) |>
+  summarize(sum = sum(catch_qty)*2.2/1000)
+
+salmon <- d2 |>
+  group_by(year) |>
+  summarize(catch_t = sum(catch_qty)*2.2/1000)
 
 # salmon: exploratory figures-------------------------------------------------
 
@@ -208,7 +233,7 @@ d2 |>
   summarise(sum = sum(catch_qty)/sum(effort)) |>
   ggplot() +
   geom_point(aes(year, sum, colour = month)) + geom_line(aes(year, sum, colour = month)) +
-  facet_wrap(~month, scales bycatch= "free")
+  facet_wrap(~month, scales = "free")
 
 d2 |>
   group_by(year, month, gear_type) |>
@@ -217,3 +242,69 @@ d2 |>
   geom_point(aes(year, log(sum), colour = gear_type)) + geom_line(aes(year, log(sum), colour = gear_type)) +
   facet_wrap(~month, scales = "free")
 
+
+
+
+# DFO surveys: load raw data ----------------------------------------------
+
+dsurveys <- readRDS("data/raw/survey-sets_2023.rds")
+#dsamps <- readRDS("output/data_survey_samples.rds")
+unique(dsurveys$survey_abbrev)
+survey <- c( "HBLL INS N" , "HBLL INS S")
+d <- dplyr::filter(dsurveys, !survey_abbrev %in% survey)
+d <- d |>
+  mutate(date2 = as.Date(time_deployed, format = "%Y-%m-%d H:M:S")) |>
+  mutate(dmy = lubridate::ymd(date2)) |>
+  mutate(julian = lubridate::yday(dmy))
+
+#how much is caught each year in trawl in tonnes?
+d |>
+  filter(!survey_abbrev %in% c("HBLL OUT N", "HBLL OUT S", "IPHC FISS")) |>
+  group_by(year) |>
+  summarize(sum_tl = sum(catch_weight)/1000) |> #kg to tons
+  ggplot() +
+  geom_point(aes(year, sum_tl)) +
+  geom_line(aes(year, sum_tl))
+
+tl <- d |>
+  filter(!survey_abbrev %in% c("HBLL OUT N", "HBLL OUT S", "IPHC FISS")) |>
+  group_by(year) |>
+  summarize(catch_t = sum(catch_weight)/1000)  #kg to tons
+
+#how much is caught each year in hbll and iphc in tonnes?
+d |>
+  filter(survey_abbrev %in% c("HBLL OUT N", "HBLL OUT S", "IPHC FISS")) |>
+  group_by(year) |>
+  summarize(sum_tl = sum(catch_count)*2.2/1000) |> #kg to tons
+  ggplot() +
+  geom_point(aes(year, sum_tl)) +
+  geom_line(aes(year, sum_tl))
+
+ll <- d |>
+  filter(survey_abbrev %in% c("HBLL OUT N", "HBLL OUT S", "IPHC FISS")) |>
+  group_by(year) |>
+  summarize(catch_t = sum(catch_count)*2.2/1000) #kg to tons
+
+
+# Yearly catches (tonnes) -------------------------------------------------
+
+tl
+tl$type <- "tl"
+ll
+ll$type <- "ll"
+salmon
+salmon$type <- "salmon"
+irec
+irec$type <- "rec"
+
+total <- bind_rows(tl, ll, salmon, irec) |>
+  group_by(year) |>
+  summarize(catch_tons = sum(catch_t))
+
+ggplot(total, aes(year, catch_tons)) + geom_point() + geom_line()
+
+total <- bind_rows(tl, ll, salmon, irec) |>
+  group_by(year, type) |>
+  summarize(catch_tons = sum(catch_t))
+
+ggplot(total, aes(year, catch_tons, colour = type)) + geom_point() + geom_line()
