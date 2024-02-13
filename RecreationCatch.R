@@ -3,20 +3,20 @@
 # library -----------------------------------------------------------------
 library(tidyverse)
 
-#https://www.researchgate.net/figure/DFO-management-areas-of-the-Pacific-Region-Fisheries-and-Oceans-Canada-2004_fig1_242162660
-
-# load raw data -----------------------------------------------------------
+# irec: load raw data -----------------------------------------------------------
 d <- readxl::read_excel("data/raw/iREC/iREC estimates Jul 2012 to Dec 2023 29012024.xlsx") |>
   filter(ITEM == "Dogfish")
+
+#see here for recreational management areas
+#https://www.researchgate.net/figure/DFO-management-areas-of-the-Pacific-Region-Fisheries-and-Oceans-Canada-2004_fig1_242162660
 
 #note: #estimate is in pieces, not kg and accounts for effort
 #see raw data for README
 #Units are pieces for catches and licence days for effort. Zero estimates are not provided; these result when no catch is reported for a combination of month, area, method, species, mark status, and disposition. See worksheet "how estimates are calculated" for more information.
 
-# summarise by year -------------------------------------------------------
+# irec: summarise by year -------------------------------------------------------
 names(d) <- tolower(names(d))
 glimpse(d)
-d$estimate_tonnes <- d$estimate/1000
 
 unique(d$logistical_area)
 #"Barkley"            "Winter Harbour"     "Campbell River"     "Nanaimo"
@@ -40,7 +40,7 @@ d |>
 
 d |>
   group_by(year) |>
-  summarise(sum_ton = (sum(estimate) * 5)/1000)
+  summarise(sum_ton = (sum(estimate) * 5)/2204) #5 lbs
 
 d |>
   group_by(year) |>
@@ -48,7 +48,7 @@ d |>
   summarise(sum = sum(estimate))
 
 
-# exploratory figures -----------------------------------------------------------------
+# irec: exploratory figures -----------------------------------------------------------------
 
 unique(d$logistical_area)
 #"Barkley"            "Winter Harbour"     "Campbell River"     "Nanaimo"
@@ -153,4 +153,67 @@ d |>
 
 
 
+
+
+
+
+# salmon: load raw data ------------------------------------------------
+#data from Jason Parsley - salmon data unit
+#need to ask about effort, doesn't seem to be in here
+#for now one boat is one unit of effort
+d <- read.csv("C:/Salmon Bycatch 2022/FISHDATA-4285-LDavidson_Dogfish_PT1_1998-2011_dataraw.csv")
+names(d) <- tolower(names(d))
+str(d)
+d2 <- d |>
+  mutate(date = as.Date(date_captured)) |>
+  #mutate(date = as.Date(date_captured, format = "%Y-%m-%d H:M:S")) |>
+  mutate(dmy = lubridate::ymd(date)) |>
+  mutate(month = lubridate::month(date), year = lubridate::year(date)) |>
+  mutate(julian = lubridate::yday(dmy)) |>
+  mutate(effort = 1)
+d2
+
+
+# salmon: exploratory figures-------------------------------------------------
+
+d2 |>
+  group_by(year) |>
+  summarise(sum_ton = sum((catch_qty)*5)/2204) #5 lbs for each dogfish, lbs to tones
+
+d2 |>
+  group_by(year) |>
+  summarise(sum_ton = sum(catch_qty)) #the whole of the salmon fishery catches less than recreational??
+
+d2 |>
+  group_by(year, gear_type) |>
+  summarize(count = n()) |>
+  ggplot() +
+  geom_point(aes(year, count, colour = gear_type)) +
+  geom_line(aes(year, count, colour = gear_type))
+
+d2 |>
+  group_by(year) |>
+  summarise(sum = sum(catch_qty)/sum(effort)) |>
+  ggplot() +
+  geom_point(aes(year, sum)) + geom_line(aes(year, sum))
+
+d2 |>
+  group_by(year, ) |>
+  summarise(sum = sum(catch_qty)) |>
+  ggplot() +
+  geom_point(aes(year, sum)) + geom_line(aes(year, sum))
+
+d2 |>
+  group_by(year, month) |>
+  summarise(sum = sum(catch_qty)/sum(effort)) |>
+  ggplot() +
+  geom_point(aes(year, sum, colour = month)) + geom_line(aes(year, sum, colour = month)) +
+  facet_wrap(~month, scales bycatch= "free")
+
+d2 |>
+  group_by(year, month, gear_type) |>
+  summarise(sum = sum(catch_qty)/sum(effort)) |>
+  ggplot() +
+  geom_point(aes(year, log(sum), colour = gear_type)) + geom_line(aes(year, log(sum), colour = gear_type)) +
+  facet_wrap(~month, scales = "free")
 
