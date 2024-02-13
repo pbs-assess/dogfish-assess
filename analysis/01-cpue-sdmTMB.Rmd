@@ -1,0 +1,426 @@
+---
+title: "`r paste(params$species_proper, params$era, params$area_name)` bottom trawl CPUE"
+author: "`r params$author`"
+date: "`r Sys.Date()`"
+output: html_document
+params:
+   author: "Sean Anderson"
+   species_proper: "SPINY DOGFISH"
+   area: !r c("^5A|^5B|^5C|^5D|^5E|^3C|^3D")
+   area_name: !r c("Coastwide")
+   skip_single_variable_models: FALSE
+   era: "modern"
+   use_alt_year: FALSE
+   alt_year_start_date: "02-21"
+   min_year_historic: 1956
+   discard_only: FALSE
+   parallel: FALSE
+   min_positive_tows: 100
+   min_positive_trips: 5
+   min_yrs_with_trips: 5
+   final_year: 2023
+   final_date: "2023-12-31"
+   depth_bin_quantiles: !r c(0.001, 0.999)
+   lat_range: !r c(48, Inf)
+   depth_range: !r c(-Inf, Inf)
+---
+
+```{r setup, include=FALSE}
+spp <- gsub(" ", "-", gsub("\\/", "-", tolower(params$species_proper)))
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  comment = "#>",
+  fig.asp = 0.618,
+  cache.path = paste0(spp, "-", params$era, "-", params$area_name, "-cache/"),
+  fig.path = paste0(spp, "-", params$era,  "-", params$area_name, "-fig/"),
+  echo = TRUE,
+  autodep = TRUE,
+  cache = TRUE,
+  cache.comments = FALSE
+)
+```
+
+```{r pkgs, cache=FALSE, warning=FALSE, message=FALSE}
+library("dplyr")
+library("ggplot2")
+library("sdmTMB")
+ggplot2::theme_set(gfplot::theme_pbs())
+dir.create(here("data"), showWarnings = FALSE)
+dir.create(here("data", "generated"), showWarnings = FALSE)
+```
+
+```{r cpue-params-print}
+print(params)
+```
+
+```{r cpue}
+if (params$era == "modern") {
+  fi <- here::here("../cpue-reports/data/cpue-modern.rds")
+  if (!file.exists(fi)) {
+    d1996 <- gfdata::get_cpue_index(gear = "bottom trawl", min_cpue_year = 1996)
+    write_rds(d1996, fi)
+  } else {
+    d1996 <- readr::read_rds(fi)
+  }
+  d1996$fishing_event_id_unique <- paste0(d1996$vessel_registration_number, "-", d1996$trip_id, "-", d1996$fishing_event_id)
+} else {
+  fi <- here::here("../cpue-reports/data/cpue-historical.rds")
+  if (!file.exists(fi)) {
+    d <- gfdata::get_cpue_historical(species = NULL, end_year = 1995, 
+      alt_year_start_date = params$alt_year_start_date)
+    write_rds(d, fi)
+  } else {
+    d <- readr::read_rds(fi)
+  }
+}
+```
+
+Define our fleet. See the help for `?gfplot::tidy_cpue_index` and `?gfplot::tidy_cpue_historical` to see a definition of these arguments. <https://github.com/pbs-assess/gfplot>
+
+```{r define-fleet}
+dat <- gfplot::tidy_cpue_index(
+  d1996,
+  species_common = tolower(params$species_proper),
+  gear = "bottom trawl",
+  alt_year_start_date = params$alt_year_start_date,
+  use_alt_year = params$use_alt_year,
+  year_range = c(1996, params$final_year),
+  lat_range = params$lat_range,
+  min_positive_tows = params$min_positive_tows,
+  min_positive_trips = params$min_positive_trips,
+  min_yrs_with_trips = params$min_yrs_with_trips,
+  depth_band_width = 1,
+  area_grep_pattern = params$area,
+  depth_bin_quantiles = params$depth_bin_quantiles,
+  min_bin_prop = 0.001,
+  lat_band_width = 0.02,
+  return_raw_data = TRUE
+)
+dat$area <- params$area_name
+glimpse(dat)
+```
+
+
+```{r}
+library(sdmTMB)
+dat <- add_utm_columns(dat, c("longitude", "latitude"))
+dat$log_depth <- log(dat$best_depth)
+dat$vessel <- as.factor(dat$vessel_registration_number)
+dat$month <- factor(dat$month)
+dat <- filter(dat, year <= 2022)
+filter(dat, hours_fished > 2000) # 8762.05!
+dat <- filter(dat, hours_fished < 2000)
+dat$depth_scaled <- (dat$log_depth - mean(dat$log_depth)) / sd(dat$log_depth)
+```
+
+```{r}
+ggplot(dat, aes(as.factor(year), (spp_catch + 1)/ hours_fished)) + 
+  geom_boxplot() +
+  scale_y_log10()
+```
+
+```{r}
+ggplot(dat, aes(as.factor(year), vessel, size = log(spp_catch / hours_fished))) + 
+  geom_point()
+```
+
+```{r}
+mesh <- make_mesh(dat, c("X", "Y"), cutoff = 30)
+plot(mesh$mesh)
+```
+
+```{r}
+grid <- gfplot::synoptic_grid
+grid$log_depth <- log(grid$depth)
+grid$survey_domain_year <- NULL
+gg <- replicate_df(grid, "year", time_values = sort(unique(dat$year)))
+gg$utm_zone <- NULL
+gg$cell_area <- NULL
+gg$survey_series_name <- NULL
+gg$month <- factor(6, levels = levels(dat$month))
+gg$vessel <- NA
+gg$depth_scaled <- (gg$log_depth - mean(dat$log_depth)) / sd(dat$log_depth)
+```
+
+# delta gamma fit
+
+```{r}
+fit2 <- sdmTMB(
+  spp_catch ~ 0 + as.factor(year) + 
+    depth_scaled + I(depth_scaled^2) + 
+    (1 | vessel) + as.factor(month),
+  family = delta_gamma(),
+  mesh = mesh,
+  offset = log(dat$hours_fished),
+  spatial = "on",
+  spatiotemporal = "off",
+  data = dat,
+  time = "year",
+  share_range = FALSE,
+  priors = sdmTMBpriors(
+    matern_s = pc_matern(range_gt = 40, sigma_lt = 3), 
+    matern_st = pc_matern(range_gt = 40, sigma_lt = 2)
+  ),
+  predict_args = list(newdata = gg, re_form_iid = NA),
+  index_args = list(area = rep(4, nrow(gg))),
+  do_index = TRUE,
+  silent = FALSE
+)
+```
+
+```{r}
+sanity(fit2)
+fit2
+```
+
+```{r}
+ind2 <- get_index(fit2, bias_correct = F)
+
+ggplot(ind2, aes(year, ymin = lwr, ymax = upr, y = est)) + 
+  geom_pointrange()
+```
+
+```{r}
+# mean(gg$year)
+# dat$year_scaled <- dat$year - 2009
+# gg$year_scaled <- gg$year - 2009
+
+# fit3 <- update(fit2, spatial_varying = ~ 0 + year_scaled)
+```
+
+# lognormal
+
+```{r}
+
+fit_dl <- update(fit2, family = delta_lognormal())
+ind_dl <- get_index(fit_dl, bias_correct = F)
+
+bind_rows(
+  mutate(ind2, type = "dg"),
+  mutate(ind_dl, type = "dl")
+) |> 
+  group_by(type) |> 
+  mutate(
+    lwr = lwr / max(est),
+    upr = upr / max(est),
+    est = est / max(est)
+    ) |> 
+  ggplot(aes(year, ymin = lwr, ymax = upr, y = est, colour = type)) + 
+  geom_pointrange(position = position_dodge(width = 0.5)) +
+  coord_cartesian(ylim = c(0, NA), expand = FALSE)
+
+
+
+AIC(fit_dl, fit2)
+```
+
+# lognormal spatiotemporal?
+
+```{r}
+fit_dl2 <- update(fit2, family = delta_lognormal(), spatiotemporal = "iid", share_range = FALSE)
+sanity(fit_dl2)
+fit_dl2
+
+AIC(fit_dl, fit_dl2)
+
+ind_dl2 <- get_index(fit_dl2, bias_correct = F)
+
+ggplot(ind_dl2, aes(year, ymin = lwr, ymax = upr, y = est)) + 
+  geom_pointrange()
+
+bind_rows(
+  mutate(ind_dl, type = "dl sp"),
+  mutate(ind_dl2, type = "dl sp st")
+) |> 
+  group_by(type) |> 
+  mutate(
+    lwr = lwr / max(est),
+    upr = upr / max(est),
+    est = est / max(est)
+  ) |> 
+  ggplot(aes(year, ymin = lwr, ymax = upr, y = est, colour = type)) + 
+  geom_pointrange(position = position_dodge(width = 0.5)) +
+  coord_cartesian(ylim = c(0, NA), expand = FALSE)
+```
+
+# shallow only?
+
+```{r}
+plot(dat$best_depth, dat$spp_catch);abline(v = 100)
+median(dat$best_depth)
+
+dat_shallow <- filter(dat, best_depth < 100)
+dat_deep <- filter(dat, best_depth > 200)
+
+grid_shallow <- filter(gg, depth < 100)
+grid_deep <- filter(gg, depth > 200)
+# plot(grid_deep$X, grid_deep$Y)
+```
+
+```{r}
+fit_model <- function(dd, this_grid) {
+  this_mesh <- make_mesh(dd, c("X", "Y"), cutoff = 25)
+  sdmTMB(
+    spp_catch ~ 0 + as.factor(year) + 
+      depth_scaled + I(depth_scaled^2) + 
+      (1 | vessel) + as.factor(month),
+    family = delta_lognormal(),
+    mesh = this_mesh,
+    offset = log(dd$hours_fished),
+    spatial = "on",
+    spatiotemporal = "off",
+    data = dd,
+    time = "year",
+    share_range = FALSE,
+    priors = sdmTMBpriors(
+      matern_s = pc_matern(range_gt = 40, sigma_lt = 3), 
+      matern_st = pc_matern(range_gt = 40, sigma_lt = 2)
+    ),
+    predict_args = list(newdata = this_grid, re_form_iid = NA),
+    index_args = list(area = rep(4, nrow(this_grid))),
+    do_index = TRUE,
+    silent = FALSE
+  )
+}
+
+ms <- fit_model(dat_shallow, grid_shallow)
+sanity(ms)
+md <- fit_model(dat_deep, grid_deep)
+sanity(md)
+```
+
+```{r}
+is <- get_index(ms)
+id <- get_index(md)
+
+bind_rows(
+  mutate(is, type = "shallow (< 100 m)"),
+  mutate(id, type = "deep (> 200 m)")
+) |> 
+  group_by(type) |> 
+  mutate(geo_mean = exp(mean(log(est)))) |> 
+  mutate(
+    lwr = lwr / geo_mean,
+    upr = upr / geo_mean,
+    est = est / geo_mean
+  ) |> 
+  ggplot(aes(year, ymin = lwr, ymax = upr, y = est, colour = type)) + 
+  geom_pointrange(position = position_dodge(width = 0.5)) +
+  coord_cartesian(ylim = c(0, NA), expand = FALSE) +
+  facet_wrap(~type)
+```
+
+# what about month of year
+
+```{r}
+fit_model_season <- function(months) {
+  
+  dd <- filter(dat, month %in% months)
+  this_grid <- filter(gg, year %in% unique(dd$year))
+  this_grid$month <- min(months)
+  this_mesh <- make_mesh(dd, c("X", "Y"), cutoff = 25)
+  
+  sdmTMB(
+    spp_catch ~ 0 + as.factor(year) + 
+      depth_scaled + I(depth_scaled^2) + 
+      (1 | vessel),
+    family = delta_lognormal(),
+    mesh = this_mesh,
+    offset = log(dd$hours_fished),
+    spatial = "on",
+    spatiotemporal = "off",
+    data = dd,
+    time = "year",
+    share_range = FALSE,
+    priors = sdmTMBpriors(
+      matern_s = pc_matern(range_gt = 40, sigma_lt = 3), 
+      matern_st = pc_matern(range_gt = 40, sigma_lt = 2)
+    ),
+    predict_args = list(newdata = this_grid, re_form_iid = NA),
+    index_args = list(area = rep(4, nrow(this_grid))),
+    do_index = TRUE,
+    silent = FALSE
+  )
+}
+
+# library(future)
+# plan()
+fits <- purrr::map(1:12, fit_model_season)
+
+fits2 <- fits
+names(fits2) <- stringr::str_pad(1:12, 2, pad = "0")
+
+i2 <- purrr::map_dfr(fits2, get_index, .id = "month")
+
+i2 |> ggplot(aes(year, ymin = lwr, ymax = upr, y = est)) + 
+  geom_pointrange() +
+  coord_cartesian(ylim = c(0, NA), expand = FALSE) +
+  facet_wrap(~month)
+
+i2 |> ggplot(aes(year, ymin = lwr, ymax = upr, y = est, colour = month, fill = month)) + 
+  geom_line() +
+  geom_ribbon(alpha = 0.2, colour = NA) +
+  coord_cartesian(ylim = c(0, NA), expand = FALSE) +
+  scale_fill_viridis_d() +
+  scale_colour_viridis_d()
+
+i2 |>
+  ggplot(aes(year, ymin = lwr, ymax = upr, y = est)) + 
+  geom_line() +
+  geom_ribbon(alpha = 0.2, colour = NA) +
+  coord_cartesian(ylim = c(0, NA), expand = FALSE) +
+  scale_fill_viridis_d() +
+  scale_colour_viridis_d() +
+  facet_wrap(~month) +
+  geom_smooth(se = F, colour = "red", method = "glm", method.args = list(family = Gamma(link = "log"))) +
+  ylab("Standardized CPUE") + xlab("Year")
+  
+i2 |> group_by(month) |> 
+  mutate(geo_mean = exp(mean(log(est)))) |> 
+  mutate(
+    lwr = lwr / geo_mean,
+    upr = upr / geo_mean,
+    est = est / geo_mean
+  ) |> 
+  ggplot(aes(year, ymin = lwr, ymax = upr, y = est, colour = month, fill = month)) + 
+  geom_line() +
+  geom_ribbon(alpha = 0.2, colour = NA) +
+  coord_cartesian(ylim = c(0, 4), expand = FALSE) +
+  scale_fill_viridis_d() +
+  scale_colour_viridis_d() +
+  facet_wrap(~month) +
+  geom_smooth(se = F, colour = "black", method = "glm", method.args = list(family = Gamma(link = "log"))) +
+  ylab("Standardized CPUE") + xlab("Year")
+
+i2 |> group_by(month) |> 
+  mutate(geo_mean = exp(mean(log(est)))) |> 
+  mutate(
+    lwr = lwr / geo_mean,
+    upr = upr / geo_mean,
+    est = est / geo_mean
+  ) |> 
+  ggplot(aes(year, ymin = lwr, ymax = upr, y = est, colour = month, fill = month, group = month)) + 
+  geom_line(alpha = 0.7) +
+  geom_ribbon(alpha = 0.1, colour = NA) +
+  coord_cartesian(ylim = c(0, 4), expand = FALSE) +
+  scale_fill_viridis_d() +
+  scale_colour_viridis_d() +
+  geom_smooth(se = F, method = "glm", method.args = list(family = Gamma(link = "log"))) +
+  ylab("Standardized CPUE") + xlab("Year")
+
+i2 |> group_by(month) |> 
+  group_split() |> 
+  purrr::map_dfr(function(.x) {
+    .x$year <- .x$year / 10
+    mm <- glm(est ~ year, family = Gamma(link = "log"), data = .x)
+    data.frame(month = unique(.x$month), slope = coef(mm)[[2]], lwr = confint(mm)[2,1], upr = confint(mm)[2,2])
+  }) |> 
+  ggplot(aes(month, 100*(1 - exp(slope)), ymin = 100*(1 - exp(lwr)), ymax = 100*(1 - exp(upr)))) + 
+  geom_pointrange() + 
+  ylab("% decline per decade") + xlab("Month")
+```
+
+# with SVC year?
+
