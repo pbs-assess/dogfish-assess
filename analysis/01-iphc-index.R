@@ -6,16 +6,29 @@ library(sf)
 #devtools::install_github("pbs-assess/gfiphc")
 library(gfiphc)
 library(gfdata)
+library(here)
 
 # note 2020 fishing was completed in July and August, whereas it is usually May to August.
 # also 2021 and 2022 have reduced WCVI sampling.
 
+#note you can't combine gfiphc and iphc data in 2022 because there were BC observers onboard
+#and the number of fish counted won't match the hooks observed.
+
 #this is downloaded from the IPHC FISS website
 #https://www.iphc.int/data/fiss-survey-raw-survey-data/
-#the search parameters included 1. all years, 2, 2B, 3. purpose code = "Standard Grid",
+#the search parameters included
+#1. all years,
+#2, 2B,
+#3. purpose code = "Standard Grid",
+
 #6. Spiny Dogfish,
+#2023 data
+#catch <- read.csv("data/raw/Non-Pacific halibut data_2023.csv")
+#2022 data
 # catch <- read.csv("~/Downloads/Non-Pacific halibut data_raw.csv")
 # stations <- read.csv("~/Downloads/Map select_standardgrid.csv")
+#latlongs <- read.csv("data/raw/Set and Pacific halibut data_2023.csv") |>
+#    dplyr::filter(`IPHC.Reg.Area` %in% "2B")
 # latlongs <- read.csv("~/Downloads/Set and Pacific halibut data_raw.csv") |>
 #   dplyr::filter(`IPHC.Reg.Area` %in% "2B")
 # saveRDS(catch, file = "data/raw/Non-Pacific halibut data_raw.rds")
@@ -29,7 +42,8 @@ iphc_stations <- iphc_stations |>
 
 # number of hooks
 # test <- get_iphc_hooks("north pacific spiny dogfish")
-iphc_hksobs <- readRDS("data/raw/Non-Pacific halibut data_raw.rds") |>
+iphc_hksobs <- read.csv("data/raw/Non-Pacific halibut data_2023.csv") |>
+#iphc_hksobs <- readRDS("data/raw/Non-Pacific halibut data_raw.rds") |>
   dplyr::select(Year, Station, HooksFished, HooksRetrieved, HooksObserved) |>
   mutate(Station = as.character(Station))
 names(iphc_hksobs) <- tolower(names(iphc_hksobs))
@@ -51,12 +65,14 @@ unique(iphc_hksobs$year)
 # df_iphc |>
 #   group_by(year) %>%
 #   ggplot(aes(lon, lat)) + geom_point() + facet_wrap(~year)
-#
+
 # saveRDS(df_iphc, "data/raw/Non-Pacific halibut data_raw_gfdata.rds") #this has station but doesn't have IPHC area
 iphc_coast <- readRDS("data/raw/Non-Pacific halibut data_raw_gfdata.rds")
 
 #this has station and IPHC reg area and date (if including julian date)
-iphc_latlongs <- readRDS("data/raw/Set and Pacific halibut data_raw.rds") %>%
+iphc_latlongs <- read.csv("data/raw/Set and Pacific halibut data_2023.csv") |>
+  dplyr::filter(`IPHC.Reg.Area` %in% "2B") |>
+#iphc_latlongs <- readRDS("data/raw/Set and Pacific halibut data_raw.rds") %>%
   dplyr::select(IPHC.Reg.Area, Station, Date, Eff, Ineffcde, BeginLat, BeginLon, AvgDepth..fm., Stlkey) |>
   mutate(Station = as.character(Station)) |>
   mutate(date2 = format(as.Date(Date, format = "%d-%b-%Y"), "%Y")) |> # get year from date
