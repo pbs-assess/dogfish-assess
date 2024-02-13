@@ -1,0 +1,151 @@
+---
+title: "`r paste(params$species_proper, params$era, params$area_name)` bottom trawl CPUE"
+author: "`r params$author`"
+date: "`r Sys.Date()`"
+output: html_document
+params:
+   author: "Sean Anderson"
+   species_proper: "SPINY DOGFISH"
+   area: !r c("^5A|^5B|^5C|^5D|^5E|^3C|^3D")
+   area_name: !r c("Coastwide")
+   skip_single_variable_models: FALSE
+   era: "modern"
+   use_alt_year: FALSE
+   alt_year_start_date: "02-21"
+   min_year_historic: 1956
+   discard_only: FALSE
+   parallel: FALSE
+   min_positive_tows: 100
+   min_positive_trips: 5
+   min_yrs_with_trips: 5
+   final_year: 2023
+   final_date: "2023-12-31"
+   depth_bin_quantiles: !r c(0.001, 0.999)
+   lat_range: !r c(48, Inf)
+   depth_range: !r c(-Inf, Inf)
+---
+
+```{r setup, include=FALSE}
+spp <- gsub(" ", "-", gsub("\\/", "-", tolower(params$species_proper)))
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  comment = "#>",
+  fig.asp = 0.618,
+  cache.path = paste0(spp, "-", params$era, "-", params$area_name, "-cache/"),
+  fig.path = paste0(spp, "-", params$era,  "-", params$area_name, "-fig/"),
+  echo = TRUE,
+  autodep = TRUE,
+  cache = TRUE,
+  cache.comments = FALSE
+)
+```
+
+```{r pkgs, cache=FALSE, warning=FALSE, message=FALSE}
+library("dplyr")
+library("ggplot2")
+library("gfplot")
+library("here")
+library("readr")
+library("purrr")
+library("glmmTMB")
+ggplot2::theme_set(gfplot::theme_pbs())
+dir.create(here("data"), showWarnings = FALSE)
+dir.create(here("data", "generated"), showWarnings = FALSE)
+```
+
+```{r cpue-params-print}
+print(params)
+```
+
+```{r fishing_event_trip, echo=FALSE}
+fishing_event_trip <- if (params$era == "modern") "fishing event" else "trip"
+```
+
+```{r cpue}
+if (params$era == "modern") {
+  fi <- here("../cpue-reports/data/cpue-modern.rds")
+  if (!file.exists(fi)) {
+    d1996 <- gfdata::get_cpue_index(gear = "bottom trawl", min_cpue_year = 1996)
+    write_rds(d1996, fi)
+  } else {
+    d1996 <- read_rds(fi)
+  }
+  d1996$fishing_event_id_unique <- paste0(d1996$vessel_registration_number, "-", d1996$trip_id, "-", d1996$fishing_event_id)
+} else {
+  fi <- here("data/cpue-historical.rds")
+  if (!file.exists(fi)) {
+    d <- gfdata::get_cpue_historical(species = NULL, end_year = 1995, 
+      alt_year_start_date = params$alt_year_start_date)
+    write_rds(d, fi)
+  } else {
+    d <- read_rds(fi)
+  }
+}
+```
+
+Define our fleet. See the help for `?gfplot::tidy_cpue_index` and `?gfplot::tidy_cpue_historical` to see a definition of these arguments. <https://github.com/pbs-assess/gfplot>
+
+```{r define-fleet}
+dat <- gfplot::tidy_cpue_index(
+  d1996,
+  species_common = tolower(params$species_proper),
+  gear = "bottom trawl",
+  alt_year_start_date = params$alt_year_start_date,
+  use_alt_year = params$use_alt_year,
+  year_range = c(1996, params$final_year),
+  lat_range = params$lat_range,
+  min_positive_tows = params$min_positive_tows,
+  min_positive_trips = params$min_positive_trips,
+  min_yrs_with_trips = params$min_yrs_with_trips,
+  depth_band_width = 1,
+  area_grep_pattern = params$area,
+  depth_bin_quantiles = params$depth_bin_quantiles,
+  min_bin_prop = 0.001,
+  lat_band_width = 0.02,
+  return_raw_data = TRUE
+)
+dat$area <- params$area_name
+glimpse(dat)
+```
+
+
+```{r}
+library(sdmTMB)
+dat <- add_utm_columns(dat, c("longitude", "latitude"))
+mesh <- make_mesh(dat, c("X", "Y"), cutoff = 30)
+plot(mesh$mesh)
+mesh$mesh$n
+dat$log_depth <- log(dat$best_depth)
+dat$vessel <- as.factor(dat$vessel_registration_number)
+dat$month <- factor(dat$month)
+
+grid <- gfplot::synoptic_grid
+grid$log_depth <- log(grid$depth)
+grid$survey_domain_year <- NULL
+gg <- replicate_df(grid, "year", time_values = sort(unique(dat$year)))
+gg$utm_zone <- NULL
+gg$cell_area <- NULL
+gg$survey_series_name <- NULL
+gg$month <- factor(6, levels = levels(dat$month))
+gg$vessel <- NA
+
+fit <- sdmTMB(
+  spp_catch ~ 0 + as.factor(year) + poly(log_depth, 2) + (1 | vessel) + as.factor(month),
+  family = delta_gamma(),
+  mesh = mesh,
+  spatial = "on",
+  spatiotemporal = "off",
+  data = dat,
+  time = "year",
+  predict_args = list(newdata = gg, re_form_iid = NA),
+  index_args = list(area = rep(4, nrow(gg))),
+  do_index = TRUE,
+  silent = FALSE
+)
+
+ind <- get_index(fit, bias_correct = TRUE)
+ggplot(ind, aes(year, ymin = lwr, ymax = upr, y = est)) + geom_pointrange()
+```
+
