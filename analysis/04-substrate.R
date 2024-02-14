@@ -52,6 +52,7 @@ hbll_sf <- hbll$data %>%
 hbll_intersects <- sf::st_intersects(hbll_sf, r3)
 
 hbll_out <- hbll$data %>%
+  select(latitude, longitude, depth_m, year, X, Y, catch_count, offset, survey_abbrev) %>%
   mutate(substrate = sapply(hbll_intersects, function(x) if(!length(x)) NA else x)) %>%
   left_join(substrate_key, by = "substrate") %>%
   filter(year != 2013)
@@ -94,6 +95,7 @@ iphc_sf <- iphc$data %>%
 iphc_intersects <- sf::st_intersects(iphc_sf, r3)
 
 iphc_out <- iphc$data %>%
+  select(latitude, longitude, depth_m, year, numobs, offset) %>%
   mutate(substrate = sapply(iphc_intersects, function(x) if(!length(x)) NA else x)) %>%
   left_join(substrate_key, by = "substrate")
 
@@ -120,4 +122,18 @@ g <- iphc_out %>%
   labs(x = "Depth (m)", y = "log(CPUE + 1)", colour = "Substrate") +
   ggtitle("IPHC")
 ggsave("figs/substrate/iphc_substrate.png", g, height = 4, width = 6)
+
+
+g <- rbind(
+  iphc_out %>% mutate(survey_abbrev = "IPHC") %>% select(year, depth_m, numobs, offset, type, survey_abbrev) %>% rename(catch_count = numobs),
+  hbll_out %>% select(year, depth_m, offset, catch_count, type, survey_abbrev)
+) %>%
+  filter(!is.na(type)) %>%
+  mutate(cpue = catch_count/exp(offset)) %>%
+  ggplot(aes(depth_m, log1p(cpue), colour = survey_abbrev)) +
+  geom_point(alpha = 0.7, shape = 1) +
+  gfplot::theme_pbs() +
+  facet_wrap(vars(type)) +
+  labs(x = "Depth (m)", y = "log(CPUE + 1)", colour = "Survey")
+ggsave("figs/substrate/substrate_cpue.png", g, height = 4, width = 6)
 
