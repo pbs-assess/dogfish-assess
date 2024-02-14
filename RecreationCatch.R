@@ -11,7 +11,7 @@ library(gfdata)
 #see here for recreational management areas
 #https://www.researchgate.net/figure/DFO-management-areas-of-the-Pacific-Region-Fisheries-and-Oceans-Canada-2004_fig1_242162660
 
-d <- readxl::read_excel("data/raw/additional_catches/iREC estimates Jul 2012 to Dec 2023 29012024.xlsx") |>
+d <- readxl::read_excel("data/raw/iREC estimates Jul 2012 to Dec 2023 29012024.xlsx") |>
   filter(ITEM == "Dogfish")
 names(d) <- tolower(names(d))
 
@@ -30,7 +30,7 @@ saveRDS(d, "data/generated/catch_recreational.rds")
 # salmon: load raw data ------------------------------------------------
 #data from Jason Parsley - salmon data unit
 #need to ask about effort, doesn't seem to be in here
-d <- read.csv("data/raw/additional_catches/FISHDATA-4285-LDavidson_Dogfish_PT1_1998-2011_dataraw.csv")
+d <- read.csv("data/raw/FISHDATA-4285-LDavidson_Dogfish_PT1_1998-2011_dataraw.csv")
 names(d) <- tolower(names(d))
 
 d2 <- d |>
@@ -91,7 +91,7 @@ ll <- d |>
   filter(survey_abbrev %in% c("HBLL OUT N", "HBLL OUT S", "IPHC FISS")) |>
   group_by(year) |>
   summarize(catch_count = sum(catch_count))
-saveRDS(ll, "data/generated/catch_lonline.rds")
+saveRDS(ll, "data/generated/catch_longline.rds")
 
 
 
