@@ -15,6 +15,35 @@ d <- readxl::read_excel("data/raw/iREC estimates Jul 2012 to Dec 2023 29012024.x
   filter(ITEM == "Dogfish")
 names(d) <- tolower(names(d))
 
+eff <- readxl::read_excel("data/raw/iREC estimates Jul 2012 to Dec 2023 29012024.xlsx")
+names(eff) <- tolower(names(eff))
+eff2 <- eff |>
+        filter(item  %in% c("Fisher Days (adult)", "Fisher Days (juvenile)")) |>
+  group_by(year, method) |>
+  summarize(effort_fishingdays = sum(estimate))
+
+catch <- d |>
+  filter(item  == "Dogfish") |>
+  group_by(year, method) |>
+  summarize(catch_method = sum(estimate))
+
+ggplot(catch, aes(year, catch_method, group = method, colour = method)) +
+  geom_point() +
+  geom_line()
+
+ggplot(eff2, aes(year, effort_fishingdays, group = method, colour = method)) +
+  geom_point() +
+  geom_line()
+
+final <- left_join(catch, eff2)
+final <- final |>
+  group_by(year, method)|>
+  summarize(catch = sum(catch_method), effort = sum(effort_fishingdays))
+final$cpue <- final$catch/final$effort
+
+ggplot(final, aes(year, cpue, group = method, colour = method)) +
+         geom_point() + geom_line()
+
 # #how much was caught each year in tonnes?
 # #convert pieces to weights by average weight of a dogfish 5lbs or 2.2 kg
 # irec <- d |>
@@ -22,8 +51,11 @@ names(d) <- tolower(names(d))
 #   summarise(catch_t = sum(estimate)*avgwt_kg/1000) #in pieces
 # irec
 
+unique(d$logistical_area)
+
 d |>
   group_by(year) |>
+  filter()
   summarise(catch_count = sum(estimate)) #in pieces
 saveRDS(d, "data/generated/catch_recreational.rds")
 
