@@ -1042,7 +1042,8 @@ SS3_retro <- function(ret) {
     labs(x = "Year", y = "Spawning output", colour = "Years peeled") +
     expand_limits(y = 0)
   g2 <- SS3_prof(ret, abs(ypeel), pred_recr) +
-    labs(x = "Year", y = "Recruitment", colour = "Years peeled")
+    labs(x = "Year", y = "Recruitment", colour = "Years peeled") +
+    expand_limits(y = 0)
   g3 <- SS3_prof(ret, abs(ypeel), dep) +
     labs(x = "Year", y = "Spawning depletion", colour = "Years peeled") +
     expand_limits(y = 0)
