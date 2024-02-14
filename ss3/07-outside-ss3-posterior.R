@@ -16,7 +16,7 @@ if (FRENCH) options(OutDec = ",")
 #ss_home <- here::here("ss3")
 ss_home <- "C:/users/qhuynh/Desktop/dogfish"
 
-SS_dir <- c("m37_flatselsurv_IPHC_g4")
+SS_dir <- "B2_estM"
 i <- 1
 samps <- readRDS(file.path(ss_home, paste0("adnuts_", SS_dir[i], ".rds")))
 replist <- r4ss::SS_output(file.path(ss_home, SS_dir[i]))
@@ -24,7 +24,8 @@ replist <- r4ss::SS_output(file.path(ss_home, SS_dir[i]))
 label_fn <- function(x) {
   xx <- x
 
-  xx[grepl("NatM", x)] <- "M"
+  xx[grepl("NatM", x) & !grepl("BLK1", x)] <- "M[1937]"
+  xx[grepl("NatM", x) & grepl("BLK1", x)] <- "M[2005]"
   xx[grepl("R0", x)] <- "log(R[0])"
   xx[grepl("zfrac", x)] <- "z[frac]"
 
@@ -34,7 +35,7 @@ label_fn <- function(x) {
   xx[grepl("SzSel_Male_Peak", x)] <- "p[1]^m"
   xx[grepl("SzSel_Male_Ascend", x)] <- "p[2]^m"
   xx[grepl("SzSel_Male_Descend", x)] <- "p[3]^m"
-  xx[grepl("SzSel_Male_Scale", x)] <- "p[4]^m"
+  xx[grepl("SzSel_Male_Scale", x)] <- "p[5]^m"
 
   fleet <- ifelse(
     grepl("Size_DblN", x) | grepl("SzSel_Male", x),
@@ -52,12 +53,18 @@ label_fn <- function(x) {
 
 
 par_key <- data.frame(
-  Par = dimnames(samps$samples)[[3]][-c(4:5)],
+  Par = dimnames(samps$samples)[[3]][!grepl("Fcast_recruitments", dimnames(samps$samples)[[3]])],
   Par_SS = c(rownames(replist$estimated_non_dev_parameters), "Log-posterior")
 ) %>%
   mutate(Par_label = label_fn(Par_SS))
 
-
+if ("M[1937]" %in% par_key$Par_label) {
+  if ("M[2005]" %in% par_key$Par_label) {
+    samps$samples[, , 2] <- samps$samples[, , 1] * exp(samps$samples[, , 2])
+  }
+} else if ("M[2005]" %in% par_key$Par_label) {
+  samps$samples[, , 2] <- 0.074 * exp(samps$samples[, , 2])
+}
 
 samps_est <- samps$samples %>% reshape2::melt() %>%
   rename(It = Var1, Chain = Var2, Par = Var3) %>%
@@ -66,8 +73,8 @@ samps_est <- samps$samples %>% reshape2::melt() %>%
   mutate(Chain = factor(Chain))
 
 
-
-par_plot <- c(par_key$Par_label[1:3], "Log-posterior")
+# Important population parameters + posterior
+par_plot <- par_key$Par_label[!grepl("selparm", par_key$Par)]
 
 g_worm <- samps_est %>%
   filter(Par_label %in% par_plot) %>%
@@ -82,7 +89,7 @@ g_worm <- samps_est %>%
   labs(x = ifelse(FRENCH, "Itération MCCM", "MCMC iteration"),
        y = en2fr("Value", FRENCH),
        colour = ifelse(FRENCH, "Chaîne", "Chain"))
-.ggsave("figs/mcmc/posterior_wormplot.png", g_worm, height = 4.5, width = 6)
+.ggsave(paste0("figs/mcmc/posterior_wormplot_", SS_dir[i], ".png"), g_worm, height = 4.5, width = 6)
 
 g_post <- samps_est %>%
   filter(Par_label %in% par_plot) %>%
@@ -97,7 +104,7 @@ g_post <- samps_est %>%
   #geom_line(data = prior_dens, aes(y = dens/max(dens))) +
   facet_wrap(vars(Par_label), scales = "free", labeller = label_parsed) +
   labs(x = en2fr("Value", FRENCH), y = en2fr("Density", FRENCH))
-.ggsave("figs/mcmc/posterior_density.png", g_post, height = 4.5, width = 6)
+.ggsave(paste0("figs/mcmc/posterior_density_", SS_dir[i], ".png"), g_post, height = 4.5, width = 6)
 
 # Selectivity
 samps_sel <- samps_est %>%
@@ -117,7 +124,7 @@ g_worm <- samps_sel %>%
   labs(x = ifelse(FRENCH, "Itération MCCM", "MCMC iteration"),
        y = en2fr("Value", FRENCH),
        colour = ifelse(FRENCH, "Chaîne", "Chain"))
-.ggsave("figs/mcmc/posterior_wormplot_sel.png", g_worm, height = 8, width = 6)
+.ggsave(paste0("figs/mcmc/posterior_wormplot_sel_", SS_dir[i], ".png"), g_worm, height = 8, width = 6)
 
 g_post <- samps_sel %>%
   ggplot(aes(value)) +
@@ -131,9 +138,10 @@ g_post <- samps_sel %>%
   theme(panel.spacing = unit(0, "in")) +
   facet_wrap(vars(Par_label), ncol = 5, scales = "free", labeller = label_parsed) +
   labs(x = en2fr("Value", FRENCH), y = en2fr("Density", FRENCH))
-.ggsave("figs/mcmc/posterior_density_sel.png", g_post, height = 8, width = 6)
+.ggsave(paste0("figs/mcmc/posterior_density_sel_", SS_dir[i], ".png"), g_post, height = 8, width = 6)
 
 # Pair plots
+library(GGally)
 g <- samps_est %>%
   filter(Par_label %in% par_plot) %>%
   filter(It > 10) %>%
@@ -144,9 +152,25 @@ g <- samps_est %>%
   #arrange(Chain, It) %>%
   select(-It2) %>%
   ggpairs(lower = list(continuous = wrap("points", alpha = 0.2)), labeller = "label_parsed")
-.ggsave("figs/mcmc/ggpairs.png", g, height = 5, width = 6)
+.ggsave(paste0("figs/mcmc/ggpairs_", SS_dir[i], ".png"), g, height = 5, width = 6)
 
 
+g <- samps_est %>%
+  filter(grepl("Scale", Par_SS) | grepl("Male_Descend", Par_SS) | grepl("R0", Par_SS) | grepl("NatM", Par_SS)) %>%
+  filter(It > 10) %>%
+  mutate(It2 = paste0(Chain, "-", It)) %>%
+  reshape2::dcast(list("It2", "Par_label"), value.var = "value") %>%
+  mutate(Chain = strsplit(It2, "-") %>% sapply(getElement, 1) %>% factor()) %>%
+  #mutate(It = strsplit(It2, "-") %>% sapply(getElement, 2) %>% as.numeric()) %>%
+  #arrange(Chain, It) %>%
+  select(-It2) %>%
+  ggpairs(lower = list(continuous = wrap("points", alpha = 0.2)), labeller = "label_parsed")
+.ggsave(paste0("figs/mcmc/ggpairs_domesel_", SS_dir[i], ".png"), g, height = 8, width = 10)
+
+
+samps_est %>%
+  summarise(stdev = sd(value) %>% round(3), .by = Par_label) %>%
+  View()
 
 panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
 {
