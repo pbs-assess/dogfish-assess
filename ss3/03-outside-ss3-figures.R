@@ -311,6 +311,20 @@ for(ff in fleet_int) {
   }
 }
 
+# Length comp residual - heat map
+g <- SS3_compresid(multi_rep[[1]], model_name[1], fleet = fleet_int) +
+  ggtitle(model_name[1]) +
+  theme(panel.spacing = unit(0, "in"))
+ggsave("figs/ss3/len_comp_resid_A1.png", g, height = 7, width = 6)
+
+# Length comp residual - histogram
+g <- SS3_compresid(multi_rep[[1]], model_name[1], fleet = fleet_int, figure = "histogram") +
+  ggtitle(model_name[1]) +
+  theme(panel.spacing = unit(0, "in"))
+ggsave("figs/ss3/len_comp_hist_A1.png", g, height = 4, width = 6)
+
+
+
 # Numbers at age
 g <- SS3_N(multi_rep[1], model_name[1], age = seq(0, 40, 10))
 #ggsave("figs/ss3/N_age_B1.png", g, height = 2, width = 6)

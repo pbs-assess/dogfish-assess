@@ -698,14 +698,14 @@ SS3_lencomp <- function(replist, scenario = "OM 1", fleet = 7, mean_length = TRU
   comp <- replist$lendbase %>%
     filter(Fleet %in% fleet) %>%
     mutate(FleetName = replist$FleetNames[Fleet]) %>%
-    select(Yr, Sex, Fleet, FleetName, Bin, Obs, Exp, Nsamp_in) %>%
+    select(Yr, Sex, Fleet, FleetName, Bin, Obs, Exp, Nsamp_in, Pearson) %>%
     mutate(scen = scenario)
 
   if (ghost) {
     ghost_comp <- replist$ghostlendbase %>%
       filter(Fleet %in% fleet) %>%
       mutate(FleetName = replist$FleetNames[Fleet]) %>%
-      select(Yr, Sex, Fleet, FleetName, Bin, Obs, Exp, Nsamp_in) %>%
+      select(Yr, Sex, Fleet, FleetName, Bin, Obs, Exp, Nsamp_in, Pearson) %>%
       mutate(scen = scenario)
     if (nrow(ghost_comp)) comp <- rbind(comp, ghost_comp)
   }
@@ -805,6 +805,44 @@ SS3_agecomp <- function(replist, scenario = "OM 1", fleet = 7, y) {
   g
 }
 
+
+SS3_compresid <- function(x, scenario, fleet, type = c("length", "age"),
+                          figure = c("heat", "histogram"),
+                          bin_width = 5, FRENCH = FALSE) {
+  type <- match.arg(type)
+  figure <- match.arg(figure)
+
+  if (type == "length") {
+
+    len <- SS3_lencomp(x, scenario, fleet = fleet, mean_length = FALSE) %>%
+      bind_rows()
+
+    if (figure == "heat") {
+
+      g <- len %>%
+        ggplot(aes(Yr, Bin)) +
+        facet_grid(vars(FleetName), vars(Sex)) +
+        geom_tile(height = bin_width, width = 1, aes(fill = Pearson), colour = "grey60", linewidth = 0.1) +
+        gfplot::theme_pbs() +
+        scale_fill_gradient2(high = "red", low = "blue", mid = "grey90") +
+        labs(x = rosettafish::en2fr("Year", FRENCH), y = rosettafish::en2fr("Length", FRENCH),
+             fill = ifelse(FRENCH, "Résiduel\nPearson", "Pearson\nresidual")) +
+        theme(legend.position = "bottom")
+    } else {
+      g <- len %>%
+        ggplot(aes(Pearson)) +
+        geom_histogram(binwidth = 0.25, aes(y = after_stat(count)), fill = "grey80", colour = "black") +
+        facet_wrap(vars(FleetName), ncol = 3) +
+        coord_cartesian(xlim = c(-3, 3)) +
+        geom_vline(xintercept = 0, linetype = 2) +
+        gfplot::theme_pbs() +
+        labs(x = ifelse(FRENCH, "Résiduel Pearson", "Pearson residual"), y = rosettafish::en2fr("Count", FRENCH))
+    }
+
+  }
+
+  g
+}
 
 .SS3_N <- function(replist, scenario = "OM 1", type = c("age", "length"), age = c(0, 15, 30, 45, 60), len = seq(10, 115, 5)) {
   if (type == "age") {
