@@ -184,6 +184,62 @@ g <- gfplot::plot_growth(object_f = vb_f2,
   ggtitle("DFO + NWFSC samples")
 ggsave("figs/length-age-vb-dfo-nwfsc.png", g, height = 3, width = 6)
 
+#### Plot residuals
+dat_resid <- rbind(
+  vb_f2$data %>% mutate(sigma = vb_f2$pars$log_sigma %>% exp(), eta = vb_f2$model$report()$eta),
+  vb_m2$data %>% mutate(sigma = vb_m2$pars$log_sigma %>% exp(), eta = vb_m2$model$report()$eta)
+) %>%
+  mutate(resid = log(length/eta), resid2 = log(length) - log(eta) - 0.5 * sigma * sigma) %>%
+  mutate(sex = ifelse(sex == 1, "Female", "Male"))
+
+sd_age <- dat_resid %>%
+  mutate(age = round(age)) %>%
+  summarise(value = sd(resid2), .by = c(sex, age))
+
+g <- sd_age %>%
+  filter(age > 0) %>%
+  ggplot(aes(age, value, colour = sex)) +
+  geom_point() +
+  geom_line() +
+  coord_cartesian(xlim = c(0, 60)) +
+  labs(x = "Age", y = "Lognormal residual standard deviation", colour = "Sex")
+ggsave("figs/length-age-residual-age.png", g, height = 3, width = 6)
+
+#### Plot residual by area
+g <- dat_resid %>%
+  ggplot(aes(age, resid2)) +
+  geom_point(alpha = 0.4) +
+  gfplot::theme_pbs() +
+  facet_grid(vars(type), vars(sex)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  theme(panel.spacing = unit(0, "in")) +
+  coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
+  labs(x = "Age", y = "Residual", colour = "Sex")
+ggsave("figs/length-age-residual-area.png", g, height = 8, width = 6)
+
+g <- dat_resid %>%
+  ggplot(aes(age, resid2)) +
+  geom_jitter(alpha = 0.25) +
+  gfplot::theme_pbs() +
+  facet_wrap(vars(sex)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  theme(panel.spacing = unit(0, "in")) +
+  coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
+  labs(x = "Age", y = "Residual", colour = "Sex")
+ggsave("figs/length-age-residual.png", g, height = 3, width = 6)
+
+g <- dat_resid %>%
+  ggplot(aes(resid2)) +
+  gfplot::theme_pbs() +
+  facet_wrap(vars(sex)) +
+  geom_histogram(binwidth = 0.1, colour = "black", fill = "grey80") +
+  theme(panel.spacing = unit(0, "in")) +
+  geom_vline(xintercept = 0, linetype = 2) +
+  coord_cartesian(xlim = c(-1.25, 1.25), expand = FALSE, ylim = c(0, 500)) +
+  labs(x = "Residual", y = "Count", colour = "Sex")
+ggsave("figs/length-age-residual-hist.png", g, height = 3, width = 6)
+
+
 # Model 3 - DFO + NWFSC samples - ex pregnant female
 vb_f3 <- dat_all %>%
   filter(sex == "Female") %>%
@@ -313,36 +369,6 @@ left_join(female_par, male_par) %>%
 
 
 
-
-#### Plot residual by area
-#dat <- dat %>%
-#  mutate(linf = ifelse(sex == "Female", 97.4, 83.7),
-#         k = ifelse(sex == "Female", 0.05, 0.08),
-#         t0 = ifelse(sex == "Female", -10.63, -11.07),
-#         sigma = ifelse(sex == "Female", exp(-1.693), exp(-1.914)),
-#         pred = linf * (1 - exp(-k * (Age - t0))) * exp(-0.5 * sigma * sigma),
-#         resid = log(length/pred))
-#g <- dat %>%
-#  ggplot(aes(Age, resid, colour = sex)) +
-#  geom_point(alpha = 0.4) +
-#  gfplot::theme_pbs() +
-#  facet_wrap(vars(Area)) +
-#  geom_hline(yintercept = 0, linetype = 2) +
-#  theme(panel.spacing = unit(0, "in")) +
-#  coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
-#  labs(x = "Age", y = "Residual", colour = "Sex")
-#ggsave("figs/length-age-residual-area.png", g, height = 5, width = 6)
-#
-#g <- dat %>%
-#  ggplot(aes(Age, resid, colour = Area)) +
-#  geom_jitter(alpha = 0.4) +
-#  gfplot::theme_pbs() +
-#  facet_wrap(vars(sex)) +
-#  geom_hline(yintercept = 0, linetype = 2) +
-#  theme(panel.spacing = unit(0, "in")) +
-#  coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
-#  labs(x = "Age", y = "Residual", colour = NULL)
-#ggsave("figs/length-age-residual.png", g, height = 3, width = 6)
 
 
 ###### Tried Schnute function but AIC does not support additional inflection parameter
