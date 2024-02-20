@@ -34,6 +34,7 @@ unique(d$survey_abbrev)
 
 
 # summary plots -----------------------------------------------------------
+
 d |>
   ggplot() +
   geom_point(aes(Y, X, colour = log(catch_weight)), size = 2) +
@@ -41,11 +42,15 @@ d |>
 
 d |>
   ggplot() +
-  geom_point(aes(year, log(catch_weight), colour = log(catch_weight), size = catch_weight))
+  geom_jitter(aes(year, log(catch_weight), colour = log(catch_weight), size = catch_weight))
 
 d |>
   ggplot() +
-  geom_point(aes(year, depth_m, colour = catch_weight), size = 2)
+  geom_jitter(aes(year, depth_m, colour = catch_weight, size = catch_weight))
+
+d |>
+  ggplot() +
+  geom_jitter(aes(year, area_swept, colour = catch_weight, size = catch_weight))
 
 d |>
   ggplot() +
@@ -100,16 +105,36 @@ d |>
 d <- d |>
   mutate(UTM.lon = X, UTM.lat = Y)
 
-d <- d |>
-  mutate(area_swept_calc = ifelse(is.na(tow_length_m), doorspread_m * duration_min * speed_mpm,
-                                  doorspread_m * tow_length_m))
-d$offset <- log(d$area_swept_calc)
+# d <- d |>
+#   mutate(area_swept_calc = ifelse(is.na(tow_length_m), doorspread_m * duration_min * speed_mpm,
+#                                   doorspread_m * tow_length_m))
+# d |>
+#   ggplot() +
+#   geom_point(aes(area_swept, area_swept_calc, colour = catch_weight), size = 2)
+
+d$offset <- log(d$area_swept)
 d <- d |>
   mutate(date2 = as.Date(time_deployed, format = "%Y-%m-%d H:M:S")) |>
   mutate(dmy = lubridate::ymd(date2)) |>
   mutate(julian = lubridate::yday(dmy))
 d <- d |>
   mutate(logbotdepth_m = log(depth_m))
+
+d |>
+  group_by(year) |>
+  summarize(catch = sum(catch_weight), effort = sum(area_swept_calc)) |>
+  mutate(cpue = catch/effort) |>
+  ggplot() +
+  geom_point(aes(year, catch)) +
+  geom_line(aes(year, catch))
+
+d |>
+  group_by(year) |>
+  summarize(catch = sum(catch_weight), effort = sum(area_swept_calc)) |>
+  mutate(cpue = catch/effort) |>
+  ggplot() +
+  geom_point(aes(year, cpue)) +
+  geom_line(aes(year, cpue))
 
 d |>
   ggplot() +
@@ -193,20 +218,30 @@ mesh$mesh$n
 #data
 d_sf2
 #grid
+st_geometry(grid_hs) <- NULL
 grid_hs
+grid_hs$julian <- mean(d_sf2$julian)
+grid_hs$julian_small <- grid_hs$julian/100
+plot(grid_hs$UTM.lon, grid_hs$UTM.lat)
 #mesh
 mesh
 #
 d_sf2 <- d_sf2 |> mutate(logbot_depth = log(depth_m), logbot_depth2 = log(depth_m) * log(depth_m))
-st_geometry(grid_hs) <- NULL
+d_sf2$julian_small <- d_sf2$julian/100
 
-#unshared ranges and priors,
-#days from solstice
-#try with and without julian as the days of the sruvey changed
+
+d_sf2 |>
+  group_by(year) |>
+  summarize(catch = sum(catch_weight), effort = sum(area_swept_calc)) |>
+  mutate(cpue = catch/effort) |>
+  ggplot() +
+  geom_point(aes(year, cpue)) +
+  geom_line(aes(year, cpue))
 
 m <- sdmTMB::sdmTMB(
   #catch_weight ~ 1 + survey_type +  poly(log_depth_c, 2) + poly(days_to_solstice, 2),
-  catch_weight ~ 1 + logbot_depth + logbot_depth2,
+  #catch_weight ~ 1 + logbot_depth + logbot_depth2,
+  catch_weight ~ 1 + logbot_depth + logbot_depth2 + julian_small,
     data = d_sf2,
     time = "year",
     mesh = mesh,
@@ -220,16 +255,38 @@ m <- sdmTMB::sdmTMB(
     predict_args = list(newdata = grid_hs),
     control = sdmTMBcontrol(newton_loops = 1L),
     index_args = list(area = grid_hs$cell_area),
-    family = delta_gamma()
+    #family = tweedie()
+    #family = delta_gamma()
+    family = delta_lognormal() #sensitive to distribution, delta gamma
+
   )
-sanity(m)
+saveRDS(m, "data/generated/m_tweedie")
+saveRDS(m, "data/generated/m_HSMSdg")
+saveRDS(m, "data/generated/m_HSMSdl.rds")
+saveRDS(m, "data/generated/m_HSMSdl_julian.rds")
+
+m <- readRDS("data/generated/m_tweedie")
+m1 <- readRDS("data/generated/m_HSMSdg")
+m2 <- readRDS("data/generated/m_HSMSdl.rds")
+m3 <- readRDS("data/generated/m_HSMSdl_julian.rds")
 
 index <- get_index(m, bias_correct = TRUE)
-pred <- predict(m, grid_hs, return_tmb_object = TRUE, response = TRUE)
-#saveRDS(index_region, "output/index_stitchedtrawlmodel.rds")
-#saveRDS(pred_region, "output/prediction_stitchedtrawlmodel.rds")
+indexdg <- get_index(m1, bias_correct = TRUE)
+indexdl <- get_index(m2, bias_correct = TRUE)
+indexdljulian <- get_index(m3, bias_correct = TRUE)
 
-ggplot(index, aes(year, est)) + geom_point() + geom_line()
+#pred <- predict(m, grid_hs, return_tmb_object = TRUE, response = TRUE)
+
+tweedie <- index |> mutate(type = "tweedie")
+dg <- indexdg |> mutate(type = "dg")
+dl <- indexdl |> mutate(type = "dl")
+dl_julian <- indexdljulian |> mutate(type = "dl_julian")
+
+all <-rbind(tweedie, dl, dl_julian, dg)
+
+ggplot(all, aes(year, est, colour = type)) + geom_point() + geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999") +
+  facet_wrap(~type, scales = "free")
 
 #priors = sdmTMBpriors(
 #  matern_s = pc_matern(range_gt = cutoff_distance * 1.5,
