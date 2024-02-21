@@ -146,8 +146,8 @@ names(cols) <- gears
 #ggsave("figs/reconstructed-catch.png", g, width = 8, height = 8)
 
 ## Both Inside and Outside ----
-land <- catch_plot(d, landed_kg/1e6) + labs(x = "Year", y = "Landings (kt)")
-discard <- catch_plot(d, discarded_kg/1000) + labs(x = "Year", y = "Discards (kt)")
+land <- catch_plot(d, landed_kg/1e3) + labs(x = "Year", y = "Landings (t)")
+discard <- catch_plot(d, discarded_kg/1000) + labs(x = "Year", y = "Discards (t)")
 catch <- catch_plot(d, landed_kg/1000 + discarded_kg/1000) + labs(x = "Year", y = "Catch (t)")
 
 g <- cowplot::plot_grid(plotlist = list(land, discard, catch), ncol = 1L)
@@ -179,8 +179,8 @@ saveRDS(d, file = "data/generated/catch.rds")
 g <- d %>%
   filter(area != "4B") %>%
   reshape2::melt(id.vars = c("year", "gear", "species_common_name", "area")) %>%
-  mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
-         value = value/1e6) %>%
+  mutate(variable = ifelse(variable == "landed_kg", "Landings (t)", "Discards (t)"),
+         value = value/1e3) %>%
   ggplot(aes(year, value, fill = gear)) +
   geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
   #coord_cartesian(expand = FALSE) +
@@ -229,8 +229,8 @@ ggsave("figs/proportion-discards-outside-gear.png", g, width = 6, height = 4)
 g <- d %>%
   filter(area == "4B") %>%
   reshape2::melt(id.vars = c("year", "gear", "species_common_name", "area")) %>%
-  mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
-         value = value/1e6) %>%
+  mutate(variable = ifelse(variable == "landed_kg", "Landings (t)", "Discards (t)"),
+         value = value/1e3) %>%
   ggplot(aes(year, value, fill = gear)) +
   geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
   #coord_cartesian(expand = FALSE) +

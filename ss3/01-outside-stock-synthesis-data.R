@@ -8,16 +8,19 @@ fleet_index <- c(
                                # discards went from 0 to 90 percent
   "Longline Landings" = 4,      # Use RETAINED lengths
   "Longline Discards" = 5,      # Map selectivity to BottomTrawlDiscards
-  "Iphc" = 6,
-  "Hbll" = 7,
-  "Syn" = 8
+  "IPHC" = 6,
+  "HBLL" = 7,
+  "SYN" = 8,
+  "iRec" = 9,
+  "Salmon Bycatch" = 10
 )
+fleet_factor <- paste(fleet_index, "-", names(fleet_index))
 
 
 ss3_catch <- function(csv = TRUE) {
 
   catch <- readRDS("data/generated/catch.rds") %>%
-    filter(area != "4B") %>%
+    filter(area != "4B", year <= 2023) %>%
     group_by(year, gear) %>%
     summarise(landing = 1e-3 * sum(landed_kg),
               discard = 1e-3 * sum(discarded_kg)) %>%
@@ -48,32 +51,66 @@ ss3_catch <- function(csv = TRUE) {
     summarise(value = sum(discard), .by = year) %>%
     mutate(fleet = 5)
 
-  out <- rbind(f1, f2, f3, f4, f5) %>%
+  # IPHC
+  catch_ll <- readRDS("data/generated/catch_longline.rds")
+  f6 <- catch_ll %>%
+    filter(survey_abbrev == "IPHC FISS") %>%
+    mutate(value = 1e-3 * catch_count, fleet = 6) %>%
+    select(year, value, fleet)
+
+  # HBLL
+  f7 <- catch_ll %>%
+    filter(survey_abbrev != "IPHC FISS") %>%
+    mutate(value = 1e-3 * catch_count, fleet = 7) %>%
+    select(year, value, fleet)
+
+  # Trawl
+  catch_trawl_survey <- readRDS("data/generated/catch_trawlsurvey.rds")
+  f8 <- catch_trawl_survey %>%
+    mutate(value = catch_ton, fleet = 8) %>%
+    select(year, value, fleet)
+
+  f9 <- readRDS("data/generated/catch_recreational.rds") %>%
+    filter(outside) %>%
+    ungroup() %>%
+    summarise(value = 1e-3 * sum(catch_count), .by = year) %>%
+    mutate(fleet = 9) %>%
+    select(year, value, fleet)
+
+  f10 <- readRDS("data/generated/catch_salmonbycatch.rds") %>%
+    filter(outside) %>%
+    ungroup() %>%
+    summarise(value = 1e-3 * sum(catch_count), .by = year) %>%
+    mutate(fleet = 10) %>%
+    select(year, value, fleet)
+
+  out <- rbind(f1, f2, f3, f4, f5, f6, f7, f8, f9, f10) %>%
+    mutate(value = round(value, 3)) %>%
     mutate(se = 0.01,
            season = 1) %>%
     filter(value > 0) %>%
     select(year, season, fleet, value, se) %>%
     arrange(fleet, year)
 
-  g <- out %>%
-    mutate(fleet2 = names(fleet_index)[fleet]) %>%
-    ggplot(aes(year, value, fill = fleet2)) +
-    facet_wrap(vars(fleet2)) +
-    geom_col(width = 1) +
-    gfplot::theme_pbs() +
-    guides(fill = "none") +
-    labs(x = "Year", y = "Catch (t)")
-  ggsave("figs/ss3/catch_fleet.png", g, height = 3, width = 6)
+  #g <- out %>%
+  #  mutate(fleet2 = paste(fleet, "-", names(fleet_index)[fleet])) %>%
+  #  ggplot(aes(year, value, fill = fleet2)) +
+  #  facet_wrap(vars(fleet2)) +
+  #  geom_col(width = 1) +
+  #  gfplot::theme_pbs() +
+  #  guides(fill = "none") +
+  #  labs(x = "Year", y = "Catch (t)")
+  #ggsave("figs/ss3/catch_fleet.png", g, height = 3, width = 6)
 
   g <- out %>%
-    mutate(fleet2 = names(fleet_index)[fleet]) %>%
+    mutate(fleet2 = paste(fleet, "-", names(fleet_index)[fleet]) %>% factor(fleet_factor)) %>%
     ggplot(aes(year, value, fill = fleet2)) +
     facet_wrap(vars(fleet2), scales = "free_y") +
     geom_col(width = 1) +
     gfplot::theme_pbs() +
     guides(fill = "none") +
-    labs(x = "Year", y = "Catch (t)")
-  ggsave("figs/ss3/catch_fleet2.png", g, height = 3, width = 6)
+    labs(x = "Year", y = "Catch")
+  ggsave("figs/ss3/catch_fleet2.png", g, height = 4, width = 7)
 
   if (csv) write.csv(out, file = "data/ss3/ss3-catch.csv", row.names = FALSE)
   invisible(out)
@@ -83,17 +120,17 @@ ss3_catch()
 ss3_index <- function(csv = TRUE) {
   # IPHC - no hook competition
   iphc <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds") %>%
-    mutate(fleet = fleet_index["Iphc"])
+    mutate(fleet = fleet_index["IPHC"])
 
   # HBLL - NB2 likelihood - no hook competition
   hbll <- readRDS("data/generated/geostat-ind-hbll-out.rds") %>%
     filter(year != 2013) %>% # No survey in 2013
-    mutate(fleet = fleet_index["Hbll"]) %>%
+    mutate(fleet = fleet_index["HBLL"]) %>%
     select(-survey_abbrev)
 
   # Synoptic Trawl
   syn <- readRDS("data/generated/geostat-ind-synoptic.rds") %>%
-    mutate(fleet = fleet_index["Syn"])
+    mutate(fleet = fleet_index["SYN"])
 
   ind <- rbind(hbll, iphc, syn) %>%
     mutate(month = 1) %>%
@@ -120,12 +157,12 @@ ss3_length <- function(csv = TRUE, bin_size = 5, bin_range = c(35, 115)) {
   # Will naively sum all trawl lengths together for trawl
   lengths_survey <- dtrawl %>%
     filter(survey_abbrev %in% c("SYN WCHG", "SYN HS", "SYN QCS", "SYN WCVI")) %>%
-    mutate(survey_abbrev = "Syn") %>%
+    mutate(survey_abbrev = "SYN") %>%
     select(year, length, sex, survey_abbrev, specimen_id, age, usability_code)
 
   lengths_iphc <- diphc %>%
     mutate(sex = ifelse(sex == "F", 2, 1),
-           survey_abbrev = "Iphc") %>%
+           survey_abbrev = "IPHC") %>%
     select(year, length, sex, survey_abbrev) %>%
     mutate(specimen_id = 1:n(),
            age = NA,
