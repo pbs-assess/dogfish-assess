@@ -76,10 +76,11 @@ d <- d |>
   mutate(date2 = as.Date(time_deployed, format = "%Y-%m-%d H:M:S")) |>
   mutate(dmy = lubridate::ymd(date2)) |>
   mutate(julian = lubridate::yday(dmy))
-d <- d |>
-  mutate(logbotdepth_m = log(depth_m))
 d <- d |> mutate(logbot_depth = log(depth_m), logbot_depth2 = log(depth_m) * log(depth_m))
+meanlogbotdepth <- mean(d$logbot_depth)
+d <- d |> mutate(logbot_depthc = logbot_depth - meanlogbotdepth)
 d$julian_small <- d$julian/100
+d$offset_sm <- log(d$area_swept/1000)
 
 d |>
   group_by(year) |>
@@ -118,12 +119,6 @@ d |>
 g <- gfplot::synoptic_grid
 #drop year and then add the HS years in
 g <- g |> dplyr::select(-survey_domain_year)
-
-#continuous year or years in the survey only
-#g <- purrr::map_dfr(unique(d$year), ~ tibble(g, year = .x))
-year <- seq(min(d$year), max(d$year), 1)
-g <- purrr::map_dfr(year, ~tibble(g, year = .x))
-
 g$logbot_depth <- log(g$depth)
 g$logbot_depth2 <- log(g$depth) * log(g$depth)
 g <- g |> mutate(UTM.lon = X, UTM.lat = Y)
@@ -169,17 +164,15 @@ plot(mesh)
 mesh$mesh$n
 
 # HS MSM only model -------------------------------------------------------------------
-#data
-d_sf2
 #grid
+#years in the survey only
+grid_hs <- purrr::map_dfr(unique(d$year), ~ tibble(grid_hs, year = .x))
 st_geometry(grid_hs) <- NULL
 grid_hs
 grid_hs$julian <- mean(d_sf2$julian)
 grid_hs$julian_small <- grid_hs$julian/100
-plot(grid_hs$UTM.lon, grid_hs$UTM.lat)
-#mesh
-mesh
-
+grid_hs$offset_sm <- 0
+grid_hs$logbot_depthc <- grid_hs$logbot_depth - meanlogbotdepth
 
 d_sf2 |>
   group_by(year) |>
@@ -189,68 +182,98 @@ d_sf2 |>
   geom_point(aes(year, cpue)) +
   geom_line(aes(year, cpue))
 
-unique(d_sf2$year)
-
 m <- sdmTMB::sdmTMB(
-  #catch_weight ~ 1 + survey_type +  poly(log_depth_c, 2) + poly(days_to_solstice, 2),
-  catch_weight ~ 1 + logbot_depth + logbot_depth2,
-  #catch_weight ~ 1 + logbot_depth + logbot_depth2 + poly(julian_small,2),
+  catch_weight ~ 1 + logbot_depthc + I(logbot_depthc^2),
     data = d_sf2,
     time = "year",
     mesh = mesh,
     spatiotemporal = "rw",
     silent = FALSE,
-    offset = d_sf2$offset,
+    offset = d_sf2$offset_sm,
     spatial = TRUE,
-    #do_index = FALSE,
     do_index = TRUE,
     share_range = FALSE,
-    #extra_time = c(1985, 1986, 1988, 1990, 1992, 1994, 1997, 1999, 2001),
     predict_args = list(newdata = grid_hs),
-    control = sdmTMBcontrol(newton_loops = 1L),
     index_args = list(area = grid_hs$cell_area),
-    #family = tweedie()
-    #family = delta_gamma()
-    family = delta_lognormal() #sensitive to distribution, delta gamma
-
-  )
+    priors = sdmTMBpriors(
+    b = normal(location = c(NA, 0, 0), scale = c(NA, 1, 1))),
+    control = sdmTMBcontrol(
+    #start = list(logit_p_mix = qlogis(0.01)),
+    #map = list(logit_p_mix = factor(NA)),
+    newton_loops = 1L
+    ),
+    family = delta_lognormal())
 sanity(m)
-
-saveRDS(m, "data/generated/m_tweedie")
-saveRDS(m, "data/generated/m_HSMSdg")
 saveRDS(m, "data/generated/m_HSMSdl.rds")
-saveRDS(m, "data/generated/m_HSMSdl_julian.rds")
-saveRDS(m, "data/generated/m_HSMSdl_julianex.rds")
+m <- readRDS("data/generated/m_HSMSdl.rds")
 
-m <- readRDS("data/generated/m_tweedie")
-m1 <- readRDS("data/generated/m_HSMSdg")
-m2 <- readRDS("data/generated/m_HSMSdl.rds")
-m3 <- readRDS("data/generated/m_HSMSdl_julian.rds")
+#diff distributions
+#lognormalmix
+m_dlmix_noex <- update(m, family = delta_lognormal_mix(),
+                  priors = sdmTMBpriors(
+                    b = normal(location = c(NA, 0, 0), scale = c(NA, 1, 1))),
+                  control = sdmTMBcontrol(
+                    start = list(logit_p_mix = qlogis(0.01)),
+                    map = list(logit_p_mix = factor(NA)),
+                    newton_loops = 1L
+                  ))
+sanity(m_dlmix_noex)
+saveRDS(m_dlmix_noex, "data/generated/m_HSMSdlmix_noex.rds")
 
-index <- get_index(m, bias_correct = TRUE)
-indexdg <- get_index(m1, bias_correct = TRUE)
-indexdl <- get_index(m2, bias_correct = TRUE)
-indexdljulian <- get_index(m3, bias_correct = TRUE)
+#diff distributions
+#lognormalmix
+grid_hsyrs <- grid_hs |> dplyr::select(-year) |> distinct()
+year <- as.numeric(seq(min(d$year), max(d$year), 1))
+grid_hs <- purrr::map_dfr(year, ~tibble(grid_hsyrs, year = .x))
+m_dlmix <- update(m, family = delta_lognormal_mix(),
+                  priors = sdmTMBpriors(
+                    b = normal(location = c(NA, 0, 0), scale = c(NA, 1, 1))),
+                  control = sdmTMBcontrol(
+                    start = list(logit_p_mix = qlogis(0.01)),
+                    map = list(logit_p_mix = factor(NA)),
+                    newton_loops = 1L
+                  ),
+                  extra_time = c(1985, 1986, 1988, 1990, 1992, 1994, 1997, 1999, 2001))
+sanity(m_dlmix)
+saveRDS(m_dlmix, "data/generated/m_HSMSdlmix.rds")
 
+#ex years
+grid_hsyrs <- grid_hs |> dplyr::select(-year) |> distinct()
+year <- as.numeric(seq(min(d$year), max(d$year), 1))
+grid_hs <- purrr::map_dfr(year, ~tibble(grid_hsyrs, year = .x))
+m_dlex <- update(m, extra_time = c(1985, 1986, 1988, 1990, 1992, 1994, 1997, 1999, 2001))
+sanity(m_dlex)
+saveRDS(m_dlex, "data/generated/m_HSMSdl_extrayear.rds")
 
-#pred <- predict(m, grid_hs, return_tmb_object = TRUE, response = TRUE)
+#load models and calculate index
+m <- readRDS('data/generated/m_HSMSdl.rds')
+ind_dl <- get_index(m, bias_correct = TRUE)
+m_dlmix <- readRDS('data/generated/m_HSMSdlmix.rds')
+ind_dlmix <- get_index(m_dlmix, bias_correct = TRUE)
+m_dlex <- readRDS('data/generated/m_HSMSdl_extrayear.rds')
+ind_dlex <- get_index(m_dlex, bias_correct = TRUE)
+m_dlmix_noex <- readRDS("data/generated/m_HSMSdlmix_noex.rds")
+ind_dlnoex <- get_index(m_dlmix_noex, bias_correct = TRUE)
 
-tweedie <- index |> mutate(type = "tweedie")
-dg <- indexdg |> mutate(type = "dg")
-dl <- indexdl |> mutate(type = "dl")
-dl_julian <- indexdljulian |> mutate(type = "dl_julian")
+#AIC
+AIC(m)
+AIC(m_dlex)
+AIC(m_dlmix)
+AIC(m_dlmix_noex)
 
-all <-rbind(tweedie, dl, dl_julian, dg)
+#ggplot of all indices
+ind_dlex <- ind_dlex |> mutate(type = "dl_extratime")
+ind_dlmix <- ind_dlmix |> mutate(type = "dl_mix")
+ind_dl <- ind_dl |> mutate(type = "dl")
+ind_dlnoex <- ind_dlnoex |> mutate(type = "dlmix_noex")
+
+all <-rbind(ind_dlex, ind_dlmix, ind_dl, ind_dlnoex)
+
+ggplot(ind_dlnoex, aes(year, est)) + geom_point() + geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4)
 
 ggplot(all, aes(year, est, colour = type)) + geom_point() + geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999") +
-  facet_wrap(~type, scales = "free")
+  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = type), alpha = 0.4)
 
-dl <- indexdl |> mutate(type = "dl")
-dl_julian <- indexdljulian |> mutate(type = "dl_julian")
-
-dl <-rbind(dl, dl_julian)
-
-ggplot(dl, aes(year, est, colour = type)) + geom_point() + geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
+ggplot(all, aes(year, est, colour = type)) + geom_point() + geom_line(size = 2)
 
