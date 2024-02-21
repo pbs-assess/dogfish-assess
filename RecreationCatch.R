@@ -11,11 +11,8 @@ library(gfdata)
 #see here for recreational management areas
 #https://www.researchgate.net/figure/DFO-management-areas-of-the-Pacific-Region-Fisheries-and-Oceans-Canada-2004_fig1_242162660
 
-#SOG waters are management areas, see map above
-sog <- c(13, 15, 16, 28, 29, 19, 18, 17, 14)
 d <- readxl::read_excel("data/raw/iREC estimates Jul 2012 to Dec 2023 29012024.xlsx") |>
-  filter(ITEM == "Dogfish") |>
-  filter(!area %in% sog)
+  filter(ITEM == "Dogfish")
 names(d) <- tolower(names(d))
 
 eff <- readxl::read_excel("data/raw/iREC estimates Jul 2012 to Dec 2023 29012024.xlsx")
@@ -45,21 +42,24 @@ final <- final |>
   summarize(catch = sum(catch_method), effort = sum(effort_fishingdays))
 final$cpue <- final$catch/final$effort
 
-ggplot(final, aes(year, cpue, group = method, colour = method)) +
-         geom_point() + geom_line()
+unique(d$logistical_area)
+unique(d$area)
 
-# #how much was caught each year in tonnes?
-# #convert pieces to weights by average weight of a dogfish 5lbs or 2.2 kg
-# irec <- d |>
-#   group_by(year) |>
-#   summarise(catch_t = sum(estimate)*avgwt_kg/1000) #in pieces
-# irec
-
-d |>
-  group_by(year) |>
-
+d_irec <- d |>
+  mutate(pfma = strsplit(area, " ") %>% sapply(getElement, 2) %>% as.numeric()) %>% #NAs are from haida gwaii
+  mutate(outside = is.na(pfma) | !pfma %in% c(12:20, 28:29)) %>%
+  group_by(year, disposition, outside) |>
   summarise(catch_count = sum(estimate)) #in pieces
-saveRDS(d, "data/generated/catch_recreational.rds")
+saveRDS(d_irec, "data/generated/catch_recreational.rds")
+
+g <- d_irec %>%
+  filter(outside == TRUE) %>%
+  ggplot(aes(year, catch_count, colour = disposition)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Year", y = "iRec catch (pieces)", colour = "Disposition")
+ggsave("figs/irec-outside.png", g, width = 6, height = 3)
+
 
 # salmon: load raw data ------------------------------------------------
 #data from Jason Parsley - salmon data unit
@@ -80,9 +80,18 @@ d2 <- d |>
 #   summarize(sum = sum(catch_qty)*avgwt_kg/1000)
 
 salmon <- d2 |>
-  group_by(year) |>
+  mutate(outside = !mgmt_area %in% c(12:20, 28:29)) %>%
+  group_by(year, kept_rel, outside) |>
   summarize(catch_count = sum(catch_qty))
 saveRDS(salmon, "data/generated/catch_salmonbycatch.rds")
+
+g <- salmon %>%
+  filter(outside == TRUE) %>%
+  ggplot(aes(year, catch_count, colour = kept_rel)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Year", y = "Salmon catch (pieces)", colour = "Disposition")
+ggsave("figs/salmon-outside.png", g, width = 6, height = 3)
 
 # DFO surveys: load raw data ----------------------------------------------
 
@@ -115,15 +124,15 @@ saveRDS(tl, "data/generated/catch_trawlsurvey.rds")
 #how much is caught each year in hbll and iphc in tonnes?
 d |>
   filter(survey_abbrev %in% c("HBLL OUT N", "HBLL OUT S", "IPHC FISS")) |>
-  group_by(year) |>
+  group_by(year, survey_abbrev) |>
   summarize(catch_count = sum(catch_count)) |>
-  ggplot() +
-  geom_point(aes(year, catch_count)) +
-  geom_line(aes(year, catch_count))
+  ggplot(aes(year, catch_count, colour = survey_abbrev)) +
+  geom_point() +
+  geom_line()
 
 ll <- d |>
   filter(survey_abbrev %in% c("HBLL OUT N", "HBLL OUT S", "IPHC FISS")) |>
-  group_by(year) |>
+  group_by(year, survey_abbrev) |>
   summarize(catch_count = sum(catch_count))
 saveRDS(ll, "data/generated/catch_longline.rds")
 
