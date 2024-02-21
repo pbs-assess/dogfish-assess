@@ -208,13 +208,17 @@ m <- readRDS("data/generated/m_HSMSdl.rds")
 ind_dl <- get_index(m, bias_correct = TRUE)
 
 had_data <- select(d_sf2, year) |> distinct() |> mutate(surveyed = TRUE)
-
-left_join(ind_dl, had_data) |>
+ind_dl_filtered <- left_join(ind_dl, had_data) |>
   mutate(surveyed = ifelse(!is.na(surveyed), TRUE, FALSE)) |>
   filter(surveyed) |>
+  select(-surveyed)
+
+ind_dl_filtered |>
   ggplot(aes(year, est)) +
   geom_pointrange(aes(ymin = lwr, ymax = upr)) +
   ylab("Relative biomass index") + xlab("Year") +
   coord_cartesian(expand = FALSE, ylim = c(0, max(ind_dl$upr) * 1.02),
     xlim = c(range(ind_dl$year) + c(-0.5, 0.5))) +
   scale_x_continuous(breaks = seq(1984, 2002, 2))
+
+saveRDS(ind_dl_filtered, "data/generated/hs-msa-index.rds")
