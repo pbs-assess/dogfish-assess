@@ -152,6 +152,8 @@ plot(st_geometry(test), col = "red", add = TRUE)
 
 d_sf2 <- d_sf |> filter(!fishing_event_id %in% test$fishing_event_id)
 
+plot(st_geometry(grid_hs), pch = ".")
+
 # create mesh -------------------------------------------------------------
 st_geometry(d_sf2) <- NULL
 glimpse(d_sf2)
@@ -166,9 +168,10 @@ all_years <- seq(min(d_sf2$year), max(d_sf2$year))
 missing_years <- sort(setdiff(all_years, unique(d_sf2$year)))
 missing_years
 
+plot(grid_hs)
 grid_hs$year <- NULL
 grid_hs_yrs <- purrr::map_dfr(all_years, ~ tibble(grid_hs, year = .x))
-st_geometry(grid_hs_yrs) <- NULL
+# st_geometry(grid_hs_yrs) <- NULL
 grid_hs_yrs$julian <- mean(d_sf2$julian)
 grid_hs_yrs$julian_small <- grid_hs_yrs$julian / 100
 grid_hs_yrs$offset_sm <- 0
@@ -184,6 +187,7 @@ d_sf2 |>
 
 m <- sdmTMB(
   catch_weight ~ 1 + logbot_depthc + I(logbot_depthc^2),
+  # catch_weight ~ 1,
   data = d_sf2,
   time = "year",
   mesh = mesh,
@@ -204,8 +208,11 @@ sanity(m)
 plot_anisotropy(m)
 saveRDS(m, "data/generated/m_HSMSdl.rds")
 m <- readRDS("data/generated/m_HSMSdl.rds")
+m$sd_report
 
 ind_dl <- get_index(m, bias_correct = TRUE)
+saveRDS(ind_dl, "data/generated/m_HSMSdl-index.rds")
+ind_dl <- readRDS("data/generated/m_HSMSdl-index.rds")
 
 had_data <- select(d_sf2, year) |> distinct() |> mutate(surveyed = TRUE)
 ind_dl_filtered <- left_join(ind_dl, had_data) |>

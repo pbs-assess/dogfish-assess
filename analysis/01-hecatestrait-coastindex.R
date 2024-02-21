@@ -154,7 +154,7 @@ plot(g$X, g$Y, pch = ".") # grid
 points(d$X, d$Y, col = "red", pch = ".")
 
 # create mesh -------------------------------------------------------------
-mesh <- make_mesh(d, c("UTM.lon", "UTM.lat"), cutoff = 20)
+mesh <- make_mesh(d, c("UTM.lon", "UTM.lat"), cutoff = 25)
 plot(mesh$mesh)
 mesh$mesh$n
 
@@ -179,19 +179,20 @@ d |>
   facet_wrap(~survey_abbrev, scales = "free")
 
 m <- sdmTMB(
-  catch_weight ~ 1 + survey_type,
+  # catch_weight ~ 1 + survey_type,
+  catch_weight ~ 1 + survey_type + logbot_depthc + I(logbot_depthc^2),
   data = d,
   time = "year",
   mesh = mesh,
   spatiotemporal = "rw",
   silent = FALSE,
   offset = "offset_sm",
-  spatial = FALSE,
+  spatial = TRUE,
   do_index = TRUE,
   anisotropy = TRUE,
-  priors = sdmTMBpriors(
-    b = normal(location = c(NA, 0), scale = c(NA, 1))
-  ),
+  # priors = sdmTMBpriors(
+  #   b = normal(location = c(NA, 0), scale = c(NA, 1))
+  # ),
   extra_time = missing_years,
   predict_args = list(newdata = g),
   index_args = list(area = g$cell_area),
@@ -199,90 +200,33 @@ m <- sdmTMB(
 )
 print(m)
 sanity(m)
-plot_anistropy(m)
+plot_anisotropy(m)
 tidy(m, "ran_pars", conf.int = TRUE)
+tidy(m, "ran_pars", conf.int = TRUE, model = 2)
 tidy(m, "fixed", conf.int = TRUE)
+tidy(m, "fixed", conf.int = TRUE, model = 2)
 m$sd_report
 saveRDS(m, "data/generated/m_HSMScoastdl.rds")
 m <- readRDS("data/generated/m_HSMScoastdl.rds")
 
-# SA stopped here ... ---------------------------------
+ind_dl <- get_index(m, bias_correct = TRUE)
+saveRDS(ind_dl, "data/generated/m_HSMSdl-coast-index.rds")
+ind_dl <- readRDS("data/generated/m_HSMSdl-coast-index.rds")
 
-m <- sdmTMB::sdmTMB(
-  catch_weight ~ 1 + logbot_depthc + logbot_depth2c + survey_type,
-  data = d,
-  time = "year",
-  mesh = mesh,
-  spatiotemporal = "rw",
-  silent = FALSE,
-  offset = "offset_sm",
-  spatial = FALSE,
-  do_index = TRUE,
-  share_range = FALSE,
-  priors = sdmTMBpriors(
-    # b = normal(location = c(NA, 0, 0), scale = c(NA, 1, 1))),
-    b = normal(location = c(NA, 0, 0, 0), scale = c(NA, 1, 1, 1))
-  ),
-  control = sdmTMBcontrol(
-    newton_loops = 1L
-  ),
-  extra_time = c(1985, 1986, 1988, 1990, 1992, 1994, 1997, 1999, 2001),
-  predict_args = list(newdata = g),
-  index_args = list(area = g$cell_area),
-  family = delta_lognormal_mix()
-)
+had_data <- select(d, year) |> distinct() |> mutate(surveyed = TRUE)
+ind_dl_filtered <- left_join(ind_dl, had_data) |>
+  mutate(surveyed = ifelse(!is.na(surveyed), TRUE, FALSE)) |>
+  filter(surveyed) |>
+  select(-surveyed)
 
-sanity(m)
-tidy(m, "ran_pars", conf.int = TRUE)
-tidy(m, "fixed", conf.int = TRUE)
-summary(m$sd_report)
-saveRDS(m, "data/generated/m_HSMScoastdlmix.rds")
+end_msa <- filter(d, survey_abbrev %in% "HS MSA") |> pull(year) |> max()
 
+ind_dl_filtered |>
+  ggplot(aes(year, est)) +
+  geom_pointrange(aes(ymin = lwr, ymax = upr)) +
+  ylab("Relative biomass index") + xlab("Year") +
+  coord_cartesian(expand = FALSE, ylim = c(0, max(ind_dl$upr) * 1.02),
+    xlim = c(range(ind_dl$year) + c(-0.5, 0.5))) +
+  geom_vline(xintercept = end_msa, col = "red", lty = 2)
 
-# load model files and calculate index ------------------------------------
-m_jul <- readRDS("data/generated/m_HSMScoastdlmix_jul.rds")
-ind_jul <- get_index(m_jul, bias_correct = TRUE)
-ggplot(ind_jul, aes(year, est)) +
-  geom_point() +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
-
-m <- readRDS("data/generated/m_HSMScoastdlmix.rds")
-ind_dlmix <- get_index(m, bias_correct = TRUE)
-ggplot(ind_dlmix, aes(year, est)) +
-  geom_point() +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
-
-# diff distributions
-m_dg <- update(m, family = delta_gamma())
-ind_dg <- get_index(m_dg, bias_correct = TRUE)
-ggplot(ind_dg, aes(year, est)) +
-  geom_point() +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
-
-# diff distributions
-m_dl <- update(m, family = delta_lognormal())
-ind_dl <- get_index(m_dl, bias_correct = TRUE)
-ggplot(ind_dl, aes(year, est)) +
-  geom_point() +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
-
-# aic
-AIC(m_dl)
-AIC(m_dg)
-AIC(m)
-AIC(m_jul)
-
-# ggplot of all indices
-ind_dlmix$type <- "dlmix"
-ind_jul$type <- "jul"
-ind_dg$type <- "dg"
-ind_dl$type <- "dl"
-both <- rbind(ind_dlmix, ind_jul, ind_dl)
-ggplot(both, aes(year, est, colour = type, fill = type)) +
-  geom_point() +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = type), alpha = 0.4)
+saveRDS(ind_dl_filtered, "data/generated/hs-msa-coast-index.rds")
