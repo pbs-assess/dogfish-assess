@@ -18,26 +18,22 @@ CRS <- 32609
 coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
   sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
 
-
 # load data ---------------------------------------------------------------
 
 # surveysets <- get_survey_sets(species = "north pacific spiny dogfish")
 surveysets <- readRDS("data/raw/survey-sets.rds")
-d <- dplyr::filter(surveysets, survey_abbrev == c(
+d <- dplyr::filter(surveysets, survey_abbrev %in% c(
   "SYN WCVI", "SYN HS",
   "SYN WCHG", "HS MSA", "SYN QCS"
 ))
-# d <- dplyr::filter(surveysets, survey_abbrev ==  "HS MSA")
 d <- sdmTMB::add_utm_columns(d, utm_crs = CRS)
 sort(unique(d$year))
 unique(d$survey_abbrev)
-
 
 # summary plots -----------------------------------------------------------
 d |>
   ggplot() +
   geom_point(aes(year, area_swept, colour = catch_weight), size = 2)
-
 
 d |>
   ggplot() +
@@ -69,8 +65,6 @@ d |>
   geom_point(aes(year, tow_length_m, colour = catch_weight), size = 2) +
   facet_wrap(~survey_abbrev)
 
-
-
 # data cleaning -----------------------------------------------------------
 d <- d |>
   mutate(UTM.lon = X, UTM.lat = Y)
@@ -83,10 +77,6 @@ d <- d |> mutate(survey_type = ifelse(survey_abbrev %in% c(
   "SYN WCVI", "SYN QCS",
   "SYN WCHG", "SYN HS"
 ), "trawl", "multi"))
-# d <- d |>
-#  mutate(area_swept_calc = ifelse(is.na(tow_length_m), doorspread_m * duration_min * speed_mpm,
-#    doorspread_m * tow_length_m
-#  ))
 d$offset <- log(d$area_swept)
 d$offset_sm <- log(d$area_swept / 1000)
 d <- d |> mutate(logbot_depth = log(depth_m))
@@ -125,7 +115,7 @@ d |>
 
 d |>
   ggplot() +
-  geom_jitter(aes(year, area_swept, size = log(catch_weight), colour = log(catch_weight))) +
+  geom_jitter(aes(year, area_swept, size = log(catch_weight + 1), colour = log(catch_weight))) +
   facet_wrap(~survey_abbrev, scales = "free")
 
 d <- d |>
@@ -136,9 +126,6 @@ d <- d |>
 d |>
   ggplot() +
   geom_point(aes(year, julian, colour = catch_weight), size = 2)
-
-
-
 
 # create grid -------------------------------------------------------------
 
@@ -151,6 +138,9 @@ g$survey_abbrev <- "SYN WCVI"
 sort(unique(d$year))
 # g <- purrr::map_dfr(unique(d$year), ~ tibble(g, year = .x))
 year <- seq(min(d$year), max(d$year))
+missing_years <- setdiff(year, unique(d$year))
+missing_years
+
 g <- purrr::map_dfr(year, ~ tibble(g, year = .x))
 
 g$logbot_depth <- log(g$depth)
@@ -160,12 +150,12 @@ g$logbot_depth2c <- g$logbot_depthc * g$logbot_depthc
 g <- g |> mutate(UTM.lon = X, UTM.lat = Y)
 g$offset <- 0
 
-plot(g$X, g$Y) # grid
-points(d$X, d$Y, col = "red")
+plot(g$X, g$Y, pch = ".") # grid
+points(d$X, d$Y, col = "red", pch = ".")
 
 # create mesh -------------------------------------------------------------
-mesh <- make_mesh(d, c("UTM.lon", "UTM.lat"), cutoff = 50)
-plot(mesh)
+mesh <- make_mesh(d, c("UTM.lon", "UTM.lat"), cutoff = 20)
+plot(mesh$mesh)
 mesh$mesh$n
 
 # HS MS + trawl coast model -------------------------------------------------------------------
@@ -174,7 +164,7 @@ g$julian <- mean(d$julian)
 g$julian_small <- g$julian / 100
 g$offset_sm <- 0
 g$survey_type <- "trawl"
-plot(g$UTM.lon, g$UTM.lat)
+plot(g$UTM.lon, g$UTM.lat, pch = ".")
 
 d <- d |> mutate(logbot_depth = log(depth_m), logbot_depth2 = log(depth_m) * log(depth_m))
 d$julian_small <- d$julian / 100
@@ -188,8 +178,8 @@ d |>
   geom_line(aes(year, cpue)) +
   facet_wrap(~survey_abbrev, scales = "free")
 
-m_jul <- sdmTMB::sdmTMB(
-  catch_weight ~ 1 + logbot_depth + logbot_depth2 + survey_type + poly(julian_small, 2),
+m <- sdmTMB(
+  catch_weight ~ 1 + survey_type,
   data = d,
   time = "year",
   mesh = mesh,
@@ -198,26 +188,25 @@ m_jul <- sdmTMB::sdmTMB(
   offset = "offset_sm",
   spatial = FALSE,
   do_index = TRUE,
-  share_range = FALSE,
+  anisotropy = TRUE,
   priors = sdmTMBpriors(
-    b = normal(location = c(NA, 0, 0, 0, 0, 0), scale = c(NA, 1, 1, 1, 1, 1))
+    b = normal(location = c(NA, 0), scale = c(NA, 1))
   ),
-  control = sdmTMBcontrol(
-    start = list(logit_p_mix = qlogis(0.05)),
-    map = list(logit_p_mix = factor(NA)),
-    newton_loops = 1L
-  ),
-  extra_time = c(1985, 1986, 1988, 1990, 1992, 1994, 1997, 1999, 2001),
+  extra_time = missing_years,
   predict_args = list(newdata = g),
   index_args = list(area = g$cell_area),
-  family = delta_lognormal_mix()
+  family = delta_lognormal()
 )
+print(m)
+sanity(m)
+plot_anistropy(m)
+tidy(m, "ran_pars", conf.int = TRUE)
+tidy(m, "fixed", conf.int = TRUE)
+m$sd_report
+saveRDS(m, "data/generated/m_HSMScoastdl.rds")
+m <- readRDS("data/generated/m_HSMScoastdl.rds")
 
-sanity(m_jul)
-tidy(m_jul, "ran_pars", conf.int = TRUE)
-tidy(m_jul, "fixed", conf.int = TRUE)
-summary(m_jul$sd_report)
-saveRDS(m_jul, "data/generated/m_HSMScoastdlmix_jul.rds")
+# SA stopped here ... ---------------------------------
 
 m <- sdmTMB::sdmTMB(
   catch_weight ~ 1 + logbot_depthc + logbot_depth2c + survey_type,
