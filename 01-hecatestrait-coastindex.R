@@ -1,0 +1,315 @@
+# calculate a coastwide index using the Hecate Strait Multi Species trawl survey
+
+# Hecate Strait multi species trawl extends back to 1984
+# one index
+
+# library -----------------------------------------------------------------
+library(tidyverse)
+library(ggplot2)
+library(sdmTMB)
+library(cowplot)
+theme_set(gfplot::theme_pbs())
+library(gfplot)
+library(gfdata)
+library(sf)
+
+# map objects -------------------------------------------------------------
+CRS <- 32609
+coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
+  sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
+
+
+# load data ---------------------------------------------------------------
+
+# surveysets <- get_survey_sets(species = "north pacific spiny dogfish")
+surveysets <- readRDS("data/raw/survey-sets.rds")
+d <- dplyr::filter(surveysets, survey_abbrev == c("SYN WCVI", "SYN HS",
+                                                  "SYN WCHG", "HS MSA", "SYN QCS"))
+# d <- dplyr::filter(surveysets, survey_abbrev ==  "HS MSA")
+d <- sdmTMB::add_utm_columns(d, utm_crs = CRS)
+sort(unique(d$year))
+unique(d$survey_abbrev)
+
+
+# summary plots -----------------------------------------------------------
+d |>
+  ggplot() +
+  geom_point(aes(year, area_swept, colour = catch_weight), size = 2)
+
+
+d |>
+  ggplot() +
+  geom_point(aes(Y, X, colour = log(catch_weight)), size = 2) +
+  facet_wrap(~year)
+
+d |>
+  ggplot() +
+  geom_jitter(aes(year, log(catch_weight), colour = log(catch_weight), size = catch_weight)) +
+  facet_wrap(~survey_abbrev)
+
+d |>
+  ggplot() +
+  geom_jitter(aes(year, depth_m, colour = catch_weight, size = catch_weight)) +
+  facet_wrap(~survey_abbrev)
+
+d |>
+  ggplot() +
+  geom_jitter(aes(year, area_swept, colour = catch_weight, size = catch_weight)) +
+  facet_wrap(~survey_abbrev)
+
+d |>
+  ggplot() +
+  geom_point(aes(year, doorspread_m, colour = catch_weight), size = 2) +
+  facet_wrap(~survey_abbrev)
+
+d |>
+  ggplot() +
+  geom_point(aes(year, tow_length_m, colour = catch_weight), size = 2) +
+  facet_wrap(~survey_abbrev)
+
+
+
+# data cleaning ignore for now -----------------------------------------------------------
+# glimpse(d)
+# #effort mutate(area_swept1_m2 = doorspread_m * tow_length_m) |>
+#   drop_na(doorspread_m)ignore
+#
+# #included some sets unsually not deemed usable
+# meandoors <- dat %>%
+#   filter(usability_code == 1 &
+#            doorspread_m != 0) %>%
+#   group_by(survey_id) %>% summarise(
+#     mean_doorspread = mean(doorspread_m, na.rm = TRUE)
+#   )
+#
+# dat <- dat %>%
+#   filter(usability_code %in% c(1, 22, 16, 6)) %>%
+#   filter(duration_min >= 10) %>%
+#   left_join(meandoors) %>%
+#   mutate(
+#     DOY = as.numeric(strftime(time_deployed, format = "%j")),
+#     days_to_solstice = DOY - 172,
+#     survey_type = as.factor(ifelse(survey_abbrev == "HS MSA", "MSA", "SYN")),
+#     log_depth = log(depth_m),
+#     log_depth_c = log_depth - 5, # mean and median for whole data set
+#     doorspread_m = ifelse(doorspread_m == 0, mean_doorspread, doorspread_m),
+#     area_swept = ifelse(is.na(tow_length_m), doorspread_m * duration_min * speed_mpm, doorspread_m * tow_length_m)
+#   )
+
+
+
+
+# data cleaning -----------------------------------------------------------
+d <- d |>
+  mutate(UTM.lon = X, UTM.lat = Y)
+d <- d |> drop_na(depth_m)
+d |>
+  filter(is.na(area_swept) == TRUE) |>
+  tally() #only 5 missing area swept
+d <- d |> drop_na(area_swept)
+d <- d |> mutate(survey_type = ifelse(survey_abbrev %in% c("SYN WCVI", "SYN QCS",
+                                                           "SYN WCHG", "SYN HS"), "trawl", "multi"))
+#d <- d |>
+#  mutate(area_swept_calc = ifelse(is.na(tow_length_m), doorspread_m * duration_min * speed_mpm,
+#    doorspread_m * tow_length_m
+#  ))
+d$offset <- log(d$area_swept)
+d$offset_sm <- log(d$area_swept/1000)
+d <- d |> mutate(logbot_depth = log(depth_m))
+meandepth <- mean(d$logbot_depth)
+d <- d |>
+  mutate(logbot_depthc = logbot_depth - meandepth,
+         logbot_depth2c = logbot_depthc * logbot_depthc)
+d |>
+  ggplot() +
+  geom_point(aes(year, area_swept, colour = catch_weight), size = 2)
+d <- d |>
+  mutate(date2 = as.Date(time_deployed, format = "%Y-%m-%d H:M:S")) |>
+  mutate(dmy = lubridate::ymd(date2)) |>
+  mutate(julian = lubridate::yday(dmy))
+
+d |>
+  group_by(year, survey_abbrev) |>
+  summarize(catch = sum(catch_weight), effort = sum(area_swept)) |>
+  mutate(cpue = catch / effort) |>
+  ggplot() +
+  geom_point(aes(year, catch)) +
+  geom_line(aes(year, catch)) +
+  facet_wrap(~survey_abbrev, scales = "free")
+
+d |>
+  group_by(year, survey_abbrev) |>
+  summarize(catch = sum(catch_weight), effort = sum(area_swept)) |>
+  mutate(cpue = catch / effort) |>
+  ggplot() +
+  geom_point(aes(year, cpue)) +
+  geom_line(aes(year, cpue))  +
+  facet_wrap(~survey_abbrev)  +
+  facet_wrap(~survey_abbrev, scales = "free")
+
+d |>
+  ggplot() +
+  geom_jitter(aes(year, area_swept, size = log(catch_weight), colour = log(catch_weight))) +
+  facet_wrap(~survey_abbrev, scales = "free")
+
+d <- d |>
+  mutate(date2 = as.Date(time_deployed, format = "%Y-%m-%d H:M:S")) |>
+  mutate(dmy = lubridate::ymd(date2)) |>
+  mutate(julian = lubridate::yday(dmy))
+
+d |>
+  ggplot() +
+  geom_point(aes(year, julian, colour = catch_weight), size = 2)
+
+
+
+
+# create grid -------------------------------------------------------------
+
+g <- gfplot::synoptic_grid
+g <- g |> dplyr::select(-survey_domain_year)
+g$survey_type <- "trawl"
+g$survey_abbrev <- "SYN WCVI"
+
+#add year to grid
+sort(unique(d$year))
+#g <- purrr::map_dfr(unique(d$year), ~ tibble(g, year = .x))
+year <- seq(min(d$year), max(d$year))
+g <- purrr::map_dfr(year, ~ tibble(g, year = .x))
+
+g$logbot_depth <- log(g$depth)
+g$logbot_depth2 <- log(g$depth) * log(g$depth)
+g$logbot_depthc <- g$logbot_depth - meandepth
+g$logbot_depth2c <- g$logbot_depthc * g$logbot_depthc
+g <- g |> mutate(UTM.lon = X, UTM.lat = Y)
+g$offset <- 0
+
+plot(g$X, g$Y) # grid
+points(d$X, d$Y, col = "red")
+
+# create mesh -------------------------------------------------------------
+mesh <- make_mesh(d, c("UTM.lon", "UTM.lat"), cutoff = 50)
+plot(mesh)
+mesh$mesh$n
+
+# HS MS + trawl coast model -------------------------------------------------------------------
+# grid
+g$julian <- mean(d$julian)
+g$julian_small <- g$julian / 100
+g$offset_sm <- 0
+g$survey_type = "trawl"
+plot(g$UTM.lon, g$UTM.lat)
+
+d <- d |> mutate(logbot_depth = log(depth_m), logbot_depth2 = log(depth_m) * log(depth_m))
+d$julian_small <- d$julian / 100
+
+d |>
+  group_by(year, survey_abbrev) |>
+  summarize(catch = sum(catch_weight), effort = sum(area_swept)) |>
+  mutate(cpue = catch / effort) |>
+  ggplot() +
+  geom_point(aes(year, cpue)) +
+  geom_line(aes(year, cpue)) +
+  facet_wrap(~survey_abbrev, scales = "free")
+
+m_jul <- sdmTMB::sdmTMB(
+  catch_weight ~ 1 + logbot_depth + logbot_depth2 + survey_type + poly(julian_small,2),
+  data = d,
+  time = "year",
+  mesh = mesh,
+  spatiotemporal = "rw",
+  silent = FALSE,
+  offset = "offset_sm",
+  spatial = FALSE,
+  do_index = TRUE,
+  share_range = FALSE,
+  priors = sdmTMBpriors(
+   b = normal(location = c(NA, 0, 0,0,0,0), scale = c(NA, 1, 1,1,1,1))),
+   control = sdmTMBcontrol(
+   start = list(logit_p_mix = qlogis(0.05)),
+   map = list(logit_p_mix = factor(NA)),
+   newton_loops = 1L
+    #matern_s = pc_matern(range_gt = 10 * 1.5,
+    #                     sigma_lt = 2),
+    #matern_st = pc_matern(range_gt = 10 * 1.5,
+    #                      sigma_lt = 2)
+  ),
+  extra_time = c(1985, 1986, 1988, 1990, 1992, 1994, 1997, 1999, 2001),
+  predict_args = list(newdata = g),
+  index_args = list(area = g$cell_area),
+  family = delta_lognormal_mix()
+)
+
+m <- sdmTMB::sdmTMB(
+  catch_weight ~ 1 + logbot_depthc + logbot_depth2c + survey_type,
+  data = d,
+  time = "year",
+  mesh = mesh,
+  spatiotemporal = "rw",
+  silent = FALSE,
+  offset = "offset_sm",
+  spatial = FALSE,
+  do_index = TRUE,
+  share_range = FALSE,
+  priors = sdmTMBpriors(
+  #b = normal(location = c(NA, 0, 0), scale = c(NA, 1, 1))),
+  b = normal(location = c(NA, 0, 0, 0), scale = c(NA, 1, 1, 1))),
+  control = sdmTMBcontrol(
+    start = list(logit_p_mix = qlogis(0.05)),
+    map = list(logit_p_mix = factor(NA)),
+    newton_loops = 1L
+    #matern_s = pc_matern(range_gt = 10 * 1.5,
+    #                     sigma_lt = 2),
+    #matern_st = pc_matern(range_gt = 10 * 1.5,
+    #                      sigma_lt = 2)
+  ),
+  extra_time = c(1985, 1986, 1988, 1990, 1992, 1994, 1997, 1999, 2001),
+  predict_args = list(newdata = g),
+  index_args = list(area = g$cell_area),
+  family = delta_lognormal_mix()
+)
+
+sanity(m_jul)
+tidy(m_jul, "ran_pars", conf.int = TRUE)
+tidy(m_jul, "fixed", conf.int = TRUE)
+summary(m_jul$sd_report)
+saveRDS(m_jul, "data/generated/m_HSMScoastdlmix_jul.rds")
+m_jul <- readRDS("data/generated/m_HSMScoastdlmix_jul.rds")
+ind_jul <- get_index(m_jul, bias_correct = TRUE)
+# pred <- predict(m, grid_hs, return_tmb_object = TRUE, response = TRUE)
+ggplot(ind_jul, aes(year, est)) +
+  geom_point() +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
+
+sanity(m)
+tidy(m, "ran_pars", conf.int = TRUE)
+tidy(m, "fixed", conf.int = TRUE)
+summary(m$sd_report)
+saveRDS(m, "data/generated/m_HSMScoastdlmix.rds")
+m <- readRDS("data/generated/m_HSMScoastdlmix.rds")
+ind_dlmix <- get_index(m, bias_correct = TRUE)
+# pred <- predict(m, grid_hs, return_tmb_object = TRUE, response = TRUE)
+ggplot(ind_dlmix, aes(year, est)) +
+  geom_point() +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
+
+#diff distributions
+m_dg <- update(m, family = delta_gamma())
+ind_dg <- get_index(m_dg, bias_correct = TRUE)
+ggplot(ind_dg, aes(year, est)) +
+  geom_point() +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
+
+#all
+ind_dlmix$type <- "dlmix"
+ind_jul$type <- "jul"
+ind_dg$type <- "dg"
+both <- rbind(ind_dlmix, ind_jul)
+ggplot(both, aes(year, est, colour = type, fill = type)) +
+  geom_point() +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = type), alpha = 0.4 )
+
