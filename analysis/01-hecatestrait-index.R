@@ -10,15 +10,14 @@ library(ggplot2)
 library(sdmTMB)
 library(cowplot)
 theme_set(gfplot::theme_pbs())
-library(gfplot)
-library(gfdata)
+# library(gfplot)
+# library(gfdata)
 library(sf)
 
 # map objects -------------------------------------------------------------
 CRS <- 32609
 coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
   sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
-
 
 # load data ---------------------------------------------------------------
 
@@ -28,7 +27,6 @@ d <- dplyr::filter(surveysets, survey_abbrev == "HS MSA")
 d <- sdmTMB::add_utm_columns(d, utm_crs = CRS)
 unique(d$year)
 unique(d$survey_abbrev)
-
 
 # summary plots -----------------------------------------------------------
 
@@ -113,9 +111,6 @@ d |>
   ggplot() +
   geom_point(aes(year, julian, colour = catch_weight), size = 2)
 
-
-
-
 # create grid -------------------------------------------------------------
 
 g <- gfplot::synoptic_grid
@@ -157,24 +152,27 @@ plot(st_geometry(test), col = "red", add = TRUE)
 
 d_sf2 <- d_sf |> filter(!fishing_event_id %in% test$fishing_event_id)
 
-
 # create mesh -------------------------------------------------------------
 st_geometry(d_sf2) <- NULL
 glimpse(d_sf2)
-mesh <- make_mesh(d_sf2, c("UTM.lon", "UTM.lat"), cutoff = 15)
+mesh <- make_mesh(d_sf2, c("UTM.lon", "UTM.lat"), cutoff = 10)
 plot(mesh)
 mesh$mesh$n
 
 # HS MSM only model -------------------------------------------------------------------
 # grid
 # years in the survey only
-grid_hs <- purrr::map_dfr(unique(d$year), ~ tibble(grid_hs, year = .x))
-st_geometry(grid_hs) <- NULL
-grid_hs
-grid_hs$julian <- mean(d_sf2$julian)
-grid_hs$julian_small <- grid_hs$julian / 100
-grid_hs$offset_sm <- 0
-grid_hs$logbot_depthc <- grid_hs$logbot_depth - meanlogbotdepth
+all_years <- seq(min(d_sf2$year), max(d_sf2$year))
+missing_years <- sort(setdiff(all_years, unique(d_sf2$year)))
+missing_years
+
+grid_hs$year <- NULL
+grid_hs_yrs <- purrr::map_dfr(all_years, ~ tibble(grid_hs, year = .x))
+st_geometry(grid_hs_yrs) <- NULL
+grid_hs_yrs$julian <- mean(d_sf2$julian)
+grid_hs_yrs$julian_small <- grid_hs_yrs$julian / 100
+grid_hs_yrs$offset_sm <- 0
+grid_hs_yrs$logbot_depthc <- grid_hs_yrs$logbot_depth - meanlogbotdepth
 
 d_sf2 |>
   group_by(year) |>
@@ -184,7 +182,7 @@ d_sf2 |>
   geom_point(aes(year, cpue)) +
   geom_line(aes(year, cpue))
 
-m <- sdmTMB::sdmTMB(
+m <- sdmTMB(
   catch_weight ~ 1 + logbot_depthc + I(logbot_depthc^2),
   data = d_sf2,
   time = "year",
@@ -194,105 +192,29 @@ m <- sdmTMB::sdmTMB(
   offset = d_sf2$offset_sm,
   spatial = TRUE,
   do_index = TRUE,
-  share_range = FALSE,
-  predict_args = list(newdata = grid_hs),
-  index_args = list(area = grid_hs$cell_area),
-  priors = sdmTMBpriors(
-    b = normal(location = c(NA, 0, 0), scale = c(NA, 1, 1))
-  ),
-  control = sdmTMBcontrol(
-    # start = list(logit_p_mix = qlogis(0.01)),
-    # map = list(logit_p_mix = factor(NA)),
-    newton_loops = 1L
-  ),
+  share_range = TRUE,
+  anisotropy = TRUE,
+  extra_time = missing_years,
+  predict_args = list(newdata = grid_hs_yrs),
+  index_args = list(area = grid_hs_yrs$cell_area),
   family = delta_lognormal()
 )
+print(m)
 sanity(m)
+plot_anisotropy(m)
 saveRDS(m, "data/generated/m_HSMSdl.rds")
 m <- readRDS("data/generated/m_HSMSdl.rds")
 
-# diff distributions
-# lognormalmix
-m_dlmix_noex <- update(m,
-  family = delta_lognormal_mix(),
-  priors = sdmTMBpriors(
-    b = normal(location = c(NA, 0, 0), scale = c(NA, 1, 1))
-  ),
-  control = sdmTMBcontrol(
-    start = list(logit_p_mix = qlogis(0.01)),
-    map = list(logit_p_mix = factor(NA)),
-    newton_loops = 1L
-  )
-)
-sanity(m_dlmix_noex)
-saveRDS(m_dlmix_noex, "data/generated/m_HSMSdlmix_noex.rds")
-
-# diff distributions
-# lognormalmix
-grid_hsyrs <- grid_hs |>
-  dplyr::select(-year) |>
-  distinct()
-year <- as.numeric(seq(min(d$year), max(d$year), 1))
-grid_hs <- purrr::map_dfr(year, ~ tibble(grid_hsyrs, year = .x))
-m_dlmix <- update(m,
-  family = delta_lognormal_mix(),
-  priors = sdmTMBpriors(
-    b = normal(location = c(NA, 0, 0), scale = c(NA, 1, 1))
-  ),
-  control = sdmTMBcontrol(
-    start = list(logit_p_mix = qlogis(0.01)),
-    map = list(logit_p_mix = factor(NA)),
-    newton_loops = 1L
-  ),
-  extra_time = c(1985, 1986, 1988, 1990, 1992, 1994, 1997, 1999, 2001)
-)
-sanity(m_dlmix)
-saveRDS(m_dlmix, "data/generated/m_HSMSdlmix.rds")
-
-# ex years
-grid_hsyrs <- grid_hs |>
-  dplyr::select(-year) |>
-  distinct()
-year <- as.numeric(seq(min(d$year), max(d$year), 1))
-grid_hs <- purrr::map_dfr(year, ~ tibble(grid_hsyrs, year = .x))
-m_dlex <- update(m, extra_time = c(1985, 1986, 1988, 1990, 1992, 1994, 1997, 1999, 2001))
-sanity(m_dlex)
-saveRDS(m_dlex, "data/generated/m_HSMSdl_extrayear.rds")
-
-# load models and calculate index
-m <- readRDS("data/generated/m_HSMSdl.rds")
 ind_dl <- get_index(m, bias_correct = TRUE)
-m_dlmix <- readRDS("data/generated/m_HSMSdlmix.rds")
-ind_dlmix <- get_index(m_dlmix, bias_correct = TRUE)
-m_dlex <- readRDS("data/generated/m_HSMSdl_extrayear.rds")
-ind_dlex <- get_index(m_dlex, bias_correct = TRUE)
-m_dlmix_noex <- readRDS("data/generated/m_HSMSdlmix_noex.rds")
-ind_dlnoex <- get_index(m_dlmix_noex, bias_correct = TRUE)
 
-# AIC
-AIC(m)
-AIC(m_dlex)
-AIC(m_dlmix)
-AIC(m_dlmix_noex)
+had_data <- select(d_sf2, year) |> distinct() |> mutate(surveyed = TRUE)
 
-# ggplot of all indices
-ind_dlex <- ind_dlex |> mutate(type = "dl_extratime")
-ind_dlmix <- ind_dlmix |> mutate(type = "dl_mix")
-ind_dl <- ind_dl |> mutate(type = "dl")
-ind_dlnoex <- ind_dlnoex |> mutate(type = "dlmix_noex")
-
-all <- rbind(ind_dlex, ind_dlmix, ind_dl, ind_dlnoex)
-
-ggplot(ind_dlnoex, aes(year, est)) +
-  geom_point() +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4)
-
-ggplot(all, aes(year, est, colour = type)) +
-  geom_point() +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = type), alpha = 0.4)
-
-ggplot(all, aes(year, est, colour = type)) +
-  geom_point() +
-  geom_line(size = 2)
+left_join(ind_dl, had_data) |>
+  mutate(surveyed = ifelse(!is.na(surveyed), TRUE, FALSE)) |>
+  filter(surveyed) |>
+  ggplot(aes(year, est)) +
+  geom_pointrange(aes(ymin = lwr, ymax = upr)) +
+  ylab("Relative biomass index") + xlab("Year") +
+  coord_cartesian(expand = FALSE, ylim = c(0, max(ind_dl$upr) * 1.02),
+    xlim = c(range(ind_dl$year) + c(-0.5, 0.5))) +
+  scale_x_continuous(breaks = seq(1984, 2002, 2))
