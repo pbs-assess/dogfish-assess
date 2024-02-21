@@ -11,14 +11,18 @@ library(gfdata)
 #see here for recreational management areas
 #https://www.researchgate.net/figure/DFO-management-areas-of-the-Pacific-Region-Fisheries-and-Oceans-Canada-2004_fig1_242162660
 
+#SOG waters are management areas, see map above
+sog <- c(13, 15, 16, 28, 29, 19, 18, 17, 14)
 d <- readxl::read_excel("data/raw/iREC estimates Jul 2012 to Dec 2023 29012024.xlsx") |>
-  filter(ITEM == "Dogfish")
+  filter(ITEM == "Dogfish") |>
+  filter(!area %in% sog)
 names(d) <- tolower(names(d))
 
 eff <- readxl::read_excel("data/raw/iREC estimates Jul 2012 to Dec 2023 29012024.xlsx")
 names(eff) <- tolower(names(eff))
 eff2 <- eff |>
         filter(item  %in% c("Fisher Days (adult)", "Fisher Days (juvenile)")) |>
+  filter(!area %in% sog) |>
   group_by(year, method) |>
   summarize(effort_fishingdays = sum(estimate))
 
@@ -51,11 +55,9 @@ ggplot(final, aes(year, cpue, group = method, colour = method)) +
 #   summarise(catch_t = sum(estimate)*avgwt_kg/1000) #in pieces
 # irec
 
-unique(d$logistical_area)
-
 d |>
   group_by(year) |>
-  filter()
+
   summarise(catch_count = sum(estimate)) #in pieces
 saveRDS(d, "data/generated/catch_recreational.rds")
 
