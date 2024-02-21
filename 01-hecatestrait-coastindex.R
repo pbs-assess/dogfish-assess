@@ -211,13 +211,6 @@ tidy(m_jul, "ran_pars", conf.int = TRUE)
 tidy(m_jul, "fixed", conf.int = TRUE)
 summary(m_jul$sd_report)
 saveRDS(m_jul, "data/generated/m_HSMScoastdlmix_jul.rds")
-m_jul <- readRDS("data/generated/m_HSMScoastdlmix_jul.rds")
-ind_jul <- get_index(m_jul, bias_correct = TRUE)
-# pred <- predict(m, grid_hs, return_tmb_object = TRUE, response = TRUE)
-ggplot(ind_jul, aes(year, est)) +
-  geom_point() +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
 
 m <- sdmTMB::sdmTMB(
   catch_weight ~ 1 + logbot_depthc + logbot_depth2c + survey_type,
@@ -248,9 +241,18 @@ tidy(m, "ran_pars", conf.int = TRUE)
 tidy(m, "fixed", conf.int = TRUE)
 summary(m$sd_report)
 saveRDS(m, "data/generated/m_HSMScoastdlmix.rds")
+
+
+# load model files and calculate index ------------------------------------
+m_jul <- readRDS("data/generated/m_HSMScoastdlmix_jul.rds")
+ind_jul <- get_index(m_jul, bias_correct = TRUE)
+ggplot(ind_jul, aes(year, est)) +
+  geom_point() +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
+
 m <- readRDS("data/generated/m_HSMScoastdlmix.rds")
 ind_dlmix <- get_index(m, bias_correct = TRUE)
-# pred <- predict(m, grid_hs, return_tmb_object = TRUE, response = TRUE)
 ggplot(ind_dlmix, aes(year, est)) +
   geom_point() +
   geom_line() +
