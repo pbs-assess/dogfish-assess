@@ -53,11 +53,20 @@ ggplot(final, aes(year, cpue, group = method, colour = method)) +
 
 unique(d$logistical_area)
 
-d |>
-  group_by(year) |>
-  filter()
+d_irec <- d |>
+  mutate(pfma = strsplit(area, " ") %>% sapply(getElement, 2) %>% as.numeric()) %>%
+  mutate(outside = is.na(pfma) | !pfma %in% c(12:20, 28:29)) %>%
+  group_by(year, disposition, outside) |>
   summarise(catch_count = sum(estimate)) #in pieces
-saveRDS(d, "data/generated/catch_recreational.rds")
+saveRDS(d_irec, "data/generated/catch_recreational.rds")
+
+g <- d_irec %>%
+  filter(outside == TRUE) %>%
+  ggplot(aes(year, catch_count, colour = disposition)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Year", y = "iRec catch (pieces)", colour = "Disposition")
+ggsave("figs/irec-outside.png", g, width = 6, height = 3)
 
 # salmon: load raw data ------------------------------------------------
 #data from Jason Parsley - salmon data unit
@@ -78,9 +87,18 @@ d2 <- d |>
 #   summarize(sum = sum(catch_qty)*avgwt_kg/1000)
 
 salmon <- d2 |>
-  group_by(year) |>
+  mutate(outside = !mgmt_area %in% c(12:20, 28:29)) %>%
+  group_by(year, kept_rel, outside) |>
   summarize(catch_count = sum(catch_qty))
 saveRDS(salmon, "data/generated/catch_salmonbycatch.rds")
+
+g <- salmon %>%
+  filter(outside == TRUE) %>%
+  ggplot(aes(year, catch_count, colour = kept_rel)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Year", y = "Salmon catch (pieces)", colour = "Disposition")
+ggsave("figs/salmon-outside.png", g, width = 6, height = 3)
 
 # DFO surveys: load raw data ----------------------------------------------
 
@@ -113,15 +131,15 @@ saveRDS(tl, "data/generated/catch_trawlsurvey.rds")
 #how much is caught each year in hbll and iphc in tonnes?
 d |>
   filter(survey_abbrev %in% c("HBLL OUT N", "HBLL OUT S", "IPHC FISS")) |>
-  group_by(year) |>
+  group_by(year, survey_abbrev) |>
   summarize(catch_count = sum(catch_count)) |>
-  ggplot() +
-  geom_point(aes(year, catch_count)) +
-  geom_line(aes(year, catch_count))
+  ggplot(aes(year, catch_count, colour = survey_abbrev)) +
+  geom_point() +
+  geom_line()
 
 ll <- d |>
   filter(survey_abbrev %in% c("HBLL OUT N", "HBLL OUT S", "IPHC FISS")) |>
-  group_by(year) |>
+  group_by(year, survey_abbrev) |>
   summarize(catch_count = sum(catch_count))
 saveRDS(ll, "data/generated/catch_longline.rds")
 
