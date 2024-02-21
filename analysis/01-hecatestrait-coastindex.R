@@ -9,8 +9,8 @@ library(ggplot2)
 library(sdmTMB)
 library(cowplot)
 theme_set(gfplot::theme_pbs())
-library(gfplot)
-library(gfdata)
+# library(gfplot)
+# library(gfdata)
 library(sf)
 
 # map objects -------------------------------------------------------------
@@ -23,8 +23,10 @@ coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", re
 
 # surveysets <- get_survey_sets(species = "north pacific spiny dogfish")
 surveysets <- readRDS("data/raw/survey-sets.rds")
-d <- dplyr::filter(surveysets, survey_abbrev == c("SYN WCVI", "SYN HS",
-                                                  "SYN WCHG", "HS MSA", "SYN QCS"))
+d <- dplyr::filter(surveysets, survey_abbrev == c(
+  "SYN WCVI", "SYN HS",
+  "SYN WCHG", "HS MSA", "SYN QCS"
+))
 # d <- dplyr::filter(surveysets, survey_abbrev ==  "HS MSA")
 d <- sdmTMB::add_utm_columns(d, utm_crs = CRS)
 sort(unique(d$year))
@@ -75,21 +77,25 @@ d <- d |>
 d <- d |> drop_na(depth_m)
 d |>
   filter(is.na(area_swept) == TRUE) |>
-  tally() #only 5 missing area swept
+  tally() # only 5 missing area swept
 d <- d |> drop_na(area_swept)
-d <- d |> mutate(survey_type = ifelse(survey_abbrev %in% c("SYN WCVI", "SYN QCS",
-                                                           "SYN WCHG", "SYN HS"), "trawl", "multi"))
-#d <- d |>
+d <- d |> mutate(survey_type = ifelse(survey_abbrev %in% c(
+  "SYN WCVI", "SYN QCS",
+  "SYN WCHG", "SYN HS"
+), "trawl", "multi"))
+# d <- d |>
 #  mutate(area_swept_calc = ifelse(is.na(tow_length_m), doorspread_m * duration_min * speed_mpm,
 #    doorspread_m * tow_length_m
 #  ))
 d$offset <- log(d$area_swept)
-d$offset_sm <- log(d$area_swept/1000)
+d$offset_sm <- log(d$area_swept / 1000)
 d <- d |> mutate(logbot_depth = log(depth_m))
 meandepth <- mean(d$logbot_depth)
 d <- d |>
-  mutate(logbot_depthc = logbot_depth - meandepth,
-         logbot_depth2c = logbot_depthc * logbot_depthc)
+  mutate(
+    logbot_depthc = logbot_depth - meandepth,
+    logbot_depth2c = logbot_depthc * logbot_depthc
+  )
 d |>
   ggplot() +
   geom_point(aes(year, area_swept, colour = catch_weight), size = 2)
@@ -113,8 +119,8 @@ d |>
   mutate(cpue = catch / effort) |>
   ggplot() +
   geom_point(aes(year, cpue)) +
-  geom_line(aes(year, cpue))  +
-  facet_wrap(~survey_abbrev)  +
+  geom_line(aes(year, cpue)) +
+  facet_wrap(~survey_abbrev) +
   facet_wrap(~survey_abbrev, scales = "free")
 
 d |>
@@ -141,9 +147,9 @@ g <- g |> dplyr::select(-survey_domain_year)
 g$survey_type <- "trawl"
 g$survey_abbrev <- "SYN WCVI"
 
-#add year to grid
+# add year to grid
 sort(unique(d$year))
-#g <- purrr::map_dfr(unique(d$year), ~ tibble(g, year = .x))
+# g <- purrr::map_dfr(unique(d$year), ~ tibble(g, year = .x))
 year <- seq(min(d$year), max(d$year))
 g <- purrr::map_dfr(year, ~ tibble(g, year = .x))
 
@@ -167,7 +173,7 @@ mesh$mesh$n
 g$julian <- mean(d$julian)
 g$julian_small <- g$julian / 100
 g$offset_sm <- 0
-g$survey_type = "trawl"
+g$survey_type <- "trawl"
 plot(g$UTM.lon, g$UTM.lat)
 
 d <- d |> mutate(logbot_depth = log(depth_m), logbot_depth2 = log(depth_m) * log(depth_m))
@@ -183,7 +189,7 @@ d |>
   facet_wrap(~survey_abbrev, scales = "free")
 
 m_jul <- sdmTMB::sdmTMB(
-  catch_weight ~ 1 + logbot_depth + logbot_depth2 + survey_type + poly(julian_small,2),
+  catch_weight ~ 1 + logbot_depth + logbot_depth2 + survey_type + poly(julian_small, 2),
   data = d,
   time = "year",
   mesh = mesh,
@@ -194,11 +200,12 @@ m_jul <- sdmTMB::sdmTMB(
   do_index = TRUE,
   share_range = FALSE,
   priors = sdmTMBpriors(
-   b = normal(location = c(NA, 0, 0,0,0,0), scale = c(NA, 1, 1,1,1,1))),
-   control = sdmTMBcontrol(
-   start = list(logit_p_mix = qlogis(0.05)),
-   map = list(logit_p_mix = factor(NA)),
-   newton_loops = 1L
+    b = normal(location = c(NA, 0, 0, 0, 0, 0), scale = c(NA, 1, 1, 1, 1, 1))
+  ),
+  control = sdmTMBcontrol(
+    start = list(logit_p_mix = qlogis(0.05)),
+    map = list(logit_p_mix = factor(NA)),
+    newton_loops = 1L
   ),
   extra_time = c(1985, 1986, 1988, 1990, 1992, 1994, 1997, 1999, 2001),
   predict_args = list(newdata = g),
@@ -224,8 +231,8 @@ m <- sdmTMB::sdmTMB(
   do_index = TRUE,
   share_range = FALSE,
   priors = sdmTMBpriors(
-  #b = normal(location = c(NA, 0, 0), scale = c(NA, 1, 1))),
-  b = normal(location = c(NA, 0, 0, 0), scale = c(NA, 1, 1, 1))
+    # b = normal(location = c(NA, 0, 0), scale = c(NA, 1, 1))),
+    b = normal(location = c(NA, 0, 0, 0), scale = c(NA, 1, 1, 1))
   ),
   control = sdmTMBcontrol(
     newton_loops = 1L
@@ -258,7 +265,7 @@ ggplot(ind_dlmix, aes(year, est)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
 
-#diff distributions
+# diff distributions
 m_dg <- update(m, family = delta_gamma())
 ind_dg <- get_index(m_dg, bias_correct = TRUE)
 ggplot(ind_dg, aes(year, est)) +
@@ -266,7 +273,7 @@ ggplot(ind_dg, aes(year, est)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
 
-#diff distributions
+# diff distributions
 m_dl <- update(m, family = delta_lognormal())
 ind_dl <- get_index(m_dl, bias_correct = TRUE)
 ggplot(ind_dl, aes(year, est)) +
@@ -274,13 +281,13 @@ ggplot(ind_dl, aes(year, est)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
 
-#aic
+# aic
 AIC(m_dl)
 AIC(m_dg)
 AIC(m)
 AIC(m_jul)
 
-#ggplot of all indices
+# ggplot of all indices
 ind_dlmix$type <- "dlmix"
 ind_jul$type <- "jul"
 ind_dg$type <- "dg"
@@ -289,5 +296,4 @@ both <- rbind(ind_dlmix, ind_jul, ind_dl)
 ggplot(both, aes(year, est, colour = type, fill = type)) +
   geom_point() +
   geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = type), alpha = 0.4 )
-
+  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = type), alpha = 0.4)
