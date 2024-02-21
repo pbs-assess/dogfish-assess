@@ -69,36 +69,6 @@ d |>
 
 
 
-# data cleaning ignore for now -----------------------------------------------------------
-# glimpse(d)
-# #effort mutate(area_swept1_m2 = doorspread_m * tow_length_m) |>
-#   drop_na(doorspread_m)ignore
-#
-# #included some sets unsually not deemed usable
-# meandoors <- dat %>%
-#   filter(usability_code == 1 &
-#            doorspread_m != 0) %>%
-#   group_by(survey_id) %>% summarise(
-#     mean_doorspread = mean(doorspread_m, na.rm = TRUE)
-#   )
-#
-# dat <- dat %>%
-#   filter(usability_code %in% c(1, 22, 16, 6)) %>%
-#   filter(duration_min >= 10) %>%
-#   left_join(meandoors) %>%
-#   mutate(
-#     DOY = as.numeric(strftime(time_deployed, format = "%j")),
-#     days_to_solstice = DOY - 172,
-#     survey_type = as.factor(ifelse(survey_abbrev == "HS MSA", "MSA", "SYN")),
-#     log_depth = log(depth_m),
-#     log_depth_c = log_depth - 5, # mean and median for whole data set
-#     doorspread_m = ifelse(doorspread_m == 0, mean_doorspread, doorspread_m),
-#     area_swept = ifelse(is.na(tow_length_m), doorspread_m * duration_min * speed_mpm, doorspread_m * tow_length_m)
-#   )
-
-
-
-
 # data cleaning -----------------------------------------------------------
 d <- d |>
   mutate(UTM.lon = X, UTM.lat = Y)
@@ -240,6 +210,19 @@ m_jul <- sdmTMB::sdmTMB(
   family = delta_lognormal_mix()
 )
 
+sanity(m_jul)
+tidy(m_jul, "ran_pars", conf.int = TRUE)
+tidy(m_jul, "fixed", conf.int = TRUE)
+summary(m_jul$sd_report)
+saveRDS(m_jul, "data/generated/m_HSMScoastdlmix_jul.rds")
+m_jul <- readRDS("data/generated/m_HSMScoastdlmix_jul.rds")
+ind_jul <- get_index(m_jul, bias_correct = TRUE)
+# pred <- predict(m, grid_hs, return_tmb_object = TRUE, response = TRUE)
+ggplot(ind_jul, aes(year, est)) +
+  geom_point() +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
+
 m <- sdmTMB::sdmTMB(
   catch_weight ~ 1 + logbot_depthc + logbot_depth2c + survey_type,
   data = d,
@@ -255,32 +238,13 @@ m <- sdmTMB::sdmTMB(
   #b = normal(location = c(NA, 0, 0), scale = c(NA, 1, 1))),
   b = normal(location = c(NA, 0, 0, 0), scale = c(NA, 1, 1, 1))),
   control = sdmTMBcontrol(
-    start = list(logit_p_mix = qlogis(0.05)),
-    map = list(logit_p_mix = factor(NA)),
     newton_loops = 1L
-    #matern_s = pc_matern(range_gt = 10 * 1.5,
-    #                     sigma_lt = 2),
-    #matern_st = pc_matern(range_gt = 10 * 1.5,
-    #                      sigma_lt = 2)
   ),
   extra_time = c(1985, 1986, 1988, 1990, 1992, 1994, 1997, 1999, 2001),
   predict_args = list(newdata = g),
   index_args = list(area = g$cell_area),
   family = delta_lognormal_mix()
 )
-
-sanity(m_jul)
-tidy(m_jul, "ran_pars", conf.int = TRUE)
-tidy(m_jul, "fixed", conf.int = TRUE)
-summary(m_jul$sd_report)
-saveRDS(m_jul, "data/generated/m_HSMScoastdlmix_jul.rds")
-m_jul <- readRDS("data/generated/m_HSMScoastdlmix_jul.rds")
-ind_jul <- get_index(m_jul, bias_correct = TRUE)
-# pred <- predict(m, grid_hs, return_tmb_object = TRUE, response = TRUE)
-ggplot(ind_jul, aes(year, est)) +
-  geom_point() +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
 
 sanity(m)
 tidy(m, "ran_pars", conf.int = TRUE)
