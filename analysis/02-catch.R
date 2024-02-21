@@ -8,6 +8,7 @@ dir.create("figs", showWarnings = FALSE)
 
 if (Sys.info()[["user"]] == "seananderson") {
   d <- readRDS("data/raw/catch.rds")
+  d <- dplyr::filter(d, year <= 2023)
   # d_4b5abcde3cd <- tidy_catch_dogfish(d, areas = c("5[CDE]+", "5[AB]+", "4B"))
   d_4b5abcde3cd <- tidy_catch_dogfish(d, areas = c("5[ABCDE]+", "3[CD]+", "4B"))
   d_4b5abcde3cd$area[d_4b5abcde3cd$area == "3CD"] <- "5ABCDE3CD"
@@ -256,3 +257,4 @@ g <- d %>%
   labs(x = "Year", y = "Proportion discards") +
   geom_vline(xintercept = 1996, linetype = 2)
 ggsave("figs/proportion-discards-inside.png", g, width = 4, height = 2.5)
+
