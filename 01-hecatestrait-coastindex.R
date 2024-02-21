@@ -199,10 +199,6 @@ m_jul <- sdmTMB::sdmTMB(
    start = list(logit_p_mix = qlogis(0.05)),
    map = list(logit_p_mix = factor(NA)),
    newton_loops = 1L
-    #matern_s = pc_matern(range_gt = 10 * 1.5,
-    #                     sigma_lt = 2),
-    #matern_st = pc_matern(range_gt = 10 * 1.5,
-    #                      sigma_lt = 2)
   ),
   extra_time = c(1985, 1986, 1988, 1990, 1992, 1994, 1997, 1999, 2001),
   predict_args = list(newdata = g),
@@ -236,7 +232,8 @@ m <- sdmTMB::sdmTMB(
   share_range = FALSE,
   priors = sdmTMBpriors(
   #b = normal(location = c(NA, 0, 0), scale = c(NA, 1, 1))),
-  b = normal(location = c(NA, 0, 0, 0), scale = c(NA, 1, 1, 1))),
+  b = normal(location = c(NA, 0, 0, 0), scale = c(NA, 1, 1, 1))
+  ),
   control = sdmTMBcontrol(
     newton_loops = 1L
   ),
@@ -267,11 +264,26 @@ ggplot(ind_dg, aes(year, est)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
 
-#all
+#diff distributions
+m_dl <- update(m, family = delta_lognormal())
+ind_dl <- get_index(m_dl, bias_correct = TRUE)
+ggplot(ind_dl, aes(year, est)) +
+  geom_point() +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999")
+
+#aic
+AIC(m_dl)
+AIC(m_dg)
+AIC(m)
+AIC(m_jul)
+
+#ggplot of all indices
 ind_dlmix$type <- "dlmix"
 ind_jul$type <- "jul"
 ind_dg$type <- "dg"
-both <- rbind(ind_dlmix, ind_jul)
+ind_dl$type <- "dl"
+both <- rbind(ind_dlmix, ind_jul, ind_dl)
 ggplot(both, aes(year, est, colour = type, fill = type)) +
   geom_point() +
   geom_line() +
