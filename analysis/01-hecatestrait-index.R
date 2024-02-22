@@ -203,6 +203,9 @@ m <- sdmTMB(
   index_args = list(area = grid_hs_yrs$cell_area),
   family = delta_lognormal()
 )
+
+reduced_grid <- filter(grid_hs_yrs, year %in% d_sf2$year)
+
 print(m)
 sanity(m)
 plot_anisotropy(m)
@@ -226,6 +229,79 @@ ind_dl_filtered |>
   ylab("Relative biomass index") + xlab("Year") +
   coord_cartesian(expand = FALSE, ylim = c(0, max(ind_dl$upr) * 1.02),
     xlim = c(range(ind_dl$year) + c(-0.5, 0.5))) +
-  scale_x_continuous(breaks = seq(1984, 2002, 2))
+  scale_x_continuous(breaks = seq(1984, 2002, 2)) +
+  ggtitle("RW fields")
 
 saveRDS(ind_dl_filtered, "data/generated/hs-msa-index.rds")
+
+d_sf2$julian_scaled <- (d_sf2$julian - mean(d_sf2$julian))/sd(d_sf2$julian)
+reduced_grid$julian_scaled <- (reduced_grid$julian - mean(d_sf2$julian))/sd(d_sf2$julian)
+
+miid <- sdmTMB(
+  catch_weight ~ 0 + as.factor(year) + logbot_depthc + I(logbot_depthc^2) + julian_scaled,
+  data = d_sf2,
+  time = "year",
+  mesh = mesh,
+  silent = FALSE,
+  offset = d_sf2$offset_sm,
+  do_index = TRUE,
+  anisotropy = TRUE,
+  predict_args = list(newdata = reduced_grid),
+  index_args = list(area = reduced_grid$cell_area),
+  family = delta_lognormal()
+)
+miid
+sanity(miid)
+
+miid_no_jul <- sdmTMB(
+  catch_weight ~ 0 + as.factor(year) + logbot_depthc + I(logbot_depthc^2),
+  data = d_sf2,
+  time = "year",
+  mesh = mesh,
+  spatiotemporal = "iid",
+  silent = FALSE,
+  offset = d_sf2$offset_sm,
+  do_index = TRUE,
+  anisotropy = TRUE,
+  predict_args = list(newdata = reduced_grid),
+  index_args = list(area = reduced_grid$cell_area),
+  family = delta_lognormal()
+)
+miid_no_jul
+miid_no_jul$sd_report
+sanity(miid_no_jul)
+
+AIC(miid, miid_no_jul)
+
+ind_iid <- get_index(miid_no_jul, bias_correct = TRUE)
+
+ind_iid |>
+  ggplot(aes(year, est)) +
+  geom_pointrange(aes(ymin = lwr, ymax = upr)) +
+  ylab("Relative biomass index") + xlab("Year") +
+  coord_cartesian(expand = FALSE, ylim = c(0, max(ind_iid$upr) * 1.02),
+    xlim = c(range(ind_iid$year) + c(-0.5, 0.5))) +
+  scale_x_continuous(breaks = seq(1984, 2002, 2)) +
+  ggtitle("IID")
+
+d_sf2 |>
+  ggplot() +
+  geom_point(aes(year, julian, colour = log(catch_weight/exp(d_sf2$offset_sm))), size = 2,
+    position = position_jitter(width = 0.4)) +
+  scale_colour_viridis_c(option = "A", direction = 1)
+
+plot(d_sf2$julian_small, d_sf2$catch_weight)
+
+ggplot(d_sf2, aes(UTM.lon, UTM.lat, size = catch_weight/exp(d_sf2$offset_sm),
+  colour = log(catch_weight/exp(d_sf2$offset_sm)))) +
+  geom_point(pch = 21) +
+  facet_wrap(~year) +
+  scale_size_area(max_size = 10) +
+  scale_colour_viridis_c(option = "A", direction = 1) +
+  coord_fixed()
+
+xx <- group_by(d_sf2, year) |> summarise(mj = mean(julian))
+left_join(ind_iid, xx) |> ggplot(aes(mj, est)) + geom_point() + xlab("Julian day") +
+  ylab("Index value")
+
+saveRDS(ind_iid, "data/generated/hs-msa-index-iid.rds")
