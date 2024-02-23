@@ -80,6 +80,7 @@ if (params$era == "modern") {
 Define our fleet. See the help for `?gfplot::tidy_cpue_index` and `?gfplot::tidy_cpue_historical` to see a definition of these arguments. <https://github.com/pbs-assess/gfplot>
 
 ```{r define-fleet}
+devtools::load_all(here::here("../gfplot"))
 dat <- gfplot::tidy_cpue_index(
   d1996,
   species_common = tolower(params$species_proper),
@@ -96,7 +97,7 @@ dat <- gfplot::tidy_cpue_index(
   depth_bin_quantiles = params$depth_bin_quantiles,
   min_bin_prop = 0.001,
   lat_band_width = 0.02,
-  return_raw_data = TRUE
+  return_raw_data = TRUE #<
 )
 dat$area <- params$area_name
 glimpse(dat)
@@ -109,7 +110,7 @@ dat <- add_utm_columns(dat, c("longitude", "latitude"))
 dat$log_depth <- log(dat$best_depth)
 dat$vessel <- as.factor(dat$vessel_registration_number)
 dat$month <- factor(dat$month)
-dat <- filter(dat, year <= 2022)
+dat <- filter(dat, year <= 2023)
 filter(dat, hours_fished > 2000) # 8762.05!
 dat <- filter(dat, hours_fished < 2000)
 dat$depth_scaled <- (dat$log_depth - mean(dat$log_depth)) / sd(dat$log_depth)
@@ -144,25 +145,25 @@ gg$vessel <- NA
 gg$depth_scaled <- (gg$log_depth - mean(dat$log_depth)) / sd(dat$log_depth)
 ```
 
-# delta gamma fit
+# delta lognormal fit
 
 ```{r}
-fit2 <- sdmTMB(
+fit_sp <- sdmTMB(
   spp_catch ~ 0 + as.factor(year) + 
     depth_scaled + I(depth_scaled^2) + 
     (1 | vessel) + as.factor(month),
-  family = delta_gamma(),
+  family = delta_lognormal(),
   mesh = mesh,
   offset = log(dat$hours_fished),
   spatial = "on",
   spatiotemporal = "off",
   data = dat,
   time = "year",
-  share_range = FALSE,
-  priors = sdmTMBpriors(
-    matern_s = pc_matern(range_gt = 40, sigma_lt = 3), 
-    matern_st = pc_matern(range_gt = 40, sigma_lt = 2)
-  ),
+  anisotropy = TRUE,
+  # priors = sdmTMBpriors(
+  #   matern_s = pc_matern(range_gt = 40, sigma_lt = 3), 
+  #   matern_st = pc_matern(range_gt = 40, sigma_lt = 2)
+  # ),
   predict_args = list(newdata = gg, re_form_iid = NA),
   index_args = list(area = rep(4, nrow(gg))),
   do_index = TRUE,
@@ -171,68 +172,38 @@ fit2 <- sdmTMB(
 ```
 
 ```{r}
-sanity(fit2)
-fit2
+sanity(fit_sp)
+fit_sp
 ```
 
 ```{r}
-ind2 <- get_index(fit2, bias_correct = F)
+ind_sp <- get_index(fit_sp, bias_correct = TRUE)
 
-ggplot(ind2, aes(year, ymin = lwr, ymax = upr, y = est)) + 
+ggplot(ind_sp, aes(year, ymin = lwr, ymax = upr, y = est)) + 
   geom_pointrange()
-```
-
-```{r}
-# mean(gg$year)
-# dat$year_scaled <- dat$year - 2009
-# gg$year_scaled <- gg$year - 2009
-
-# fit3 <- update(fit2, spatial_varying = ~ 0 + year_scaled)
-```
-
-# lognormal
-
-```{r}
-
-fit_dl <- update(fit2, family = delta_lognormal())
-ind_dl <- get_index(fit_dl, bias_correct = F)
-
-bind_rows(
-  mutate(ind2, type = "dg"),
-  mutate(ind_dl, type = "dl")
-) |> 
-  group_by(type) |> 
-  mutate(
-    lwr = lwr / max(est),
-    upr = upr / max(est),
-    est = est / max(est)
-    ) |> 
-  ggplot(aes(year, ymin = lwr, ymax = upr, y = est, colour = type)) + 
-  geom_pointrange(position = position_dodge(width = 0.5)) +
-  coord_cartesian(ylim = c(0, NA), expand = FALSE)
-
-
-
-AIC(fit_dl, fit2)
 ```
 
 # lognormal spatiotemporal?
 
 ```{r}
-fit_dl2 <- update(fit2, family = delta_lognormal(), spatiotemporal = "iid", share_range = FALSE)
-sanity(fit_dl2)
-fit_dl2
+fit_spt <- update(
+  fit_sp, 
+  family = delta_lognormal(), 
+  spatiotemporal = "iid"
+)
+sanity(fit_spt)
+fit_spt
 
-AIC(fit_dl, fit_dl2)
+AIC(fit_sp, fit_spt)
 
-ind_dl2 <- get_index(fit_dl2, bias_correct = F)
+ind_spt <- get_index(fit_spt, bias_correct = TRUE)
 
-ggplot(ind_dl2, aes(year, ymin = lwr, ymax = upr, y = est)) + 
+ggplot(ind_spt, aes(year, ymin = lwr, ymax = upr, y = est)) + 
   geom_pointrange()
 
 bind_rows(
-  mutate(ind_dl, type = "dl sp"),
-  mutate(ind_dl2, type = "dl sp st")
+  mutate(ind_sp, type = "dl sp"),
+  mutate(ind_spt, type = "dl sp st")
 ) |> 
   group_by(type) |> 
   mutate(
@@ -273,7 +244,6 @@ fit_model <- function(dd, this_grid) {
     spatiotemporal = "off",
     data = dd,
     time = "year",
-    share_range = FALSE,
     priors = sdmTMBpriors(
       matern_s = pc_matern(range_gt = 40, sigma_lt = 3), 
       matern_st = pc_matern(range_gt = 40, sigma_lt = 2)
@@ -333,7 +303,6 @@ fit_model_season <- function(months) {
     spatiotemporal = "off",
     data = dd,
     time = "year",
-    share_range = FALSE,
     priors = sdmTMBpriors(
       matern_s = pc_matern(range_gt = 40, sigma_lt = 3), 
       matern_st = pc_matern(range_gt = 40, sigma_lt = 2)
@@ -374,7 +343,8 @@ i2 |>
   scale_fill_viridis_d() +
   scale_colour_viridis_d() +
   facet_wrap(~month) +
-  geom_smooth(se = F, colour = "red", method = "glm", method.args = list(family = Gamma(link = "log"))) +
+  geom_smooth(se = F, colour = "red", method = "glm", 
+    method.args = list(family = Gamma(link = "log"))) +
   ylab("Standardized CPUE") + xlab("Year")
   
 i2 |> group_by(month) |> 
@@ -391,7 +361,8 @@ i2 |> group_by(month) |>
   scale_fill_viridis_d() +
   scale_colour_viridis_d() +
   facet_wrap(~month) +
-  geom_smooth(se = F, colour = "black", method = "glm", method.args = list(family = Gamma(link = "log"))) +
+  geom_smooth(se = F, colour = "black", method = "glm", 
+    method.args = list(family = Gamma(link = "log"))) +
   ylab("Standardized CPUE") + xlab("Year")
 
 i2 |> group_by(month) |> 
@@ -401,7 +372,8 @@ i2 |> group_by(month) |>
     upr = upr / geo_mean,
     est = est / geo_mean
   ) |> 
-  ggplot(aes(year, ymin = lwr, ymax = upr, y = est, colour = month, fill = month, group = month)) + 
+  ggplot(aes(year, ymin = lwr, ymax = upr, y = est, 
+    colour = month, fill = month, group = month)) + 
   geom_line(alpha = 0.7) +
   geom_ribbon(alpha = 0.1, colour = NA) +
   coord_cartesian(ylim = c(0, 4), expand = FALSE) +
@@ -415,7 +387,8 @@ i2 |> group_by(month) |>
   purrr::map_dfr(function(.x) {
     .x$year <- .x$year / 10
     mm <- glm(est ~ year, family = Gamma(link = "log"), data = .x)
-    data.frame(month = unique(.x$month), slope = coef(mm)[[2]], lwr = confint(mm)[2,1], upr = confint(mm)[2,2])
+    data.frame(month = unique(.x$month), slope = coef(mm)[[2]], 
+      lwr = confint(mm)[2,1], upr = confint(mm)[2,2])
   }) |> 
   ggplot(aes(month, 100*(1 - exp(slope)), ymin = 100*(1 - exp(lwr)), ymax = 100*(1 - exp(upr)))) + 
   geom_pointrange() + 
@@ -423,4 +396,3 @@ i2 |> group_by(month) |>
 ```
 
 # with SVC year?
-
