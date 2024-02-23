@@ -6,8 +6,8 @@ fleet_index <- c(
   "Bottom Trawl Discards" = 2,   # Catch series since 1966, catches smaller fish - Use DISCARDS lengths (1990s to 2019, sparse)
   "Midwater Trawl" = 3,         # Use UNSORTED lengths (data quantity, 1980s-1990s) - not a strong difference in unsorted comps over time when
                                # discards went from 0 to 90 percent
-  "Longline Landings" = 4,      # Use RETAINED lengths
-  "Longline Discards" = 5,      # Map selectivity to BottomTrawlDiscards
+  "Hook & Line Landings" = 4,      # Use RETAINED lengths
+  "Hook & Line Discards" = 5,      # Map selectivity to BottomTrawlDiscards
   "IPHC" = 6,
   "HBLL" = 7,
   "SYN" = 8,
@@ -109,8 +109,9 @@ ss3_catch <- function(csv = TRUE) {
     geom_col(width = 1) +
     gfplot::theme_pbs() +
     guides(fill = "none") +
+    coord_cartesian(expand = FALSE) +
     labs(x = "Year", y = "Catch")
-  ggsave("figs/ss3/catch_fleet2.png", g, height = 4, width = 7)
+  ggsave("figs/ss3/catch_fleet2.png", g, height = 4, width = 8)
 
   if (csv) write.csv(out, file = "data/ss3/ss3-catch.csv", row.names = FALSE)
   invisible(out)
@@ -192,7 +193,7 @@ ss3_length <- function(csv = TRUE, bin_size = 5, bin_range = c(35, 115)) {
 
   f4 <- lengths_comm %>%
     filter(survey_abbrev == "LONGLINE", sampling_desc == "KEEPERS") %>%
-    mutate(survey_abbrev = "Longline Landings") %>%
+    mutate(survey_abbrev = "Hook & Line Landings") %>%
     select(-sampling_desc)
 
 
@@ -300,14 +301,50 @@ ss3_maturity_slope <- function(l95 = 115.1, l50 = 97.6) {
 ss3_maturity_slope()
 
 
-# Compare fecundity
-len <- seq(40, 120, 5)
-f1 <- -9.96 + 0.176 * len # Wood 1979 - use this one
 
-f2 <- -14.7 + 0.214 * len # Taylor 2009
-f2 <- -13.24 + 0.2 * len # Taylor 2009
-f2 <- -15.5 + 0.214 * len # Taylor 2009
+# We use growth parameters estimated from DFO + NWFSC samples
+vb <- function(Linf, K, t0, a) Linf * (1 - exp(-K * (a - t0)))
 
-plot(len, f1, typ = 'o', ylim = c(0, 12))
-lines(len, f2, typ = 'o', col = 2)
+# Decreasing variability in size at age
+# Use L2 = 40 in SS3. SD is constant above L2
+vb(97.7, 0.06, -5.73, 0) # Female age 40 = 91.42
+vb(84.4, 0.09, -4.35, 0) # Male age 40 = 82.8
 
+# Ketchen 1972 Figure 3. Embryos after 2 years gestation are around 20-30 cm
+vb(97.7, 0.06, -5.73, 40) # Female age 0 = 28.4
+vb(84.4, 0.09, -4.35, 40) # Male age 40 = 27.3
+
+
+# Compare fecundity estimates from the literature
+fec <- data.frame(len = seq(25, 120, 5)) %>%
+  mutate(`Ketchen 1972` = -9.96 + 0.176 * len,
+         `Taylor and Gallucci 2009 (1940s)` = -15.5 + 0.214 * len,
+         `Taylor and Gallucci 2009 (2000s)` = -14.7 + 0.214 * len) %>%
+  reshape2::melt(id.vars = "len") %>%
+  mutate(value = pmax(value, 0)) %>%
+  ggplot(aes(len, value, colour = variable, shape = variable)) +
+  geom_line() +
+  geom_point() +
+  theme(legend.position = "bottom") +
+  guides(colour = guide_legend(ncol = 2)) +
+  labs(x = "Length (cm)", y = "Fecundity", colour = NULL, shape = NULL)
+ggsave("figs/fec-lit.png", fec, width = 5, height = 4)
+
+# Compare maturity at age from the literature
+# McFarlane: qnorm(a + b * 35) = 0.5; qnorm(a + b * 25) = 0.05
+b <- qnorm(0.05)/-10
+a <- -35 * b
+
+mat <- data.frame(age = seq(10, 70)) %>%
+  mutate(`McFarlane and Beamish 1987` = ifelse(age >= 24, pnorm(a + b * age), 0),
+         `Taylor and Gallucci 2009 (1940s)` = ifelse(age >= 18, 1/(1 + exp(-log(19) * (age - 43.3)/16.2)), 0),
+         `Taylor and Gallucci 2009 (2000s)` = ifelse(age >= 18, 1/(1 + exp(-log(19) * (age - 31.5)/24.3)), 0)) %>%
+  reshape2::melt(id.vars = "age") %>%
+  mutate(value = pmax(value, 0)) %>%
+  ggplot(aes(age, value, colour = variable, shape = variable)) +
+  geom_line() +
+  geom_point() +
+  theme(legend.position = "bottom") +
+  guides(colour = guide_legend(ncol = 2)) +
+  labs(x = "Age", y = "Maturity", colour = NULL, shape = NULL)
+ggsave("figs/mat-lit.png", mat, width = 5, height = 4)
