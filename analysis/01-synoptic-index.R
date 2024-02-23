@@ -107,42 +107,6 @@ gg <- d %>%
   labs(x = "Year", y = "Mean depth of positive sets", colour = "Survey")
 ggsave("figs/synoptic/cpue_mean_depth.png", gg, height = 3, width = 5)
 
-
-## Design-based index ----
-# QH: area_km2 should be the strata area (unique to each grouping code) so that I can calculate the area-weighted index
-# The field was in survey-sets.rds but is missing in survey-sets_2023.rds
-index_design <- d %>%
-  left_join(
-    readRDS("data/raw/survey-sets.rds") %>%
-      select(grouping_code, area_km2) %>%
-      filter(!duplicated(grouping_code)),
-    by = "grouping_code"
-  ) %>%
-  mutate(cpue = catch_weight/area_swept,
-         catch_expand = area_km2 * cpue) %>% #where did this area_km2 value come from? I cahnged to area_swept
-  summarize(index_strat = mean(catch_expand),
-            var_strat = var(catch_expand),
-            n = n(),
-            nsamp = unique(area_km2)/sum(area_swept) * n * 1e3 * 1e3, # Number of sampling units per stratum
-            .by = c(year, grouping_code, survey_abbrev, area_km2)) %>%
-  mutate(area_total = sum(area_km2), .by = c(year, survey_abbrev)) %>%
-  summarize(Biomass = sum(index_strat),
-            Var = sum(nsamp * (nsamp - n)/n * var_strat)/sum(nsamp)/sum(nsamp), # See SimSurvey appendix
-            #Var = sum(var_strat * area_km2^2/area_total^2),
-            .by = c(year, survey_abbrev)) %>%
-  mutate(SE = sqrt(Var), CV = SE/Biomass)
-
-g <- index_design %>%
-  ggplot(aes(year, Biomass)) +
-  geom_linerange(aes(ymin = Biomass - 2 * SE, ymax = Biomass + 2 * SE)) +
-  geom_point() +
-  theme(panel.spacing = unit(0, "in"),
-        legend.position = "bottom") +
-  expand_limits(y = 0) +
-  facet_wrap(vars(survey_abbrev), scales = "free_y") +
-  labs(x = "Year", y = "Index of biomass")
-ggsave("figs/synoptic/syn_index_design.png", g, height = 4, width = 6)
-
 ## Fit sdm model ----
 mesh <- make_mesh(d, c("X", "Y"), cutoff = 15)
 plot(mesh)
@@ -316,4 +280,107 @@ ggsave("figs/synoptic/depth_marginal.png", gg3, height = 6, width = 4)
 
 # This used to work for sdmTMB
 #m <- ggeffects::ggeffect(fit, terms = "depth_m [20:269, by=10]", offset = 0)
+
+# Index by survey area
+library(snowfall)
+sfInit(parallel = TRUE, cpus = 4)
+sfLibrary(sdmTMB)
+sfLibrary(tidyverse)
+sfExport(list = c("fit", "grid"))
+ind_area <- sfLapply(unique(grid$survey), function(i) {
+  grid_survey <- dplyr::filter(grid, survey == i)
+
+  p <- predict(fit, newdata = grid_survey, return_tmb_object = TRUE)
+  ind <- get_index(p, bias_correct = TRUE) %>%
+    mutate(survey_abbrev = i)
+  return(ind)
+})
+saveRDS(ind_area, file = "data/generated/geostat-ind-synoptic-area.rds")
+sfStop()
+
+ind_area <- readRDS(file = "data/generated/geostat-ind-synoptic-area.rds") %>%
+  bind_rows()
+
+g <- ind_area %>%
+  mutate(value = est/sum(est), .by = year) %>%
+  ggplot(aes(year, value, fill = survey_abbrev)) +
+  geom_col(width = 1, colour = NA) +
+  gfplot::theme_pbs() +
+  coord_cartesian(expand = FALSE) +
+  labs(x = "Year", y = "Proportion biomass", fill = "Survey") +
+  theme(legend.position = "bottom")
+g2 <- ind_area %>%
+  mutate(value = est) %>%
+  ggplot(aes(year, value, fill = survey_abbrev)) +
+  geom_col(width = 1, colour = NA) +
+  gfplot::theme_pbs() +
+  coord_cartesian(expand = FALSE) +
+  labs(x = "Year", y = "Biomass estimate", fill = "Survey") +
+  theme(legend.position = "bottom")
+gout <- ggpubr::ggarrange(g2, g, ncol = 2, legend = "bottom", common.legend = TRUE)
+ggsave("figs/synoptic/syn_index_area_biomass.png", gout, height = 3, width = 6)
+
+# Compare with design-based index
+## Design-based index ----
+# QH: area_km2 should be the strata area (unique to each grouping code) so that I can calculate the area-weighted index
+# The field was in survey-sets.rds but is missing in survey-sets_2023.rds
+index_design <- d %>%
+  left_join(
+    readRDS("data/raw/survey-sets.rds") %>%
+      select(grouping_code, area_km2) %>%
+      filter(!duplicated(grouping_code)),
+    by = "grouping_code"
+  ) %>%
+  mutate(cpue = catch_weight/area_swept,
+         catch_expand = area_km2 * cpue) %>% #where did this area_km2 value come from? I cahnged to area_swept
+  summarize(index_strat = mean(catch_expand),
+            var_strat = var(catch_expand),
+            n = n(),
+            nsamp = unique(area_km2)/sum(area_swept) * n * 1e3 * 1e3, # Number of sampling units per stratum
+            .by = c(year, grouping_code, survey_abbrev, area_km2)) %>%
+  mutate(area_total = sum(area_km2), .by = c(year, survey_abbrev)) %>%
+  summarize(Biomass = sum(index_strat),
+            Var = sum(nsamp * (nsamp - n)/n * var_strat)/sum(nsamp)/sum(nsamp), # See SimSurvey appendix
+            #Var = sum(var_strat * area_km2^2/area_total^2),
+            .by = c(year, survey_abbrev)) %>%
+  mutate(SE = sqrt(Var), CV = SE/Biomass,
+         lwr = Biomass - 2 * SE, upr = Biomass + 2 * SE)
+g <- index_design %>%
+  ggplot(aes(year, Biomass)) +
+  geom_linerange(aes(ymin = lwr, ymax = upr)) +
+  geom_point() +
+  theme(panel.spacing = unit(0, "in"), legend.position = "bottom") +
+  expand_limits(y = 0) +
+  facet_wrap(vars(survey_abbrev), scales = "free_y") +
+  labs(x = "Year", y = "Index of biomass")
+ggsave("figs/synoptic/syn_index_design.png", g, height = 4, width = 6)
+
+
+g <- rbind(
+  index_design %>% select(year, survey_abbrev, Biomass, lwr, upr) %>%
+    rename(est = Biomass) %>% mutate(type = "Design-based"),
+  ind_area %>%
+    select(year, survey_abbrev, est, lwr, upr) %>%
+    mutate(type = "Spatiotemporal model")
+) %>%
+  #mutate(value = est) %>%
+  mutate(value = est/mean(est),
+         lwr = lwr/mean(est),
+         upr = upr/mean(est),
+         .by = c(type, survey_abbrev)) %>%
+  filter(!(survey_abbrev == "SYN WCHG" & year == 2020 & type == "Design-based")) %>%
+  mutate(upr = ifelse(survey_abbrev == "SYN WCHG", pmin(upr, 4), upr)) %>%
+  ggplot(aes(year, value, colour = type, shape = type)) +
+  geom_linerange(aes(ymin = lwr, ymax = upr),
+                 position = position_dodge(0.5), linewidth = 0.25) +
+  geom_point(position = position_dodge(0.5)) +
+  theme(panel.spacing = unit(0, "in"),
+        legend.position = "bottom") +
+  expand_limits(y = 0) +
+  facet_wrap(vars(survey_abbrev), scales = "free_y") +
+  scale_shape_manual(values = c(1, 16)) +
+  coord_cartesian(xlim = c(2000, 2024), expand = FALSE) +
+  labs(x = "Year", y = "Relative Biomass Index", colour = "Method", shape = "Method")
+ggsave("figs/synoptic/syn_index_compare_design.png", g, height = 4, width = 6)
+
 
