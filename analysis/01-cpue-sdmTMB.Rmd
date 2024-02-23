@@ -1,5 +1,5 @@
 ---
-title: "`r paste(params$species_proper, params$era, params$area_name)` bottom trawl CPUE"
+title: "Bottom drawl dogfish commerical CPUE"
 author: "`r params$author`"
 date: "`r Sys.Date()`"
 output: html_document
@@ -49,6 +49,7 @@ library("sdmTMB")
 ggplot2::theme_set(gfplot::theme_pbs())
 dir.create(here("data"), showWarnings = FALSE)
 dir.create(here("data", "generated"), showWarnings = FALSE)
+dir.create("figs/cpue", showWarnings = FALSE)
 ```
 
 ```{r cpue-params-print}
@@ -148,6 +149,13 @@ gg$depth_scaled <- (gg$log_depth - mean(dat$log_depth)) / sd(dat$log_depth)
 # delta lognormal fit
 
 ```{r}
+hist(dat$spp_catch)
+hist(log(dat$spp_catch + 1))
+hist(filter(dat, spp_catch > 0) |> pull(spp_catch))
+hist(filter(dat, spp_catch > 0) |> pull(spp_catch) |> log())
+```
+
+```{r}
 fit_sp <- sdmTMB(
   spp_catch ~ 0 + as.factor(year) + 
     depth_scaled + I(depth_scaled^2) + 
@@ -161,19 +169,29 @@ fit_sp <- sdmTMB(
   time = "year",
   anisotropy = TRUE,
   # priors = sdmTMBpriors(
-  #   matern_s = pc_matern(range_gt = 40, sigma_lt = 3), 
-  #   matern_st = pc_matern(range_gt = 40, sigma_lt = 2)
+  #   matern_s = pc_matern(range_gt = 40, sigma_lt = 3)
   # ),
   predict_args = list(newdata = gg, re_form_iid = NA),
   index_args = list(area = rep(4, nrow(gg))),
   do_index = TRUE,
   silent = FALSE
 )
+
+# heavier than lognormal!? see histogram above and QQ plots below
+fit_dgm <- update(
+  fit_sp, 
+  family = delta_lognormal_mix(), 
+  control = sdmTMBcontrol(
+    start = list(logit_p_mix = qlogis(0.01)),
+    map = list(logit_p_mix = factor(NA))
+  )
+)
 ```
 
 ```{r}
 sanity(fit_sp)
 fit_sp
+plot_anisotropy(fit_sp)
 ```
 
 ```{r}
@@ -186,21 +204,26 @@ ggplot(ind_sp, aes(year, ymin = lwr, ymax = upr, y = est)) +
 # lognormal spatiotemporal?
 
 ```{r}
+tictoc::tic()
 fit_spt <- update(
-  fit_sp, 
-  family = delta_lognormal(), 
+  fit_sp,
+  anisotropy = FALSE, # convergence issues if TRUE
   spatiotemporal = "iid"
 )
+tictoc::toc()
 sanity(fit_spt)
 fit_spt
 
 AIC(fit_sp, fit_spt)
 
+tictoc::tic()
 ind_spt <- get_index(fit_spt, bias_correct = TRUE)
+tictoc::toc()
 
 ggplot(ind_spt, aes(year, ymin = lwr, ymax = upr, y = est)) + 
   geom_pointrange()
 
+# compare
 bind_rows(
   mutate(ind_sp, type = "dl sp"),
   mutate(ind_spt, type = "dl sp st")
@@ -214,6 +237,73 @@ bind_rows(
   ggplot(aes(year, ymin = lwr, ymax = upr, y = est, colour = type)) + 
   geom_pointrange(position = position_dodge(width = 0.5)) +
   coord_cartesian(ylim = c(0, NA), expand = FALSE)
+
+# on its own:
+
+ind_spt |>
+  mutate(
+    upr = upr / exp(mean(log(est))),
+    lwr = lwr / exp(mean(log(est))),
+    est = est / exp(mean(log(est)))
+  ) |> 
+  ggplot(aes(year, est)) +
+  geom_pointrange(aes(ymin = lwr, ymax = upr)) +
+  ylab("Standardized commercial trawl CPUE") + 
+  xlab("Year") +
+  coord_cartesian(
+    expand = FALSE, 
+    ylim = c(0, 3),
+    xlim = c(range(ind_spt$year) + c(-0.5, 0.5))
+  ) +
+  scale_x_continuous(breaks = seq(1996, 2024, 2))
+
+ggsave("figs/cpue/cpue-index-spatiotemporal.png", width = 6, height = 4)
+```
+
+```{r}
+p <- predict(fit_spt, newdata = gg, re_form_iid = NA)
+source(here::here("analysis/functions/make_sdmTMB_delta_maps.R"))
+make_sdmTMB_delta_maps(p, folder = "figs/cpue")
+```
+
+```{r}
+make_re_plot <- function(fit, model = 1) {
+  tidy(fit, "ran_vals", conf.int = TRUE, model = model) |> 
+    mutate(term2 = paste0("vessel ", stringr::str_pad(as.numeric(as.factor(term)), 2, pad = "0"))) |> 
+    ggplot(aes(estimate, xmin = conf.low, xmax = conf.high, y = term2)) +
+    geom_pointrange() +
+    ylab("Vessel") + xlab("Random intercept value")
+}
+g1 <- make_re_plot(fit_spt, 1) + ggtitle("Encounter probability (logit link)")
+g2 <- make_re_plot(fit_spt, 2) + ggtitle("Positive density (log link)")
+cowplot::plot_grid(g1, g2, ncol = 2)
+ggsave("figs/cpue/vessel-effects.png", width = 8, height = 8)
+
+make_month_plot <- function(fit, model = 1) {
+  tidy(fit, conf.int = TRUE, model = model) |> 
+    filter(grepl("month", term)) |> 
+    mutate(month = gsub("as\\.factor\\(month\\)", "", term)) |> 
+    mutate(month = stringr::str_pad(month, 2, pad = "0")) |> 
+    ggplot(aes(estimate, xmin = conf.low, xmax = conf.high, y = month)) +
+    geom_pointrange() +
+    ylab("Month effect relative to January") + 
+    xlab("Coefficient value")
+}
+g1 <- make_month_plot(fit_spt, 1) + ggtitle("Encounter probability (logit link)")
+g2 <- make_month_plot(fit_spt, 2) + ggtitle("Positive density (log link)")
+cowplot::plot_grid(g1, g2, ncol = 2)
+ggsave("figs/cpue/month-effects.png", width = 7, height = 4)
+```
+
+```{r}
+# s <- simulate(fit_spt, nsim = 100L)
+# sdmTMBextra::dharma_residuals(s, fit_spt)
+r1 <- residuals(fit_spt, model = 1)
+qqnorm(r2)
+r2 <- residuals(fit_spt, model = 2)
+.r2 <- r2[!is.na(r2)] # zeros!
+.r2 <- .r2[is.finite(.r2)] # zeros!
+qqnorm(as.numeric(.r2));qqline(as.numeric(.r2))
 ```
 
 # shallow only?
@@ -241,13 +331,13 @@ fit_model <- function(dd, this_grid) {
     mesh = this_mesh,
     offset = log(dd$hours_fished),
     spatial = "on",
+    anisotropy = TRUE,
     spatiotemporal = "off",
     data = dd,
     time = "year",
-    priors = sdmTMBpriors(
-      matern_s = pc_matern(range_gt = 40, sigma_lt = 3), 
-      matern_st = pc_matern(range_gt = 40, sigma_lt = 2)
-    ),
+    # priors = sdmTMBpriors(
+    #   matern_s = pc_matern(range_gt = 40, sigma_lt = 3)
+    # ),
     predict_args = list(newdata = this_grid, re_form_iid = NA),
     index_args = list(area = rep(4, nrow(this_grid))),
     do_index = TRUE,
@@ -303,10 +393,10 @@ fit_model_season <- function(months) {
     spatiotemporal = "off",
     data = dd,
     time = "year",
-    priors = sdmTMBpriors(
-      matern_s = pc_matern(range_gt = 40, sigma_lt = 3), 
-      matern_st = pc_matern(range_gt = 40, sigma_lt = 2)
-    ),
+    anisotropy = TRUE,
+    # priors = sdmTMBpriors(
+    #   matern_s = pc_matern(range_gt = 40, sigma_lt = 3)
+    # ),
     predict_args = list(newdata = this_grid, re_form_iid = NA),
     index_args = list(area = rep(4, nrow(this_grid))),
     do_index = TRUE,
