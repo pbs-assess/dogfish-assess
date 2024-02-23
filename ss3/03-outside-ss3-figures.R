@@ -65,9 +65,40 @@ lapply(multi_rep, function(x) {
   x$Natural_Mortality %>% View()
   x$M_age %>% View()
 
-
-
 })
+
+# Length at age distribution (add empirical samples)
+age_samps <- readr::read_csv("data/generated/length-age.csv") %>%
+  filter(Age <= 70) %>%
+  filter(Age %in% seq(5, 70, 5)) %>%
+  rename(Length = length) %>%
+  mutate(Age = paste("Age", round(Age, 0)) %>% factor(levels = paste("Age", 0:70)))
+LAK <- multi_rep[[1]]$ALK %>%
+  reshape2::melt() %>%
+  mutate(TrueAge = as.character(TrueAge) %>% as.numeric(),
+         Age = paste("Age", TrueAge) %>% factor(levels = paste("Age", 0:70)),
+         Length = as.character(Length) %>% as.numeric()) %>%
+  filter(Matrix == "Seas: 1 Sub_Seas: 1 Morph: 1") %>%
+  filter(TrueAge <= 70) %>%
+  filter(TrueAge %in% seq(5, 70, 5))
+mu <- multi_rep[[1]]$endgrowth %>%
+  filter(Sex == 1) %>%
+  select(int_Age, Len_Beg) %>%
+  filter(int_Age %in% seq(5, 70, 5)) %>%
+  mutate(Age = paste("Age", int_Age) %>% factor(levels = paste("Age", 0:70)))
+g <- LAK %>%
+  ggplot(aes(Length)) +
+  #geom_vline(data = mu, aes(xintercept = Len_Beg), linetype = 2) +
+  geom_vline(xintercept = 95, linetype = 3) +
+  geom_histogram(data = age_samps, aes(y = after_stat(density)), binwidth = 5, colour = "grey80", linewidth = 0.1) +
+  geom_density(data = age_samps, aes(y = after_stat(density)), linetype = 2) +
+  geom_line(aes(y = value)) +
+  facet_wrap(vars(Age)) +
+  gfplot::theme_pbs() +
+  theme(panel.spacing = unit(0, "in")) +
+  labs(x = "Length", y = "Length-at-age probability") +
+  ggtitle("Female")
+ggsave("figs/ss3/prob-length-at-age.png", g, height = 6, width = 8)
 
 ### Tables
 likelihoods <- lapply(1:length(mods), function(i) {
