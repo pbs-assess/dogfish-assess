@@ -68,6 +68,8 @@ g <- index_bin_agg %>%
   labs(x = "Year", y = "SYN Index", colour = "Sex", shape = "Sex") +
   scale_shape_manual(values = c(1, 16)) +
   coord_cartesian(expand = FALSE)
+
+dir.create("figs/synoptic_length/", showWarnings = FALSE)
 ggsave("figs/synoptic_length/strat_index_large_bin.png", g, height = 6, width = 6)
 
 # Catch rate by depth
@@ -106,20 +108,20 @@ dsets_samp <- left_join(
   select(year, survey_abbrev, fishing_event_id, cpue_set, nlength, catch_weight) %>%
   mutate(samp = catch_weight == 0 | !is.na(nlength))
 
-g <- ggplot(dsets_samp, aes(longitude, latitude, colour = samp)) +
-  geom_sf(data = coast, inherit.aes = FALSE) +
-  coord_sf(expand = FALSE) +
-  geom_point(alpha = 0.1) +
-  geom_label(data = p_samp, inherit.aes = FALSE, aes(label = p), x = -Inf, y = -Inf,
-             hjust = "inward", vjust = "inward") +
-  facet_wrap(vars(year)) +
-  theme(panel.spacing = unit(0, "in"),
-        legend.position = "bottom",
-        axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  scale_shape_manual(values = c("TRUE" = 1, "FALSE" = 4)) +
-  labs(x = "Longitude", y = "Latitude", colour = "Unsampled") +
-  guides(colour = guide_legend(override.aes = list(alpha = 1)))
-ggsave("figs/synoptic_length/sets_unsampled.png", g, height = 8, width = 6, dpi = 600)
+# g <- ggplot(dsets_samp, aes(longitude, latitude, colour = samp)) +
+#   geom_sf(data = coast, inherit.aes = FALSE) +
+#   coord_sf(expand = FALSE) +
+#   geom_point(alpha = 0.1) +
+#   geom_label(data = p_samp, inherit.aes = FALSE, aes(label = p), x = -Inf, y = -Inf,
+#              hjust = "inward", vjust = "inward") +
+#   facet_wrap(vars(year)) +
+#   theme(panel.spacing = unit(0, "in"),
+#         legend.position = "bottom",
+#         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+#   scale_shape_manual(values = c("TRUE" = 1, "FALSE" = 4)) +
+#   labs(x = "Longitude", y = "Latitude", colour = "Unsampled") +
+#   guides(colour = guide_legend(override.aes = list(alpha = 1)))
+# ggsave("figs/synoptic_length/sets_unsampled.png", g, height = 8, width = 6, dpi = 600)
 
 g <- dsets_samp %>%
   filter(!is.na(cpue_set)) %>%
