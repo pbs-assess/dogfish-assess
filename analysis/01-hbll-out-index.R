@@ -213,7 +213,7 @@ fit_nb2 <- sdmTMB(
   time = "year",
   spatiotemporal = "rw",
   spatial = "on",
-  silent = TRUE,
+  silent = FALSE,
   anisotropy = TRUE,
   extra_time = 2013L
 )
@@ -262,47 +262,55 @@ fit_nb2$sd_report
 #   pstar <- pluck(pstar_list, 'pstar_df', 'pstar')
 # }
 
-#pstar <- 0.8
-#pstar <- 0.95
-pstar <- 1
-mesh_cutoff <- 50
-d <- d |>
-  mutate(obs_id = as.factor(seq(1, n()))) |> # Account for variance constraint when using Poisson
-  mutate(prop_removed = (1 - count_bait_only / hook_count))
+for (pstar in c(0.8, 0.95, 1)) {
+  #pstar <- 0.8
+  #pstar <- 0.95
+  # pstar <- 1
+  mesh_cutoff <- 15
+  d <- d |>
+    mutate(obs_id = as.factor(seq(1, n()))) |> # Account for variance constraint when using Poisson
+    mutate(prop_removed = (1 - count_bait_only / hook_count))
   # Provide upper bound on censored distribution
-d$upr <- sdmTMB:::get_censored_upper(
-  prop_removed = d$prop_removed,
-  n_catch = d$catch_count,
-  n_hooks = d$hook_count,
-  pstar = pstar)
+  d$upr <- sdmTMB:::get_censored_upper(
+    prop_removed = d$prop_removed,
+    n_catch = d$catch_count,
+    n_hooks = d$hook_count,
+    pstar = pstar)
 
-fit_cpois <- sdmTMB(
-  #formula = catch_count ~ 1 + poly(log(depth_m), 2L) + (1 | obs_id),
-  formula = catch_count ~ 1 + (1 | obs_id),
-  family = sdmTMB::censored_poisson(link = "log"),
-  data = d,
-  mesh = make_mesh(d, c("X", "Y"), cutoff = mesh_cutoff),
-  offset = d$log_hook_count,
-  time = "year",
-  spatiotemporal = "rw",
-  spatial = "on",
-  silent = FALSE,
-  anisotropy = TRUE,
-  extra_time = 2013L,
-  control = sdmTMB::sdmTMBcontrol(censored_upper = d$upr)
-)
+  plot(d$upr, d$catch_count);abline(0,1)
 
-saveRDS(fit_cpois, file = paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", pstar, "_mesh=", mesh_cutoff, ".rds"))
-fit_cpois_1  <- readRDS(paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", 1, "_mesh=", mesh_cutoff, ".rds")) #readRDS("data/generated/hbll-out-sdmTMB_cpois-pstar=1.rds")
-fit_cpois_95 <- readRDS(paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", 0.95, "_mesh=", mesh_cutoff, ".rds")) #readRDS("data/generated/hbll-out-sdmTMB_cpois-pstar=0.95.rds")
-fit_cpois_80 <- readRDS(paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", 0.8, "_mesh=", mesh_cutoff, ".rds")) #readRDS("data/generated/hbll-out-sdmTMB_cpois-pstar=0.8.rds")
+  fit_cpois <- sdmTMB(
+    #formula = catch_count ~ 1 + poly(log(depth_m), 2L) + (1 | obs_id),
+    formula = catch_count ~ 1 + (1 | obs_id),
+    family = sdmTMB::censored_poisson(link = "log"),
+    data = d,
+    mesh = make_mesh(d, c("X", "Y"), cutoff = mesh_cutoff),
+    offset = d$log_hook_count,
+    time = "year",
+    spatiotemporal = "rw",
+    spatial = "on",
+    silent = FALSE,
+    anisotropy = TRUE,
+    extra_time = 2013L,
+    control = sdmTMB::sdmTMBcontrol(censored_upper = d$upr)
+  )
 
-sanity(fit_cpois)
+  saveRDS(fit_cpois, file = paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", pstar, "_mesh=", mesh_cutoff, ".rds"))
+}
+fit_cpois_1  <- readRDS(paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", 1, "_mesh=", mesh_cutoff, ".rds"))
+fit_cpois_95 <- readRDS(paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", 0.95, "_mesh=", mesh_cutoff, ".rds"))
+fit_cpois_80 <- readRDS(paste0("data/generated/hbll-out-sdmTMB_cpois-pstar=", 0.8, "_mesh=", mesh_cutoff, ".rds"))
+
+sanity(fit_cpois_1)
+sanity(fit_cpois_95)
+sanity(fit_cpois_80)
 AIC(fit_nb2)
-AIC(fit_cpois)
+AIC(fit_cpois_1)
+AIC(fit_cpois_95)
+# AIC(fit_cpois_80)
 
-plot_anisotropy(fit_cpois)
-fit_cpois$sd_report
+plot_anisotropy(fit_cpois_1)
+fit_cpois_1$sd_report
 
 AIC(fit_nb2, fit_nb2_julian, fit_nb2_nohk, fit_cpois) |>
   arrange(AIC)
@@ -358,15 +366,15 @@ ind_cpois_1 <- get_index(p_cpois_1, bias_correct = TRUE)
 survs <- select(d, year, survey_abbrev) |> distinct()
 ind_cpois_1 <- left_join(ind_cpois_1, survs, by = join_by(year))
 
-p_cpois_95 <- predict(fit_cpois_95, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
-ind_cpois_95 <- get_index(p_cpois_95, bias_correct = TRUE)
-survs <- select(d, year, survey_abbrev) |> distinct()
-ind_cpois_95 <- left_join(ind_cpois_95, survs, by = join_by(year))
-
-p_cpois_80 <- predict(fit_cpois_80, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
-ind_cpois_80 <- get_index(p_cpois_80, bias_correct = TRUE)
-survs <- select(d, year, survey_abbrev) |> distinct()
-ind_cpois_80 <- left_join(ind_cpois_80, survs, by = join_by(year))
+# p_cpois_95 <- predict(fit_cpois_95, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
+# ind_cpois_95 <- get_index(p_cpois_95, bias_correct = TRUE)
+# survs <- select(d, year, survey_abbrev) |> distinct()
+# ind_cpois_95 <- left_join(ind_cpois_95, survs, by = join_by(year))
+#
+# p_cpois_80 <- predict(fit_cpois_80, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
+# ind_cpois_80 <- get_index(p_cpois_80, bias_correct = TRUE)
+# survs <- select(d, year, survey_abbrev) |> distinct()
+# ind_cpois_80 <- left_join(ind_cpois_80, survs, by = join_by(year))
 beepr::beep()
 #saveRDS(ind_cpois_80, file = "data/generated/geostat-ind-hbll-out_ind_cpois_80.rds")
 
@@ -374,7 +382,7 @@ indexes <- bind_rows(list(
   mutate(ind, type = "NB2 ICR hook competition"),
   mutate(ind_nohk, type = "NB2 no hook competition"),
   #mutate(ind_julian, type = "NB2 hook competition + day of year"),
-  mutate(ind_cpois_1, type = "Censored Poisson hook competition"))
+  mutate(ind_cpois_1, type = "Overdispersed Poisson\nno hook competition"))
 )
 gg <- group_by(indexes, type) |>
   mutate(lwr = lwr/est[1], upr = upr/est[1], est = est / est[1]) |>
@@ -386,7 +394,7 @@ gg <- group_by(indexes, type) |>
   coord_cartesian(expand = F) +
   labs(colour = "Model", fill = "Model", y = "Scaled index", x = "Year") +
   scale_colour_brewer(palette = "Dark2") +
-  theme(legend.position = c(0.7, 0.8))
+  theme(legend.position.inside = c(0.7, 0.8))
 ggsave("figs/hbll_out/index_model_comparison.png", width = 7, height = 4)
 
 ggplot() +
@@ -395,7 +403,7 @@ ggplot() +
 
 ind_hk <- dplyr::filter(ind, !is.na(survey_abbrev))
 ind_nohk <- dplyr::filter(ind_nohk, !is.na(survey_abbrev))
-ind_julian <- dplyr::filter(ind_julian, !is.na(survey_abbrev))
+# ind_julian <- dplyr::filter(ind_julian, !is.na(survey_abbrev))
 
 saveRDS(ind_nohk, file = "data/generated/geostat-ind-hbll-out.rds")
 ind_nohk <- readRDS("data/generated/geostat-ind-hbll-out.rds")
@@ -408,8 +416,6 @@ x <- ggplot(ind_hk, aes(year, est, ymin = lwr, ymax = upr, colour = survey_abbre
   geom_pointrange() +
   coord_cartesian(ylim = c(0, NA))
 x + geom_pointrange(data = ind_nohk, aes(year, est, ymin = lwr, ymax = upr), colour = "black")
-
-
 
 ## Plot figures in prediction grid ----
 # Depth ----
@@ -467,7 +473,7 @@ gg <- ggplot(ind_nohk, aes(year, est)) +
   geom_linerange(aes(ymin = lwr, ymax = upr)) +
   labs(x = "Year", y = "HBLL Index") +
   expand_limits(y = 0) +
-  coord_cartesian(expand = FALSE)
+  coord_cartesian(expand = FALSE, xlim = range(ind_nohk$year) + c(-0.5, 0.5))
 ggsave("figs/hbll_out/hbll_index.png", gg, height = 3, width = 4)
 
 # Marginal effect of depth ----
