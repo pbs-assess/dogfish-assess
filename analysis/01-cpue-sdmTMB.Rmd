@@ -186,6 +186,18 @@ fit_dgm <- update(
     map = list(logit_p_mix = factor(NA))
   )
 )
+ind_dgm <- get_index(fit_dgm, bias_correct = F)
+ggplot(ind_sp, aes(year, ymin = lwr, ymax = upr, y = est)) + 
+  geom_pointrange()
+
+AIC(fit_dgm, fit_sp)
+ss <- simulate(fit_dgm, 50)
+sdmTMBextra::dharma_residuals(ss, fit_dgm)
+
+rrr <- residuals(fit_dgm, model = 2)
+.r2 <- rrr[!is.na(rrr)] # zeros!
+.r2 <- .r2[is.finite(.r2)] # zeros!
+qqnorm(as.numeric(.r2));qqline(as.numeric(.r2))
 ```
 
 ```{r}
