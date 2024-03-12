@@ -1,6 +1,7 @@
 library(gfplot)
 library(dplyr)
 library(ggplot2)
+theme_set(theme_pbs())
 
 
 d <- readRDS("data/raw/survey-samples.rds")
@@ -328,3 +329,4 @@ g <- dc %>%
   labs(x = "Length (cm)", y = "Frequency", linetype = "Sex") +
   theme(legend.position = "bottom")
 ggsave("figs/biosample-bottom-trawl-area.png", g, width = 6, height = 5, dpi = 150)
+

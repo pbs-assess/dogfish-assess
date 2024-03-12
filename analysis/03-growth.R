@@ -2,6 +2,7 @@
 library(tidyverse)
 library(readxl)
 library(gfplot)
+theme_set(gfplot::theme_pbs())
 
 #length is tail extended in cm
 
@@ -53,7 +54,7 @@ datnwus2 <- datnwus |> dplyr::select(sex, Age, length) |> mutate(type = "nwus1")
 datnwus3 <- datnwus |> dplyr::select(sex, Age_Ketchen, length) |> rename (Age =  Age_Ketchen) |> mutate(type = "nwus_Ketchen")
 datnwus4 <- datnwus |> dplyr::select(sex, Age_Exponential , length) |> rename (Age =  Age_Exponential ) |> mutate(type = "nwus_exponential")
 datc <- rbind(datnwus2, datnwus3, datnwus4)
-datc <- rbind(dat2, datnwus3)
+datc <- dplyr::bind_rows(dat2, datnwus3)
 
 ggplot(datc, aes(Age, length, colour = type)) +
   facet_wrap(~sex, scales = "free") + geom_smooth() + geom_point(alpha = 0.5)
@@ -466,3 +467,4 @@ left_join(female_par, male_par) %>%
 #  expand_limits(y = 0) +
 #  labs(x = "Age", y = "Length (cm)", colour = "Sex")
 #ggsave("length-age-vb.png", g, height = 3, width = 6)
+
