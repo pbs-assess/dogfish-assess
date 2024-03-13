@@ -177,27 +177,27 @@ fit_sp <- sdmTMB(
   silent = FALSE
 )
 
-# heavier than lognormal!? see histogram above and QQ plots below
-fit_dgm <- update(
-  fit_sp, 
-  family = delta_lognormal_mix(), 
-  control = sdmTMBcontrol(
-    start = list(logit_p_mix = qlogis(0.01)),
-    map = list(logit_p_mix = factor(NA))
-  )
-)
-ind_dgm <- get_index(fit_dgm, bias_correct = F)
-ggplot(ind_sp, aes(year, ymin = lwr, ymax = upr, y = est)) + 
-  geom_pointrange()
+# # heavier than lognormal!? see histogram above and QQ plots below
+# fit_dgm <- update(
+#   fit_sp, 
+#   family = delta_lognormal_mix(), 
+#   control = sdmTMBcontrol(
+#     start = list(logit_p_mix = qlogis(0.01)),
+#     map = list(logit_p_mix = factor(NA))
+#   )
+# )
+# ind_dgm <- get_index(fit_dgm, bias_correct = F)
+# ggplot(ind_sp, aes(year, ymin = lwr, ymax = upr, y = est)) + 
+#   geom_pointrange()
 
-AIC(fit_dgm, fit_sp)
-ss <- simulate(fit_dgm, 50)
-sdmTMBextra::dharma_residuals(ss, fit_dgm)
+# AIC(fit_dgm, fit_sp)
+# ss <- simulate(fit_dgm, 50)
+# sdmTMBextra::dharma_residuals(ss, fit_dgm)
 
-rrr <- residuals(fit_dgm, model = 2)
-.r2 <- rrr[!is.na(rrr)] # zeros!
-.r2 <- .r2[is.finite(.r2)] # zeros!
-qqnorm(as.numeric(.r2));qqline(as.numeric(.r2))
+# rrr <- residuals(fit_dgm, model = 2)
+# .r2 <- rrr[!is.na(rrr)] # zeros!
+# .r2 <- .r2[is.finite(.r2)] # zeros!
+# qqnorm(as.numeric(.r2));qqline(as.numeric(.r2))
 ```
 
 ```{r}
@@ -225,6 +225,7 @@ fit_spt <- update(
 tictoc::toc()
 sanity(fit_spt)
 fit_spt
+fit_spt$sd_report
 
 AIC(fit_sp, fit_spt)
 
@@ -269,6 +270,9 @@ ind_spt |>
   ) +
   scale_x_continuous(breaks = seq(1996, 2024, 2))
 
+saveRDS(ind_sp, "data/geostat-sp-ind-cpue.rds")
+saveRDS(ind_spt, "data/geostat-spt-ind-cpue.rds")
+
 ggsave("figs/cpue/cpue-index-spatiotemporal.png", width = 6, height = 4)
 ```
 
@@ -311,7 +315,7 @@ ggsave("figs/cpue/month-effects.png", width = 7, height = 4)
 # s <- simulate(fit_spt, nsim = 100L)
 # sdmTMBextra::dharma_residuals(s, fit_spt)
 r1 <- residuals(fit_spt, model = 1)
-qqnorm(r2)
+qqnorm(r1)
 r2 <- residuals(fit_spt, model = 2)
 .r2 <- r2[!is.na(r2)] # zeros!
 .r2 <- .r2[is.finite(.r2)] # zeros!
@@ -364,8 +368,8 @@ sanity(md)
 ```
 
 ```{r}
-is <- get_index(ms)
-id <- get_index(md)
+is <- get_index(ms, bias_correct = TRUE)
+id <- get_index(md, bias_correct = TRUE)
 
 bind_rows(
   mutate(is, type = "shallow (< 100 m)"),
@@ -416,29 +420,35 @@ fit_model_season <- function(months) {
   )
 }
 
-# library(future)
-# plan()
-fits <- purrr::map(1:12, fit_model_season)
+library(future)
+plan(multisession, workers = 6)
+fits <- furrr::future_map(1:12, fit_model_season)
+plan(sequential)
 
 fits2 <- fits
 names(fits2) <- stringr::str_pad(1:12, 2, pad = "0")
 
-i2 <- purrr::map_dfr(fits2, get_index, .id = "month")
+plan(multisession, workers = 4)
+i2 <- furrr::future_map_dfr(fits2, get_index, bias_correct = TRUE, .id = "month")
+plan(sequential)
 
 i2 |> ggplot(aes(year, ymin = lwr, ymax = upr, y = est)) + 
   geom_pointrange() +
   coord_cartesian(ylim = c(0, NA), expand = FALSE) +
   facet_wrap(~month)
 
-i2 |> ggplot(aes(year, ymin = lwr, ymax = upr, y = est, colour = month, fill = month)) + 
+i2 |> ggplot(aes(year, ymin = lwr/100000, ymax = upr/100000, y = est/100000, colour = month, fill = month)) + 
   geom_line() +
   geom_ribbon(alpha = 0.2, colour = NA) +
   coord_cartesian(ylim = c(0, NA), expand = FALSE) +
   scale_fill_viridis_d() +
-  scale_colour_viridis_d()
+  scale_colour_viridis_d() + ylab("Standardized CPUE") + xlab("Year") + 
+  labs(colour = "Month", fill = "Month") +
+  theme(axis.text.y.left = element_blank(), axis.ticks.y.left = element_blank())
+ggsave("figs/cpue/cpue-lines-by-month-abs.png", width = 5, height = 3.8)
 
 i2 |>
-  ggplot(aes(year, ymin = lwr, ymax = upr, y = est)) + 
+  ggplot(aes(year, ymin = lwr/100000, ymax = upr/100000, y = est/100000)) + 
   geom_line() +
   geom_ribbon(alpha = 0.2, colour = NA) +
   coord_cartesian(ylim = c(0, NA), expand = FALSE) +
@@ -447,7 +457,9 @@ i2 |>
   facet_wrap(~month) +
   geom_smooth(se = F, colour = "red", method = "glm", 
     method.args = list(family = Gamma(link = "log"))) +
-  ylab("Standardized CPUE") + xlab("Year")
+  ylab("Standardized CPUE") + xlab("Year") +
+  theme(axis.text.y.left = element_blank(), axis.ticks.y.left = element_blank())
+ggsave("figs/cpue/cpue-lines-by-month-facets-abs.png", width = 8, height = 6)
   
 i2 |> group_by(month) |> 
   mutate(geo_mean = exp(mean(log(est)))) |> 
@@ -456,16 +468,17 @@ i2 |> group_by(month) |>
     upr = upr / geo_mean,
     est = est / geo_mean
   ) |> 
-  ggplot(aes(year, ymin = lwr, ymax = upr, y = est, colour = month, fill = month)) + 
+  ggplot(aes(year, ymin = lwr, ymax = upr, y = est)) + 
   geom_line() +
   geom_ribbon(alpha = 0.2, colour = NA) +
   coord_cartesian(ylim = c(0, 4), expand = FALSE) +
   scale_fill_viridis_d() +
   scale_colour_viridis_d() +
   facet_wrap(~month) +
-  geom_smooth(se = F, colour = "black", method = "glm", 
+  geom_smooth(se = FALSE, colour = "red", method = "glm", 
     method.args = list(family = Gamma(link = "log"))) +
   ylab("Standardized CPUE") + xlab("Year")
+ggsave("figs/cpue/cpue-lines-by-month-facets.png", width = 8, height = 6)
 
 i2 |> group_by(month) |> 
   mutate(geo_mean = exp(mean(log(est)))) |> 
@@ -482,7 +495,8 @@ i2 |> group_by(month) |>
   scale_fill_viridis_d() +
   scale_colour_viridis_d() +
   geom_smooth(se = F, method = "glm", method.args = list(family = Gamma(link = "log"))) +
-  ylab("Standardized CPUE") + xlab("Year")
+  ylab("Standardized CPUE") + xlab("Year") + labs(colour = "Month", fill = "Month")
+ggsave("figs/cpue/cpue-lines-by-month.png", width = 5, height = 3.8)
 
 i2 |> group_by(month) |> 
   group_split() |> 
@@ -495,6 +509,7 @@ i2 |> group_by(month) |>
   ggplot(aes(month, 100*(1 - exp(slope)), ymin = 100*(1 - exp(lwr)), ymax = 100*(1 - exp(upr)))) + 
   geom_pointrange() + 
   ylab("% decline per decade") + xlab("Month")
+ggsave("figs/cpue/cpue-slopes-by-month.png", width = 5, height = 3.8)
 ```
 
 # with SVC year?
