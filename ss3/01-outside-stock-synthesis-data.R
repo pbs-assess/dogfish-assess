@@ -12,7 +12,9 @@ fleet_index <- c(
   "HBLL" = 7,
   "SYN" = 8,
   "iRec" = 9,
-  "Salmon Bycatch" = 10
+  "Salmon Bycatch" = 10,
+  "HS MSA" = 11,
+  "Bottom Trawl CPUE" = 12
 )
 fleet_factor <- paste(fleet_index, "-", names(fleet_index))
 
@@ -133,13 +135,34 @@ ss3_index <- function(csv = TRUE) {
   syn <- readRDS("data/generated/geostat-ind-synoptic.rds") %>%
     mutate(fleet = fleet_index["SYN"])
 
-  ind <- rbind(hbll, iphc, syn) %>%
+  hs_msa <- readRDS("data/generated/hs-msa-index.rds") %>%
+    mutate(fleet = fleet_index["HS MSA"])
+
+  cpue <- readRDS("data/generated/geostat-spt-ind-cpue.rds") %>%
+    mutate(fleet = fleet_index["Bottom Trawl CPUE"])
+
+  ind <- rbind(hbll, iphc, syn, hs_msa, cpue)
+
+  g <- ind %>%
+    mutate(fleet2 = names(fleet_index)[fleet]) %>%
+    ggplot(aes(year, est)) +
+    facet_wrap(vars(fleet2), scales = "free_y", ncol = 2) +
+    geom_point() +
+    geom_line(linewidth = 0.25, linetype = 3) +
+    geom_linerange(aes(ymin = lwr, ymax = upr)) +
+    gfplot::theme_pbs() +
+    expand_limits(y = 0) +
+    coord_cartesian(expand = FALSE, xlim = c(1980, 2025)) +
+    labs(x = "Year", y = "Index")
+  ggsave("figs/ss3/index.png", g, height = 5, width = 6)
+
+  out <- ind %>%
     mutate(month = 1) %>%
     select(year, month, fleet, est, se) %>%
     arrange(fleet, year) %>%
     round(3)
 
-  if (csv) write.csv(ind, file = "data/ss3/ss3-index.csv", row.names = FALSE)
+  if (csv) write.csv(out, file = "data/ss3/ss3-index.csv", row.names = FALSE)
 
   invisible(ind)
 }
