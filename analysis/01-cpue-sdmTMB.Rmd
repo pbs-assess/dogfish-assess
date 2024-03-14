@@ -270,8 +270,8 @@ ind_spt |>
   ) +
   scale_x_continuous(breaks = seq(1996, 2024, 2))
 
-saveRDS(ind_sp, "data/geostat-sp-ind-cpue.rds")
-saveRDS(ind_spt, "data/geostat-spt-ind-cpue.rds")
+saveRDS(ind_sp, "data/generated/geostat-sp-ind-cpue.rds")
+saveRDS(ind_spt, "data/generated/geostat-spt-ind-cpue.rds")
 
 ggsave("figs/cpue/cpue-index-spatiotemporal.png", width = 6, height = 4)
 ```
@@ -329,9 +329,11 @@ plot(dat$best_depth, dat$spp_catch);abline(v = 100)
 median(dat$best_depth)
 
 dat_shallow <- filter(dat, best_depth < 100)
+dat_mid <- filter(dat, best_depth >= 100, best_depth < 200)
 dat_deep <- filter(dat, best_depth > 200)
 
 grid_shallow <- filter(gg, depth < 100)
+grid_mid <- filter(gg, depth >= 100, depth < 200)
 grid_deep <- filter(gg, depth > 200)
 # plot(grid_deep$X, grid_deep$Y)
 ```
@@ -363,17 +365,20 @@ fit_model <- function(dd, this_grid) {
 
 ms <- fit_model(dat_shallow, grid_shallow)
 sanity(ms)
+mm <- fit_model(dat_mid, grid_mid)
 md <- fit_model(dat_deep, grid_deep)
 sanity(md)
 ```
 
 ```{r}
 is <- get_index(ms, bias_correct = TRUE)
+im <- get_index(mm, bias_correct = TRUE)
 id <- get_index(md, bias_correct = TRUE)
 
 bind_rows(
-  mutate(is, type = "shallow (< 100 m)"),
-  mutate(id, type = "deep (> 200 m)")
+  mutate(is, type = "01 - shallow (< 100 m)"),
+  mutate(im, type = "02 - mid (>= 100 m, < 200 m)"),
+  mutate(id, type = "03 - deep (> 200 m)")
 ) |> 
   group_by(type) |> 
   mutate(geo_mean = exp(mean(log(est)))) |> 
@@ -382,10 +387,12 @@ bind_rows(
     upr = upr / geo_mean,
     est = est / geo_mean
   ) |> 
-  ggplot(aes(year, ymin = lwr, ymax = upr, y = est, colour = type)) + 
+  ggplot(aes(year, ymin = lwr, ymax = upr, y = est, group = type)) + 
   geom_pointrange(position = position_dodge(width = 0.5)) +
   coord_cartesian(ylim = c(0, NA), expand = FALSE) +
-  facet_wrap(~type)
+  facet_wrap(~type) +
+  geom_smooth(se = FALSE, colour = "red", method = "glm", 
+    method.args = list(family = Gamma(link = "log")))
 ```
 
 # what about month of year
