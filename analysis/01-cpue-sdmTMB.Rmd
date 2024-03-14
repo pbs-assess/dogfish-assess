@@ -376,9 +376,9 @@ im <- get_index(mm, bias_correct = TRUE)
 id <- get_index(md, bias_correct = TRUE)
 
 bind_rows(
-  mutate(is, type = "01 - shallow (< 100 m)"),
-  mutate(im, type = "02 - mid (>= 100 m, < 200 m)"),
-  mutate(id, type = "03 - deep (> 200 m)")
+  mutate(is, type = "(a) Shallow (< 100 m)"),
+  mutate(im, type = "(b) Mid (>= 100 m, < 200 m)"),
+  mutate(id, type = "(c) Deep (> 200 m)")
 ) |> 
   group_by(type) |> 
   mutate(geo_mean = exp(mean(log(est)))) |> 
@@ -389,10 +389,11 @@ bind_rows(
   ) |> 
   ggplot(aes(year, ymin = lwr, ymax = upr, y = est, group = type)) + 
   geom_pointrange(position = position_dodge(width = 0.5)) +
-  coord_cartesian(ylim = c(0, NA), expand = FALSE) +
-  facet_wrap(~type) +
+  coord_cartesian(ylim = c(0, NA), expand = FALSE, xlim = range(is$year) + c(-0.5, 0.5)) +
+  facet_wrap(~type) + ylab("Standardized CPUE") + xlab("Year") +
   geom_smooth(se = FALSE, colour = "red", method = "glm", 
     method.args = list(family = Gamma(link = "log")))
+ggsave("figs/cpue/cpue-by-depth.png", width = 9.5, height = 3.5)
 ```
 
 # what about month of year
