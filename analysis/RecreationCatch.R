@@ -1,7 +1,6 @@
 #pull data on additional sources of mortality from recreational, salmon bycatch (1998-2011), and surveys
 
 
-
 # library -----------------------------------------------------------------
 library(tidyverse)
 #remotes::install_github("pbs-assess/gfdata")
@@ -11,15 +10,35 @@ library(gfdata)
 #see here for recreational management areas
 #https://www.researchgate.net/figure/DFO-management-areas-of-the-Pacific-Region-Fisheries-and-Oceans-Canada-2004_fig1_242162660
 
-d <- readxl::read_excel("data/raw/iREC estimates Jul 2012 to Dec 2023 29012024.xlsx") |>
+d <- readxl::read_excel("data/raw/iREC estimates Jul 2012 to Jan 2024 29022024.xlsx") |>
   filter(ITEM == "Dogfish")
 names(d) <- tolower(names(d))
 
+# d_old <- readxl::read_excel("data/raw/iREC estimates Jul 2012 to Jan 2024 29022024.xlsx") |>
+#   filter(ITEM == "Dogfish")
+# names(d_revised) <- tolower(names(d_revised))
+#
+# # d_old<- d_old |>
+#   group_by(year) |>
+#   summarise(catch = sum(estimate))|>
+#   mutate(method = "orig")
+#
+# d <- d |>
+#   group_by(year) |>
+#   summarise(catch = sum(estimate)) |>
+#   mutate(method = "orig")
+#
+# both <- rbind(d, d_old)
+# ggplot(both, aes(year, catch, group = method, colour = method)) +
+#   geom_point() +
+#   geom_line()
+
 eff <- readxl::read_excel("data/raw/iREC estimates Jul 2012 to Dec 2023 29012024.xlsx")
+#eff <- readxl::read_excel("data/raw/iREC estimates Jul 2012 to Jan 2024 29022024.xlsx")
 names(eff) <- tolower(names(eff))
 eff2 <- eff |>
         filter(item  %in% c("Fisher Days (adult)", "Fisher Days (juvenile)")) |>
-  filter(!area %in% sog) |>
+  #filter(!area %in% sog) |>
   group_by(year, method) |>
   summarize(effort_fishingdays = sum(estimate))
 
@@ -139,223 +158,3 @@ saveRDS(ll, "data/generated/catch_longline.rds")
 
 
 
-# # irec: summarise by year -------------------------------------------------------
-#
-#
-# unique(d$logistical_area)
-# #"Barkley"            "Winter Harbour"     "Campbell River"     "Nanaimo"
-# #"Victoria"           "Tahsis/Nootka"      "Vancouver"          "Prince Rupert"
-# # "Central Coast"      "Haida Gwaii"        "Port Hardy"         "Port Renfrew"
-# # "Sunshine Coast"     "Tofino"             "Kyuquot"            "Lower Fraser River"
-# # "Port Alberni"
-#
-#
-# d |>
-#   group_by(year) |>
-#   summarise(sum = sum(estimate)) #in pieces
-#
-# d |>
-#   group_by(year) |>
-#   summarise(sum = sum(estimate)*2.2/1000) #in pieces
-#
-#
-# d |>
-#   group_by(year, month, area, disposition) |>
-#   summarise(sum = sum(estimate))
-#
-# d |>
-#   group_by(year, month, area, disposition) |>
-#   summarise(sum = sum(estimate))
-#
-# d |>
-#   group_by(year) |>
-#   summarise(sum = sum(estimate)) #27,000 dogfish were captured in 2023??
-#
-# d |>
-#   group_by(year) |>
-#   summarise(sum_ton = (sum(estimate) * 5)/2204) #5 lbs
-#
-# d |>
-#   group_by(year) |>
-#   filter(retainable == "Legal Size") |>
-#   summarise(sum = sum(estimate))
-#
-#
-# # irec: exploratory figures -----------------------------------------------------------------
-#
-# unique(d$logistical_area)
-# #"Barkley"            "Winter Harbour"     "Campbell River"     "Nanaimo"
-# #"Victoria"           "Tahsis/Nootka"      "Vancouver"          "Prince Rupert"
-# # "Central Coast"      "Haida Gwaii"        "Port Hardy"         "Port Renfrew"
-# # "Sunshine Coast"     "Tofino"             "Kyuquot"            "Lower Fraser River"
-# # "Port Alberni"
-#
-#
-# d |>
-#   group_by(year) |>
-#   summarise(sum = sum(estimate)) |>
-#   ggplot() +
-#   geom_point(aes(year, sum)) +
-#   geom_line(aes(year, sum))
-#
-# d |>
-#   group_by(year, logistical_area  ) |>
-#   summarise(sum = sum(estimate)) |>
-#   ggplot() +
-#   geom_point(aes(year, sum)) +
-#   geom_line(aes(year, sum)) +
-#   facet_wrap(vars(logistical_area), scales = "free")
-#
-# d |>
-#   group_by(year, logistical_area  ) |>
-#   summarise(sum = sum(estimate)) |>
-#   ggplot() +
-#   geom_point(aes(year, sum)) +
-#   geom_line(aes(year, sum)) +
-#   facet_wrap(vars(logistical_area))
-#
-# d |>
-#   group_by(year, month) |>
-#   filter(logistical_area == "Victoria") |>
-#   summarise(sum = sum(estimate)) |>
-#   ggplot() +
-#   geom_point(aes(year, sum)) +
-#   geom_line(aes(year, sum)) +
-#   facet_wrap(vars(month))
-#
-# d |>
-#   group_by(year, month) |>
-#   filter(logistical_area == "Campbell River") |>
-#   summarise(sum = sum(estimate)) |>
-#   ggplot() +
-#   geom_point(aes(year, sum)) +
-#   geom_line(aes(year, sum)) +
-#   facet_wrap(vars(month))
-#
-# d |>
-#   group_by(year, month, logistical_area) |>
-#   filter(!(logistical_area %in% c("Campbell River", "Central Coast", "Lower Fraser River", "Nanaimo",
-#                                 "Sunshine Coast", "Vancouver"))) |>
-#   filter(logistical_area != "Victoria") |>
-#   summarise(sum = sum(estimate)) |>
-#   ggplot() +
-#   geom_point(aes(year, log(sum), colour = logistical_area)) +
-#   geom_line(aes(year, log(sum), colour = logistical_area)) +
-#   facet_wrap(vars(month)) +
-#   theme_classic()
-#
-# d |>
-#   group_by(year, month, logistical_area) |>
-#   filter(logistical_area %in% c("Campbell River", "Central Coast", "Lower Fraser River", "Nanaimo",
-#                                   "Sunshine Coast", "Vancouver")) |>
-#   summarise(sum = sum(estimate)) |>
-#   ggplot() +
-#   geom_point(aes(year, log(sum), colour = logistical_area)) +
-#   geom_line(aes(year, log(sum), colour = logistical_area)) +
-#   facet_wrap(vars(month), scales = "free") +
-#   theme_classic()
-#
-# d |>
-#   group_by(year, month) |>
-#   filter(!(logistical_area %in% c("Campbell River", "Central Coast", "Lower Fraser River", "Nanaimo",
-#                                   "Sunshine Coast", "Vancouver"))) |>
-#   summarise(sum = sum(estimate)) |>
-#   ggplot() +
-#   geom_point(aes(year, log(sum))) +
-#   geom_line(aes(year, log(sum))) +
-#   facet_wrap(vars(month)) +
-#   theme_classic()
-#
-# d |>
-#   group_by(year, month) |>
-#   filter(logistical_area %in% c("Haida Gwaii")) |>
-#   summarise(sum = sum(estimate)) |>
-#   ggplot() +
-#   geom_point(aes(year, log(sum))) +
-#   geom_line(aes(year, log(sum))) +
-#   facet_wrap(vars(month), scales = "free") +
-#   theme_classic()
-#
-# d |>
-#   group_by(year, month) |>
-#   summarise(sum = sum(estimate)) |>
-#   ggplot() +
-#   geom_point(aes(year, sum)) +
-#   geom_line(aes(year, sum)) +
-#   facet_wrap(vars(month))
-#
-#
-#
-#
-#
-#
-#
-# # salmon: exploratory figures-------------------------------------------------
-#
-# d2 |>
-#   group_by(year) |>
-#   summarise(sum_ton = sum((catch_qty)*5)/2204) #5 lbs for each dogfish, lbs to tones
-#
-# d2 |>
-#   group_by(year) |>
-#   summarise(sum_ton = sum(catch_qty)) #the whole of the salmon fishery catches less than recreational??
-#
-# d2 |>
-#   group_by(year, gear_type) |>
-#   summarize(count = n()) |>
-#   ggplot() +
-#   geom_point(aes(year, count, colour = gear_type)) +
-#   geom_line(aes(year, count, colour = gear_type))
-#
-# d2 |>
-#   group_by(year) |>
-#   summarise(sum = sum(catch_qty)/sum(effort)) |>
-#   ggplot() +
-#   geom_point(aes(year, sum)) + geom_line(aes(year, sum))
-#
-# d2 |>
-#   group_by(year, ) |>
-#   summarise(sum = sum(catch_qty)) |>
-#   ggplot() +
-#   geom_point(aes(year, sum)) + geom_line(aes(year, sum))
-#
-# d2 |>
-#   group_by(year, month) |>
-#   summarise(sum = sum(catch_qty)/sum(effort)) |>
-#   ggplot() +
-#   geom_point(aes(year, sum, colour = month)) + geom_line(aes(year, sum, colour = month)) +
-#   facet_wrap(~month, scales = "free")
-#
-# d2 |>
-#   group_by(year, month, gear_type) |>
-#   summarise(sum = sum(catch_qty)/sum(effort)) |>
-#   ggplot() +
-#   geom_point(aes(year, log(sum), colour = gear_type)) + geom_line(aes(year, log(sum), colour = gear_type)) +
-#   facet_wrap(~month, scales = "free")
-#
-#
-#
-#
-#
-# # Yearly catches (tonnes) -------------------------------------------------
-#
-# tl
-# tl$type <- "tl"
-# ll
-# ll$type <- "ll"
-# salmon
-# salmon$type <- "salmon"
-# irec
-# irec$type <- "rec"
-#
-# total <- bind_rows(tl, ll, salmon, irec) |>
-#   group_by(year) |>
-#   summarize(catch_tons = sum(catch_t))
-#
-# ggplot(total, aes(year, catch_tons)) + geom_point() + geom_line()
-#
-# total <- bind_rows(tl, ll, salmon, irec) |>
-#   group_by(year, type) |>
-#   summarize(catch_tons = sum(catch_t))
-#
-# ggplot(total, aes(year, catch_tons, colour = type)) + geom_point() + geom_line()
