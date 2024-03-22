@@ -1,0 +1,132 @@
+
+---
+title: "Documentation in support of the 2024 Outside Dogfish Stock Assessment"
+author: "Quang Huynh <quang@bluematterscience.com>"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+&nbsp;
+
+
+<style>
+  .col2 {
+    columns: 2 200px;         /* number of columns and width in pixels*/
+    -webkit-columns: 2 200px; /* chrome, safari */
+    -moz-columns: 2 200px;    /* firefox */
+  }
+  .col3 {
+    columns: 3 100px;
+    -webkit-columns: 3 100px;
+    -moz-columns: 3 100px;
+  }
+  .col4 {
+    columns: 4 100px;
+    -webkit-columns: 4 100px;
+    -moz-columns: 4 100px;
+  }
+</style>
+
+***
+
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(kableExtra)
+library(readxl)
+library(DT)
+
+knitr::opts_chunk$set(echo = FALSE)
+# setwd("C:/Users/tcarruth/Documents/Github/CaliBL/docs")
+
+
+getprojectinfo<-function(page,addcol=F,dummy=F){
+  tab=as.data.frame(read_excel("Project_Info/Status Assumptions To do.xlsx", sheet = page))
+  tab[is.na(tab)]=""
+  dt<-datatable(tab,caption=NULL,options(dom='t'),rownames = F )  
+  if(addcol){
+    nbk <- 100
+    j = ncol(tab)
+    brks <- seq(0,100,length.out=nbk)
+    y <- round(seq(255, 40, length.out = nbk + 1), 0)
+    clrs <- rainbow(nbk + 1, start=0.05,end=0.3)
+    dt <- DT::formatStyle(dt, j, backgroundColor = DT::styleInterval(brks, clrs))
+  }
+  if(!dummy)return(dt)
+}
+
+```
+
+&nbsp;
+
+## Disclaimer
+
+The following material is intended to support development and review of stock assessment models for outside dogfish. 
+
+The work is in progress and is intended to elicit feedback on data, modelling and other aspects. 
+
+Any results that are presented are not final and are not necessarily relevant to future policy making. 
+
+***
+
+## Objective
+
+Develop a defensible and empirically based model of population and fishery dynamics to support management decision making for outside dogfish (*Squalus suckleyi*) making use of biological parameters, catches, survey indices and size data.  
+
+***
+
+## Project Status
+
+Modeling is in progress for the second Technical Working Group meeting on April 4, 2024.
+
+***
+
+## Presentations
+
+[Technical Working Group meeting 1](https://docs.google.com/presentation/d/1o8LlDvcGiKykInXDM8Dz7nq7KfNRV3Fy?rtpof=true&usp=drive_fs) presented on February 12, 2024
+
+[Technical Working Group meeting 2] to be presented on April 4, 2024
+
+***
+
+## Software and Code 
+
+[Github repository](https://github.com/pbs-assess/dogfish-assess)
+
+[Stock Synthesis Manual](https://nmfs-ost.github.io/ss3-doc/SS330_User_Manual_release.html)
+
+***
+
+## Reports
+
+### 2010 outside assessment
+
+[Gallucci et al. 2011](pdf/dogfish-resdoc-2011.pdf) Research Document, the assessment was based on a surplus production model.
+
+[2010 Science Advisory Report](pdf/dogfish-sar-2010.pdf) The assessment was not used for science advice.
+
+[2010 Proceedings](https://www.dfo-mpo.gc.ca/csas-sccs/Publications/Pro-Cr/2011/2011_071-eng.html) Including the external reviews.
+
+[2011 COSEWIC assessment](https://www.canada.ca/en/environment-climate-change/services/species-risk-public-registry/cosewic-assessments-status-reports/north-pacific-spiny-dogfish-2011.html) Classified as Special Concern.
+
+### US assessments
+
+[Gertseva et al. 2021](https://www.pcouncil.org/documents/2021/06/g-5-attachment-3-draft-executive-summary-of-status-of-the-pacific-spiny-dogfish-shark-resource-off-the-continental-u-s-pacific-coast-in-2021-electronic-only.pdf/) US West Coast assessment in 2021 (Stock Synthesis age-structured model)
+
+[STAR Panel Report](https://www.pcouncil.org/documents/2021/06/agenda-item-g-5-attachment-4-spiny-dogfish-stock-assessment-review-star-panel-report-electronic-only.pdf/) Review of the 2021 US West Coast assessment
+
+[Tribuzio et al. 2022](pdf/2022-us-goa-assessment.pdf) Gulf of Alaska assessment in 2022. No population dynamics model was used for spiny dogfish.
+
+### Other
+
+[Wood et al. 1979](https://www.researchgate.net/publication/237180846_Population_Dynamics_of_Spiny_Dogfish_Squalus_acanthias_in_British_Columbia_Waters) Age-structured assessment from 1979 for the basis of the current commercial TAC.
+
+The assessment proposed that the unfished vulnerable biomass from BC to Oregon was 200 thousand tonnes based on Delury and Leslie depletion models. The authors also assumed that the pup survival was density-independent. Thus, natural mortality can be solved from the maturity and fecundity schedule and estimated to be 0.094. MSY was estimated to be 9-11 thousand tonnes where MSY = FMSY * 200,000 and FMSY = 0.5 M. Natural mortality was proposed as the density-dependent mechanism for the yield curve, after excluding density-dependent growth and fecundity to be biologically implausible to achieve the proposed MSY value.
+
+***
+
+### References
+
+[Methot, Richard D., and Chantell R. Wetzel. 2013. “Stock Synthesis: A Biological and Statistical Framework for Fish Stock Assessment and Fishery Management.” Fisheries Research 142 (May): 86–99. ](https://doi.org/10.1016/j.fishres.2012.10.012)
+
+
+***
