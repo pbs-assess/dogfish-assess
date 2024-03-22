@@ -372,6 +372,58 @@ left_join(female_par, male_par) %>%
 
 
 
+
+
+
+# Compare US growth samples and their estimated growth curve
+us_pars <- data.frame(Age = 0:80) %>%
+  mutate(Male = 119.07 * exp(-0.195213) + (22.07 - 119.07 * exp(-0.195213)) * exp(-0.0277291 * exp(0.368135) *Age),
+         Female = 119.07 + (22.07 - 119.07) * exp(-0.0277291 * Age)) %>%
+  reshape2::melt(id.vars = "Age", variable.name = "sex", value.name = "length")
+
+g <- dat_all %>%
+  filter(!grepl("DFO", type)) %>%
+  ggplot(aes(Age, length)) +
+  geom_point(alpha = 0.25) +
+  facet_wrap(vars(sex)) +
+  coord_cartesian(ylim = c(0, 125)) +
+  geom_line(data = us_pars) +
+  ggtitle("US growth curve and samples")
+ggsave("figs/us_growth.png", g, height = 3, width = 6)
+
+
+
+
+
+# Compare DFO growth samples and growth curves
+us_pars <- data.frame(Age = 0:80) %>%
+  mutate(Male = 119.07 * exp(-0.195213) + (22.07 - 119.07 * exp(-0.195213)) * exp(-0.0277291 * exp(0.368135) *Age),
+         Female = 119.07 + (22.07 - 119.07) * exp(-0.0277291 * Age)) %>%
+  reshape2::melt(id.vars = "Age", variable.name = "sex", value.name = "length") %>%
+  mutate(type = "US")
+
+dfo_pars <- rbind(vb_f2$predictions %>%
+                    mutate(sex = "Female"),
+                  vb_m2$predictions %>%
+                    mutate(sex = "Male")) %>%
+  rename(Age = age) %>%
+  select(Age, sex, length) %>%
+  mutate(type = "DFO")
+
+g <- dat_all %>%
+  mutate(isDFO = ifelse(grepl("DFO", type), "DFO", "NWFSC")) %>%
+  #filter(grepl("DFO", type)) %>%
+  ggplot(aes(Age, length)) +
+  geom_point(alpha = 0.4, aes(colour = isDFO)) +
+  facet_wrap(vars(sex)) +
+  coord_cartesian(ylim = c(0, 125)) +
+  geom_line(data = rbind(dfo_pars, us_pars), aes(linetype = type)) +
+  labs(colour = "Sample origin", linetype = "Growth curve")
+ggsave("figs/us_growth_dfo_samples.png", g, height = 3, width = 6)
+
+
+
+
 ###### Tried Schnute function but AIC does not support additional inflection parameter
 #fit_growth <- function(dat, a1 = 0, a2 = max(dat$Age), p) {
 #  require(TMB)
