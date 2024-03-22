@@ -371,3 +371,12 @@ mat <- data.frame(age = seq(10, 70)) %>%
   guides(colour = guide_legend(ncol = 2)) +
   labs(x = "Age", y = "Maturity", colour = NULL, shape = NULL)
 ggsave("figs/mat-lit.png", mat, width = 5, height = 4)
+
+# McFarlane and Beamish 1987, Figure
+mat_age <- data.frame(age = 0:70) %>%
+  mutate(mat = ifelse(age >= 24, pnorm(a + b * age), 0),
+         mat_adjust = round(mat * 0.5, 2))
+plot(mat ~ age, mat_age, typ = 'o')
+points(mat_adjust ~ age, mat_age, col = 2)
+
+write.csv(mat_age, file = "data/ss3/mat_age.csv")
