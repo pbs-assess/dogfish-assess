@@ -353,8 +353,10 @@ fec <- data.frame(len = seq(25, 120, 5)) %>%
   labs(x = "Length (cm)", y = "Fecundity", colour = NULL, shape = NULL)
 ggsave("figs/fec-lit.png", fec, width = 5, height = 4)
 
-# Compare maturity at age from the literature
-# McFarlane: qnorm(a + b * 35) = 0.5; qnorm(a + b * 25) = 0.05
+#### Compare maturity at age from the literature ----
+# McFarlane and Beamish 1987, Figure 6
+# Taylor and Gallucci 2009, Figure 5, Table 1
+# qnorm(a + b * 35) = 0.5; qnorm(a + b * 25) = 0.05
 b <- qnorm(0.05)/-10
 a <- -35 * b
 
@@ -372,11 +374,9 @@ mat <- data.frame(age = seq(10, 70)) %>%
   labs(x = "Age", y = "Maturity", colour = NULL, shape = NULL)
 ggsave("figs/mat-lit.png", mat, width = 5, height = 4)
 
-# McFarlane and Beamish 1987, Figure
 mat_age <- data.frame(age = 0:70) %>%
-  mutate(mat = ifelse(age >= 24, pnorm(a + b * age), 0),
-         mat_adjust = round(mat * 0.5, 2))
-plot(mat ~ age, mat_age, typ = 'o')
-points(mat_adjust ~ age, mat_age, col = 2)
-
+  mutate(mat_high = ifelse(age >= 24, pnorm(a + b * age), 0),
+         mat_adjust_high = round(mat_high * 0.5, 3),
+         mat_low = ifelse(age >= 18, 1/(1 + exp(-log(19) * (age - 31.5)/24.3)), 0),
+         mat_adjust_low = round(mat_low * 0.5, 3))
 write.csv(mat_age, file = "data/ss3/mat_age.csv")
