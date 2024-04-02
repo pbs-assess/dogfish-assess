@@ -86,18 +86,17 @@ range(grid$depth_m)
 range(h$depth_m)
 range(df.int$depth_m)
 
-# Intersect IPHC points with HBLL grid ------------------------------------
-#create a polygon, if you intersect with the grid points it has to overlap perfectly
-hulls <- concaveman::concaveman(grid.sf)
-plot(st_geometry(hulls), col = "red", lwd = 2) #doesnt work well
-plot(st_geometry(d.sf), add = TRUE)
-
+# Intersect IPHC points with HBLL grid - WCVI only ------------------------------------
 #make a buffer around points then dissolve
-buff <- st_buffer(grid.sf, dist = 5000) #10 km buffer
+grid.wcvi <- filter(grid, latitude < 51)
+grid.sf.wcvi <- filter(grid.sf, latitude < 51)
+buff <- st_buffer(grid.sf.wcvi, dist = 5000) #10 km buffer
 diss <- buff %>% st_union() %>% st_cast("POLYGON")
-ggplot() + geom_sf(data=diss, aes(fill="red"))
 
-#use the buffer to intersect with the IPHC points
+x <- ggplot() + geom_sf(data=diss, fill="red")
+x + geom_sf(data = grid.sf.wcvi, col = "black")
+
+#usegeom_sf()#use the buffer to intersect with the IPHC points
 plot(st_geometry(diss), col = "red", lwd = 2)
 plot(st_geometry(d.sf), add = TRUE)
 
@@ -106,7 +105,7 @@ df.int <- st_intersection(
   diss
 )
 
-x <- ggplot() + geom_sf(data = grid.sf)
+x <- ggplot() + geom_sf(data = grid.sf.wcvi)
 y <- x + geom_sf(data = d.sf, col= "red")
 y + geom_sf(data = df.int, col = "blue")
 
@@ -121,7 +120,7 @@ ggplot(df.int, aes(year, depth_m)) + geom_point()
 df.int <- st_drop_geometry(df.int)
 df.int <- filter(df.int , depth_m > 20 & depth_m < 270)
 
-range(grid$depth_m)
+range(grid.wcvi$depth_m)
 range(h$depth_m)
 range(df.int$depth_m)
 
@@ -132,11 +131,12 @@ mesh$mesh$n
 
 years <- unique(df.int$year)
 grid <- sdmTMB::replicate_df(grid, "year", years)
+grid <- sdmTMB::replicate_df(grid.wcvi, "year", years)
 
 iphc_trim <- sdmTMB(
-  numobs ~ 1 + poly(depth_m_log, 2L), #this is both N_it20 or N_it, offset accounts for hooks observed
+  numobs ~ 0 + poly(depth_m_log, 2L), #this is both N_it20 or N_it, offset accounts for hooks observed
   family = nbinom2(link = "log"),
-  #time_varying = ~1,
+  time_varying = ~1,
   data = df.int,
   mesh = mesh,
   time = "year",
@@ -159,6 +159,8 @@ tidy(iphc_trim, effects = "ran_pars", conf.int = TRUE)
 
 saveRDS(iphc_trim, file = "data/generated/iphc-nb2-hblloverlap.rds")
 iphc_trim <- readRDS("data/generated/iphc-nb2-hblloverlap.rds")
+saveRDS(iphc_trim, file = "data/generated/iphc-nb2-wcvi-hblloverlap.rds")
+iphc_trim <- readRDS("data/generated/iphc-nb2-wcvi-hblloverlap.rds")
 
 r <- residuals(iphc_trim, type = "mle-mvn")
 qqnorm(r);abline(0, 1)
