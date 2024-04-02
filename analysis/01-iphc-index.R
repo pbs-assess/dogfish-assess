@@ -640,3 +640,37 @@ gg <- plot(marginal_depth, gg = TRUE,
   coord_cartesian(xlim = c(0, 500), expand = FALSE) +
   labs(x = "Depth (m)", y = "log(CPUE)")
 ggsave("figs/iphc/depth_marginal.png", gg, height = 3, width = 4)
+
+
+# Generate IPHC index on HBLL grid - is decline in HBLL a function of habitat?
+hbll <- sdmTMB::replicate_df(gfplot::hbll_grid$grid, "year", unique(fit_iphc_nb2$data$year)) %>%
+  mutate(depth_m_log = log(depth), area = 4) %>%
+  bind_rows() %>%
+  sdmTMB::add_utm_columns(ll_names = c("X", "Y"), utm_names = c("UTM_lon", "UTM_lat"), utm_crs = 32609)
+
+g <- rbind(
+  gfplot::hbll_grid$grid %>% rename(longitude = X, latitude = Y) %>%
+    select(longitude, latitude) %>%
+    mutate(name = "HBLL grid"),
+  d %>%
+    select(longitude, latitude) %>%
+    mutate(name = "IPHC sets")
+) %>%
+  ggplot(aes(longitude, latitude, colour = name)) +
+  geom_sf(data = coast, inherit.aes = FALSE) +
+  coord_sf(expand = FALSE) +
+  geom_point(shape = 1) +
+  labs(x = "Longitude", y = "Latitude", colour = NULL) +
+  theme(legend.position = "bottom") +
+  scale_colour_manual(values = c(1, 2))
+ggsave("figs/iphc/iphc_hbll_grid.png", g, width = 5, height = 5)
+
+p <- predict(fit_iphc_nb2, newdata = hbll, return_tmb_object = TRUE)
+ind <- get_index(p, bias_correct = TRUE)
+g <- ggplot(ind, aes(year, est)) +
+  geom_linerange(aes(ymin = lwr, ymax = upr)) +
+  geom_point() +
+  expand_limits(y = 0) +
+  labs(x = "Year", y = "IPHC index on HBLL grid")
+ggsave("figs/iphc/iphc_index_on_hbll.png", g, height = 3, width = 4)
+g
