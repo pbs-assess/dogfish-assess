@@ -22,7 +22,7 @@ grid <- rename(grid, latitude = Y, longitude = X, depth_m = depth)
 grid <- add_utm_columns(grid, utm_crs = 32609) |>
   rename(UTM_lon = X, UTM_lat = Y) |>
   mutate(UTM_lon_m = UTM_lon*1000, UTM_lat_m = UTM_lat*1000)
-grid$area_km2 <- 2
+grid$area_km2 <- 4
 grid$depth_m_log <- log(grid$depth_m)
 grid$offset <- 0
 grid.sf <- st_as_sf(grid,
@@ -64,7 +64,7 @@ y + geom_sf(data = df.int, col = "blue")
 df.int <- st_drop_geometry(df.int)
 
 # Run model with the IPHC points that overlap --------------------------------------
-mesh <- make_mesh(df.int, c("UTM_lon", "UTM_lat"), cutoff = 15)
+mesh <- make_mesh(df.int, c("UTM_lon", "UTM_lat"), cutoff = 12)
 plot(mesh)
 mesh$mesh$n
 
@@ -83,12 +83,12 @@ iphc_trim <- sdmTMB(
   spatiotemporal = "ar1",
   spatial = "on",
   silent = FALSE,
-  anisotropy = TRUE,
-  control = sdmTMBcontrol(newton_loops = 1L),
-  predict_args = list(newdata = grid, re_form_iid = NA),
-  index_args = list(area = grid$area_km),
-  do_index = TRUE
+  anisotropy = TRUE
+  # predict_args = list(newdata = grid, re_form_iid = NA),
+  # index_args = list(area = grid$area_km),
+  # do_index = TRUE
 )
+iphc_trim
 sanity(iphc_trim)
 plot_anisotropy(iphc_trim)
 tidy(iphc_trim, conf.int = TRUE)
@@ -100,9 +100,8 @@ iphc_trim <- readRDS("data/generated/iphc-nb2-hblloverlap.rds")
 r <- residuals(iphc_trim, type = "mle-mvn")
 qqnorm(r);abline(0, 1)
 
-
-#p <- predict(iphc_trim, newdata = grid, return_tmb_object = TRUE)
-ind <- get_index(iphc_trim, bias_correct = TRUE)
+p <- predict(iphc_trim, newdata = grid, return_tmb_object = TRUE)
+ind <- get_index(p, bias_correct = TRUE)
 
 years <- seq(min(ind$year), max(ind$year), 5)
 ggplot(ind, aes(year, est)) +
@@ -111,4 +110,17 @@ ggplot(ind, aes(year, est)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999") +
   theme_classic() +
   scale_x_continuous(breaks = c(years))
+
+ind_orig <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds")
+
+
+bind_rows(mutate(ind, type = "IPHC trimmed to HBLL"), mutate(ind_orig, type = "Full IPHC")) |>
+  group_by(type) |>
+  mutate(upr = upr / est[year == 1998], lwr = lwr / est[year == 1998], est = est / est[year == 1998]) |>
+  ggplot(aes(year, est, colour = type, fill = type)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  geom_pointrange(aes(ymin = lwr, ymax = upr)) +
+  scale_x_continuous(breaks = c(years))
+
 
