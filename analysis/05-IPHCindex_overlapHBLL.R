@@ -131,7 +131,7 @@ mesh$mesh$n
 
 years <- unique(df.int$year)
 grid <- sdmTMB::replicate_df(grid, "year", years)
-grid <- sdmTMB::replicate_df(grid.wcvi, "year", years)
+#grid <- sdmTMB::replicate_df(grid.wcvi, "year", years)
 
 iphc_trim <- sdmTMB(
   numobs ~ 0 + poly(depth_m_log, 2L), #this is both N_it20 or N_it, offset accounts for hooks observed
@@ -158,8 +158,8 @@ tidy(iphc_trim, effects = "ran_pars", conf.int = TRUE)
 
 saveRDS(iphc_trim, file = "data/generated/iphc-nb2-hblloverlap.rds")
 iphc_trim <- readRDS("data/generated/iphc-nb2-hblloverlap.rds")
-saveRDS(iphc_trim, file = "data/generated/iphc-nb2-wcvi-hblloverlap.rds")
-iphc_trim <- readRDS("data/generated/iphc-nb2-wcvi-hblloverlap.rds")
+##saveRDS(iphc_trim, file = "data/generated/iphc-nb2-wcvi-hblloverlap.rds")
+##iphc_trim <- readRDS("data/generated/iphc-nb2-wcvi-hblloverlap.rds")
 
 set.seed(1)
 # r <- residuals(iphc_trim, type = "mle-mvn")
@@ -171,7 +171,6 @@ dharma_residuals(s, iphc_trim)
 p <- predict(iphc_trim, newdata = grid, return_tmb_object = TRUE)
 ind <- get_index(p, bias_correct = TRUE)
 ind_orig <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds")
-
 
 bind_rows(mutate(ind, type = "IPHC trimmed to HBLL"), mutate(ind_orig, type = "Full IPHC")) |>
   group_by(type) |>
