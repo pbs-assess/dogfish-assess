@@ -44,7 +44,7 @@ plot(st_geometry(hulls), col = "red", lwd = 2) #doesnt work well
 plot(st_geometry(d.sf), add = TRUE)
 
 #make a buffer around points then dissolve
-buff <- st_buffer(grid.sf, dist = 10000) #10 km buffer
+buff <- st_buffer(grid.sf, dist = 2000) #2 km buffer
 diss <- buff %>% st_union() %>% st_cast("POLYGON")
 ggplot() + geom_sf(data=diss, aes(fill="red"))
 
@@ -97,8 +97,11 @@ tidy(iphc_trim, effects = "ran_pars", conf.int = TRUE)
 saveRDS(iphc_trim, file = "data/generated/iphc-nb2-hblloverlap.rds")
 iphc_trim <- readRDS("data/generated/iphc-nb2-hblloverlap.rds")
 
-r <- residuals(iphc_trim, type = "mle-mvn")
-qqnorm(r);abline(0, 1)
+set.seed(1)
+# r <- residuals(iphc_trim, type = "mle-mvn")
+# qqnorm(r);abline(0, 1)
+s <- simulate(iphc_trim, nsim = 500, type = "mle-mvn")
+dharma_residuals(s, iphc_trim)
 
 p <- predict(iphc_trim, newdata = grid, return_tmb_object = TRUE)
 ind <- get_index(p, bias_correct = TRUE)
