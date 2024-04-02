@@ -82,9 +82,9 @@ Modeling is in progress for the second Technical Working Group meeting on April 
 
 ## Presentations
 
-[Technical Working Group meeting 1](https://docs.google.com/presentation/d/1o8LlDvcGiKykInXDM8Dz7nq7KfNRV3Fy?rtpof=true&usp=drive_fs) presented on February 12, 2024
+[Technical Working Group meeting 1](https://docs.google.com/presentation/d/1o8LlDvcGiKykInXDM8Dz7nq7KfNRV3Fy) presented on February 12, 2024
 
-[Technical Working Group meeting 2] to be presented on April 4, 2024
+[Technical Working Group meeting 2](https://docs.google.com/presentation/d/1aP_gIWBJ7fmG_ps1dAxHomCL3jQblOFK) to be presented on April 4, 2024
 
 ***
 
@@ -124,9 +124,15 @@ The assessment proposed that the unfished vulnerable biomass from BC to Oregon w
 
 ***
 
-### References
+## References
 
 [Methot, Richard D., and Chantell R. Wetzel. 2013. “Stock Synthesis: A Biological and Statistical Framework for Fish Stock Assessment and Fishery Management.” Fisheries Research 142 (May): 86–99. ](https://doi.org/10.1016/j.fishres.2012.10.012)
 
+
+***
+
+## Analyst Team
+
+Sean Anderson, Lindsay Davidson, Philina English, Quang Huynh, Jackie King
 
 ***
