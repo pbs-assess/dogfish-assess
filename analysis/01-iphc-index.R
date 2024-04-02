@@ -42,8 +42,8 @@ iphc_stations <- iphc_stations |>
 
 # number of hooks
 # test <- get_iphc_hooks("north pacific spiny dogfish")
-iphc_hksobs <- read.csv("data/raw/Non-Pacific halibut data_2023.csv") |>
-#iphc_hksobs <- readRDS("data/raw/Non-Pacific halibut data_raw.rds") |>
+# iphc_hksobs <- read.csv("data/raw/Non-Pacific halibut data_2023.csv") |>
+iphc_hksobs <- readRDS("data/raw/Non-Pacific halibut data_raw.rds") |>
   dplyr::select(Year, Station, HooksFished, HooksRetrieved, HooksObserved) |>
   mutate(Station = as.character(Station))
 names(iphc_hksobs) <- tolower(names(iphc_hksobs))
@@ -70,9 +70,9 @@ unique(iphc_hksobs$year)
 iphc_coast <- readRDS("data/raw/Non-Pacific halibut data_raw_gfdata.rds")
 
 #this has station and IPHC reg area and date (if including julian date)
-iphc_latlongs <- read.csv("data/raw/Set and Pacific halibut data_2023.csv") |>
-  dplyr::filter(`IPHC.Reg.Area` %in% "2B") |>
-#iphc_latlongs <- readRDS("data/raw/Set and Pacific halibut data_raw.rds") %>%
+# iphc_latlongs <- read.csv("data/raw/Set and Pacific halibut data_2023.csv") |>
+  # dplyr::filter(`IPHC.Reg.Area` %in% "2B") |>
+iphc_latlongs <- readRDS("data/raw/Set and Pacific halibut data_raw.rds") %>%
   dplyr::select(IPHC.Reg.Area, Station, Date, Eff, Ineffcde, BeginLat, BeginLon, AvgDepth..fm., Stlkey) |>
   mutate(Station = as.character(Station)) |>
   mutate(date2 = format(as.Date(Date, format = "%d-%b-%Y"), "%Y")) |> # get year from date
@@ -195,9 +195,9 @@ ggplot(both, aes(year, count, group = data, colour = data)) +
 
 # Add Hook Competition ----
 #from https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fwww.iphc.int%2Fuploads%2F2023%2F12%2Fiphc-2023-fiss-hadj-20231031.xlsx&wdOrigin=BROWSELINK
-# h <- readxl::read_excel("data/raw/iphc-2023-fiss-hadj-20231031.xlsx") |> #iphc-2021-fiss-hadj.xlsx") #old data set
-# dplyr::filter(`IPHC Reg Area` %in% "2B")
-# saveRDS(h, file = "data/raw/iphc-2023-fiss-hadj.rds")
+h <- readxl::read_excel("data/raw/iphc-2023-fiss-hadj-20231031.xlsx") |> #iphc-2021-fiss-hadj.xlsx") #old data set
+dplyr::filter(`IPHC Reg Area` %in% "2B")
+saveRDS(h, file = "data/raw/iphc-2023-fiss-hadj.rds")
 
 d <- readRDS("data/generated/IPHC_coastdata_nosog_gfdata.rds") |>
   mutate(depth_m = exp(depth_m_log)) |>
@@ -277,6 +277,8 @@ saveRDS(d, "data/generated/IPHC_coastdata_nosog_gfdata_hk.rds")
 coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
   sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
 
+dir.create("figs/iphc", showWarnings = FALSE, recursive = TRUE)
+
 gg <- ggplot(d, aes(longitude, latitude, fill = bait/hooksobserved, colour = bait/hooksobserved)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
@@ -289,6 +291,8 @@ gg <- ggplot(d, aes(longitude, latitude, fill = bait/hooksobserved, colour = bai
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   labs(x = "Longitude", y = "Latitude", fill = "Proportion baited hooks", colour = "Proportion baited hooks")
 ggsave("figs/iphc/baited_hooks.png", gg, height = 6, width = 5, dpi = 600)
+
+d$numobs <- ifelse(is.na(d$N_it) == TRUE, d$N_it20, d$N_it)
 
 gg <- ggplot(d, aes(longitude, latitude, fill = numobs/exp(offset), colour = numobs/exp(offset))) +
   geom_sf(data = coast, inherit.aes = FALSE) +
@@ -346,15 +350,18 @@ fit_iphc_nb2 <- sdmTMB(
   #offset = "offset_hk",
   spatiotemporal = "ar1",
   spatial = "on",
-  silent = TRUE,
-  anisotropy = TRUE,
-  control = sdmTMBcontrol(newton_loops = 1L)
+  silent = FALSE,
+  anisotropy = TRUE
 )
 saveRDS(fit_iphc_nb2, file = "data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 
+r <- residuals(fit_iphc_nb2, type = "mle-mvn")
+qqnorm(r);abline(0, 1)
+
 #check
 fit_iphc_nb2$data |> filter(N_it20 == 0) |> group_by(year) |> tally()
+fit_iphc_nb2$data |> filter(N_it20 != 0) |> group_by(year) |> tally() |> as.data.frame()
 
 #with hook comp
 # fit_iphc_nb2_whk <- update(fit_iphc_nb2,
@@ -674,3 +681,34 @@ g <- ggplot(ind, aes(year, est)) +
   labs(x = "Year", y = "IPHC index on HBLL grid")
 ggsave("figs/iphc/iphc_index_on_hbll.png", g, height = 3, width = 4)
 g
+
+## Generate IPHC index from data collected only in HBLL domain
+
+# library(dplyr)
+#
+# hg <- gfplot::hbll_grid$grid
+#
+# hg <- hg %>%
+#   sf::st_as_sf(coords = c("X", "Y"))
+#
+# hgc <- concaveman::concaveman(hg)
+# plot(hgc)
+#
+# dsf <- sf::st_as_sf(d, coords = c("longitude", "latitude"))
+#
+# hgi <- sf::st_intersection(hgc, dsf)
+# hgi <- sf::st_intersection(dsf, hgc)
+#
+# x <- sf::st_coordinates(hgi)
+# plot(x)
+#
+# hg <- gfplot::hbll_grid$grid
+#
+# plot(d$longitude, d$latitude)
+# points(hg$X, hg$Y, col = "red", pch = ".")
+
+# %>%
+#   group_by(region) %>%
+#   summarize(geometry = sf::st_union(geometry)) %>%
+#   sf::st_convex_hull()
+# plot(hulls)
