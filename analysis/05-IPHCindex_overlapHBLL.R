@@ -12,6 +12,7 @@ library(sdmTMB)
 # Pull IPHC and HBLL data -------------------------------------------------
 d <- readRDS("data/generated/IPHC_coastdata_nosog_gfdata_hk.rds")
 d$numobs <- ifelse(is.na(d$N_it) == TRUE, d$N_it20, d$N_it)
+d$offset <- log(d$hooksobserved)
 d.sf <- st_as_sf(d,
                  coords = c("UTM_lon_m", "UTM_lat_m"),
                  crs = 32609
@@ -36,6 +37,15 @@ x + geom_point(data = d, aes(UTM_lon, UTM_lat), col= "red")
 x <- ggplot() + geom_sf(data = grid.sf)
 x + geom_sf(data = d.sf, col= "red")
 
+#hbll data
+s <- readRDS("data/raw/survey-sets.rds")
+h <- dplyr::filter(s, grepl("HBLL OUT", survey_abbrev))
+h <- sdmTMB::add_utm_columns(h, utm_crs = 32609)
+h <- h |>
+  mutate(date2 = as.Date(time_deployed, format = "%Y-%m-%d H:M:S")) |>
+  mutate(dmy = lubridate::ymd(date2)) |>
+  mutate(julian = lubridate::yday(dmy))
+range(h$depth_m)
 
 # Intersect IPHC points with HBLL grid ------------------------------------
 #create a polygon, if you intersect with the grid points it has to overlap perfectly
@@ -44,7 +54,7 @@ plot(st_geometry(hulls), col = "red", lwd = 2) #doesnt work well
 plot(st_geometry(d.sf), add = TRUE)
 
 #make a buffer around points then dissolve
-buff <- st_buffer(grid.sf, dist = 10000) #10 km buffer
+buff <- st_buffer(grid.sf, dist = 5000) #10 km buffer
 diss <- buff %>% st_union() %>% st_cast("POLYGON")
 ggplot() + geom_sf(data=diss, aes(fill="red"))
 
@@ -61,7 +71,59 @@ x <- ggplot() + geom_sf(data = grid.sf)
 y <- x + geom_sf(data = d.sf, col= "red")
 y + geom_sf(data = df.int, col = "blue")
 
+x <- ggplot() + geom_point(data = h, aes(longitude, latitude), col= "red")
+x + geom_point(data = df.int, aes(longitude, latitude, colour = depth_m))
+
+range(grid$depth_m)
+range(h$depth_m)
+range(df.int$depth_m)
+
+ggplot(df.int, aes(year, depth_m)) + geom_point()
 df.int <- st_drop_geometry(df.int)
+df.int <- filter(df.int , depth_m > 20 & depth_m < 270)
+
+range(grid$depth_m)
+range(h$depth_m)
+range(df.int$depth_m)
+
+# Intersect IPHC points with HBLL grid ------------------------------------
+#create a polygon, if you intersect with the grid points it has to overlap perfectly
+hulls <- concaveman::concaveman(grid.sf)
+plot(st_geometry(hulls), col = "red", lwd = 2) #doesnt work well
+plot(st_geometry(d.sf), add = TRUE)
+
+#make a buffer around points then dissolve
+buff <- st_buffer(grid.sf, dist = 5000) #10 km buffer
+diss <- buff %>% st_union() %>% st_cast("POLYGON")
+ggplot() + geom_sf(data=diss, aes(fill="red"))
+
+#use the buffer to intersect with the IPHC points
+plot(st_geometry(diss), col = "red", lwd = 2)
+plot(st_geometry(d.sf), add = TRUE)
+
+df.int <- st_intersection(
+  d.sf,
+  diss
+)
+
+x <- ggplot() + geom_sf(data = grid.sf)
+y <- x + geom_sf(data = d.sf, col= "red")
+y + geom_sf(data = df.int, col = "blue")
+
+x <- ggplot() + geom_point(data = h, aes(longitude, latitude), col= "red")
+x + geom_point(data = df.int, aes(longitude, latitude, colour = depth_m))
+
+range(grid$depth_m)
+range(h$depth_m)
+range(df.int$depth_m)
+
+ggplot(df.int, aes(year, depth_m)) + geom_point()
+df.int <- st_drop_geometry(df.int)
+df.int <- filter(df.int , depth_m > 20 & depth_m < 270)
+
+range(grid$depth_m)
+range(h$depth_m)
+range(df.int$depth_m)
 
 # Run model with the IPHC points that overlap --------------------------------------
 mesh <- make_mesh(df.int, c("UTM_lon", "UTM_lat"), cutoff = 15)
@@ -89,6 +151,7 @@ iphc_trim <- sdmTMB(
   index_args = list(area = grid$area_km),
   do_index = TRUE
 )
+
 sanity(iphc_trim)
 plot_anisotropy(iphc_trim)
 tidy(iphc_trim, conf.int = TRUE)
@@ -100,15 +163,26 @@ iphc_trim <- readRDS("data/generated/iphc-nb2-hblloverlap.rds")
 r <- residuals(iphc_trim, type = "mle-mvn")
 qqnorm(r);abline(0, 1)
 
-
 #p <- predict(iphc_trim, newdata = grid, return_tmb_object = TRUE)
-ind <- get_index(iphc_trim, bias_correct = TRUE)
+ind <- get_index(iphc_trim, bias_correct = TRUE) |>
+   mutate(type = "HBLLoverlap") |>
+  mutate(mean = mean(est) , sd = sd(est)) |>
+  mutate(est_scale = (est - mean)/sd,
+         lwr_scale = (lwr - mean)/sd,
+         upr_scale = (upr - mean)/sd)
+ind2 <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds") |>  #from 01-iphc-index.R
+ mutate(type = "allIPHC") |>
+  mutate(mean = mean(est) , sd = sd(est)) |>
+  mutate(est_scale = (est - mean)/sd,
+         lwr_scale = (lwr - mean)/sd,
+         upr_scale = (upr - mean)/sd)
 
+index <- bind_rows(ind, ind2)
 years <- seq(min(ind$year), max(ind$year), 5)
-ggplot(ind, aes(year, est)) +
-  geom_line(col = "#8D9999") +
-  geom_point(col = "#8D9999") +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "#8D9999") +
+ggplot(index, aes(year, est_scale, group= type, fill = type, colour = type)) +
+  geom_line() +
+  geom_point() +
+  geom_ribbon(aes(ymin = lwr_scale, ymax = upr_scale), alpha = 0.4) +
   theme_classic() +
   scale_x_continuous(breaks = c(years))
 
