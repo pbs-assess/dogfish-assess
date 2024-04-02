@@ -23,7 +23,7 @@ grid <- rename(grid, latitude = Y, longitude = X, depth_m = depth)
 grid <- add_utm_columns(grid, utm_crs = 32609) |>
   rename(UTM_lon = X, UTM_lat = Y) |>
   mutate(UTM_lon_m = UTM_lon*1000, UTM_lat_m = UTM_lat*1000)
-grid$area_km2 <- 2
+grid$area_km2 <- 4
 grid$depth_m_log <- log(grid$depth_m)
 grid$offset <- 0
 grid.sf <- st_as_sf(grid,
@@ -54,7 +54,7 @@ plot(st_geometry(hulls), col = "red", lwd = 2) #doesnt work well
 plot(st_geometry(d.sf), add = TRUE)
 
 #make a buffer around points then dissolve
-buff <- st_buffer(grid.sf, dist = 5000) #10 km buffer
+buff <- st_buffer(grid.sf, dist = 2000) #2 km buffer
 diss <- buff %>% st_union() %>% st_cast("POLYGON")
 ggplot() + geom_sf(data=diss, aes(fill="red"))
 
@@ -125,7 +125,7 @@ range(h$depth_m)
 range(df.int$depth_m)
 
 # Run model with the IPHC points that overlap --------------------------------------
-mesh <- make_mesh(df.int, c("UTM_lon", "UTM_lat"), cutoff = 15)
+mesh <- make_mesh(df.int, c("UTM_lon", "UTM_lat"), cutoff = 12)
 plot(mesh)
 mesh$mesh$n
 
@@ -145,13 +145,12 @@ iphc_trim <- sdmTMB(
   spatiotemporal = "ar1",
   spatial = "on",
   silent = FALSE,
-  anisotropy = TRUE,
-  control = sdmTMBcontrol(newton_loops = 1L),
-  predict_args = list(newdata = grid, re_form_iid = NA),
-  index_args = list(area = grid$area_km),
-  do_index = TRUE
+  anisotropy = TRUE
+  # predict_args = list(newdata = grid, re_form_iid = NA),
+  # index_args = list(area = grid$area_km),
+  # do_index = TRUE
 )
-
+iphc_trim
 sanity(iphc_trim)
 plot_anisotropy(iphc_trim)
 tidy(iphc_trim, conf.int = TRUE)
@@ -162,29 +161,25 @@ iphc_trim <- readRDS("data/generated/iphc-nb2-hblloverlap.rds")
 saveRDS(iphc_trim, file = "data/generated/iphc-nb2-wcvi-hblloverlap.rds")
 iphc_trim <- readRDS("data/generated/iphc-nb2-wcvi-hblloverlap.rds")
 
-r <- residuals(iphc_trim, type = "mle-mvn")
-qqnorm(r);abline(0, 1)
+set.seed(1)
+# r <- residuals(iphc_trim, type = "mle-mvn")
+# qqnorm(r);abline(0, 1)
+s <- simulate(iphc_trim, nsim = 500, type = "mle-mvn")
+dharma_residuals(s, iphc_trim)
 
-#p <- predict(iphc_trim, newdata = grid, return_tmb_object = TRUE)
-ind <- get_index(iphc_trim, bias_correct = TRUE) |>
-   mutate(type = "HBLLoverlap") |>
-  mutate(mean = mean(est) , sd = sd(est)) |>
-  mutate(est_scale = (est - mean)/sd,
-         lwr_scale = (lwr - mean)/sd,
-         upr_scale = (upr - mean)/sd)
-ind2 <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds") |>  #from 01-iphc-index.R
- mutate(type = "allIPHC") |>
-  mutate(mean = mean(est) , sd = sd(est)) |>
-  mutate(est_scale = (est - mean)/sd,
-         lwr_scale = (lwr - mean)/sd,
-         upr_scale = (upr - mean)/sd)
 
-index <- bind_rows(ind, ind2)
-years <- seq(min(ind$year), max(ind$year), 5)
-ggplot(index, aes(year, est_scale, group= type, fill = type, colour = type)) +
+p <- predict(iphc_trim, newdata = grid, return_tmb_object = TRUE)
+ind <- get_index(p, bias_correct = TRUE)
+ind_orig <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds")
+
+
+bind_rows(mutate(ind, type = "IPHC trimmed to HBLL"), mutate(ind_orig, type = "Full IPHC")) |>
+  group_by(type) |>
+  mutate(upr = upr / est[year == 1998], lwr = lwr / est[year == 1998], est = est / est[year == 1998]) |>
+  ggplot(aes(year, est, colour = type, fill = type)) +
   geom_line() +
-  geom_point() +
-  geom_ribbon(aes(ymin = lwr_scale, ymax = upr_scale), alpha = 0.4) +
-  theme_classic() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  geom_pointrange(aes(ymin = lwr, ymax = upr)) +
   scale_x_continuous(breaks = c(years))
+
 
