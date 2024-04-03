@@ -1,5 +1,6 @@
 
 library(raster)
+library(tidyverse)
 
 # https://www.gis-hub.ca/dataset/substrate100m-data
 
@@ -17,7 +18,7 @@ library(raster)
 
 
 #r <- raster::raster("data/substrate/Ranger_RF_Substrate_100m.tif") %>%
-#  raster::projectRaster(scrs = 32609)
+#  raster::projectRaster(crs = 32609)
 
 # https://www.r-bloggers.com/2021/06/conversions-between-different-spatial-classes-in-r/
 # Takes a while
@@ -46,13 +47,13 @@ substrate_key <- data.frame(
 hbll <- readRDS("data/generated/hbll-out-sdmTMB_nohk.rds")
 
 hbll_sf <- hbll$data %>%
-  select(latitude, longitude, depth_m, year, X, Y, catch_count, offset, survey_abbrev) %>%
+  dplyr::select(latitude, longitude, depth_m, year, X, Y, catch_count, offset, survey_abbrev) %>%
   mutate(Xm = X * 1e3, Ym = Y * 1e3) %>%
   sf::st_as_sf(coords = c("Xm", "Ym"), crs = 32609)
 hbll_intersects <- sf::st_intersects(hbll_sf, r3)
 
 hbll_out <- hbll$data %>%
-  select(latitude, longitude, depth_m, year, X, Y, catch_count, offset, survey_abbrev) %>%
+  dplyr::select(latitude, longitude, depth_m, year, X, Y, catch_count, offset, survey_abbrev) %>%
   mutate(substrate = sapply(hbll_intersects, function(x) if(!length(x)) NA else x)) %>%
   left_join(substrate_key, by = "substrate") %>%
   filter(year != 2013)
@@ -81,6 +82,76 @@ g <- hbll_out %>%
   ggtitle("HBLL")
 ggsave("figs/substrate/hbll_substrate.png", g, height = 4, width = 6)
 
+# Annual mean CPUE by substrate
+g <- hbll_out %>%
+  filter(!is.na(substrate)) %>%
+  mutate(cpue = catch_count/exp(offset)) %>%
+  summarise(cpue = mean(cpue), .by = c(year, type)) %>%
+  ggplot(aes(year, cpue, colour = type)) +
+  geom_point() +
+  geom_line() +
+  gfplot::theme_pbs() +
+  facet_wrap(vars(type)) +
+  guides(colour = "none") +
+  labs(x = "Year", y = "log(CPUE + 1)", colour = "Substrate") +
+  ggtitle("HBLL")
+ggsave("figs/substrate/hbll_substrate_year.png", g, height = 4, width = 6)
+
+
+# Substrate of HBLL grid
+hbll_grid_sf <- gfplot::hbll_grid$grid %>%
+  rename(longitude = X, latitude = Y) %>%
+  sdmTMB::add_utm_columns(units = "m", utm_crs = 32609) %>%
+  sf::st_as_sf(coords = c("X", "Y"), crs = 32609)
+hbll_grid_intersects <- sf::st_intersects(hbll_grid_sf, r3)
+
+hbll_grid <- gfplot::hbll_grid$grid %>%
+  rename(longitude = X, latitude = Y) %>%
+  sdmTMB::add_utm_columns(units = "km", utm_crs = 32609) %>%
+  mutate(substrate = sapply(hbll_grid_intersects, function(x) if(!length(x)) NA else x)) %>%
+  left_join(substrate_key, by = "substrate") %>%
+  filter(!is.na(type)) %>%
+  rename(depth_m = depth)
+
+coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
+  sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
+
+g <- ggplot(hbll_grid, aes(X, Y, colour = type)) +
+  geom_point(size = 0.5, alpha = 0.5) +
+  labs(x = "Longitude", y = "Latitude", colour = "Substrate") +
+  gfplot::theme_pbs()
+ggsave("figs/substrate/hbll_grid_substrate.png", g, height = 6, width = 6)
+
+yrs <- sort(union(unique(hbll$data$year), hbll$extra_time))
+grid <- sdmTMB::replicate_df(hbll_grid, time_name = "year", time_values = yrs)
+
+# Index of mud habitat
+p <- predict(hbll, newdata = grid %>% filter(type == "Mud"), return_tmb_object = TRUE)
+ind_mud <- get_index(p, bias_correct = TRUE)
+readr::write_csv(ind_mud, file = "data/generated/hbll_index_mud.csv")
+
+g <- ggplot(ind, aes(year, est)) +
+  #geom_linerange(aes(ymin = lwr, ymax = upr)) +
+  geom_point() +
+  #facet_wrap(vars(name), ncol = 1) +
+  expand_limits(y = 0) +
+  labs(x = "Year", y = "Index")
+
+# Index of non-mud habitat
+p <- predict(hbll, newdata = grid %>% filter(type != "Mud"), return_tmb_object = TRUE)
+ind_nonmud <- get_index(p, bias_correct = TRUE)
+readr::write_csv(ind_nonmud, file = "data/generated/hbll_index_nonmud.csv")
+
+g <- rbind(
+  ind_mud %>% mutate(type = "Mud"),
+  ind_nonmud %>% mutate(type = "Non-mud")
+) %>%
+  ggplot(aes(year, est)) +
+  geom_linerange(aes(ymin = lwr, ymax = upr)) +
+  geom_point() +
+  facet_wrap(vars(type), ncol = 1, scales = "free_y") +
+  expand_limits(y = 0) +
+  labs(x = "Year", y = "Index")
 
 
 
