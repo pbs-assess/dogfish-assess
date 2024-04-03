@@ -1,6 +1,7 @@
 
 model_dir <- "m37_IPHC_g4"
 ss_home <- here::here("ss3")
+ss_home <- "C:/users/qhuynh/Desktop/dogfish"
 
 #### Fit ss3 model version 3.30.22.1 with custom compilation that fixes lognormal prior density function
 fit_ss3 <- function(model_dir = "model1",
@@ -33,19 +34,23 @@ fit_ss3 <- function(model_dir = "model1",
 # fit_ss3(model_dir, hessian = FALSE, ss_home = ss_home, max_phase = 10L)
 
 
-mods <- c("m37_IPHC_g4", "m37_IPHC_g2", "m37_IPHC_g4_M056", "m37_SYN_g4")
+mods <- c("A1", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_exHS", "A6_IPHC", "A7_SYN", "B1_2005")
 snowfall::sfInit(parallel = TRUE, cpus = length(mods))
 snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 snowfall::sfStop()
 
 # Load r4ss list
-model_dir <- "m37_IPHC_g4"
+model_dir <- "B1_2005"
 covar <- TRUE
-replist <- r4ss::SS_output(file.path(ss_home, model_dir),
-                           verbose = FALSE,
-                           printstats = FALSE,
-                           covar = covar,
-                           hidewarn = TRUE)
+replist <- r4ss::SS_output(
+  file.path(ss_home, model_dir),
+  verbose = FALSE,
+  printstats = FALSE,
+  covar = covar,
+  hidewarn = TRUE
+)
+replist$Length_Comp_Fit_Summary
+
 
 # Save report list
 #saveRDS(replist, file = file.path(ss_home, paste0("r4ss_", model_dir, ".rds")))
