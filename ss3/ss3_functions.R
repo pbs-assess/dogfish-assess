@@ -423,7 +423,7 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
   } else {
     mat <- data.frame(
       variable = replist$endgrowth %>% filter(Sex == 1) %>% pull(int_Age),
-      value = replist$endgrowth %>% filter(Sex == 1) %>% pull(Len_Mat)
+      value = replist$endgrowth %>% filter(Sex == 1) %>% pull(Age_Mat)
     )
   }
 
@@ -486,38 +486,45 @@ SS3_vuln <- function(x, scen) {
   g
 }
 
-.SS3_F <- function(replist, scenario = "OM 1") {
+.SS3_F <- function(replist, scenario = "OM 1", instantaneous = FALSE) {
 
-  total_catch <- replist$timeseries %>%
-    filter(Era == "TIME", Yr <= 2023) %>%
-    select(Yr, starts_with("dead(B)")) %>%
-    reshape2::melt(id.vars = c("Yr")) %>%
-    summarise(deadB = sum(value), .by = Yr)
+  if (instantaneous) {
+    out <- replist$exploitation %>%
+      select(Yr, F_std, replist$FleetNames[replist$IsFishFleet]) %>%
+      mutate(F_std = ifelse(is.na(F_std), 0, F_std),
+             FMSY = replist$derived_quants %>% filter(Label == "annF_MSY") %>% pull(Value),
+             scen = scenario,
+             F_FMSY = F_std/FMSY) %>%
+      filter(Yr <= 2023)
+  } else {
 
-  # Vuln_bio is calculated at midpoint of year
-  hr_fleet <- replist$catch %>%
-    mutate(hr = ifelse(dead_bio, dead_bio/(dead_bio + vuln_bio), 0),
-           scen = scenario) %>%
-    select(Yr, hr, Fleet_Name) %>%
-    reshape2::dcast(list("Yr", "Fleet_Name"), value.var = "hr")
+    total_catch <- replist$timeseries %>%
+      filter(Era == "TIME", Yr <= 2023) %>%
+      select(Yr, starts_with("dead(B)")) %>%
+      reshape2::melt(id.vars = c("Yr")) %>%
+      summarise(deadB = sum(value), .by = Yr)
 
-  # Harvest rate
-  # Bio_smry is calculated at beginning of year
-  out <- replist$timeseries %>%
-    filter(Era == "TIME", Yr <= 2023) %>%
-    select(Yr, Bio_smry) %>%
-    left_join(total_catch, by = "Yr") %>%
-    left_join(hr_fleet, by = "Yr") %>%
-    mutate(F_std = deadB/Bio_smry, #total harvest rates
-           scen = scenario)
+    # Vuln_bio is calculated at midpoint of year
+    hr_fleet <- replist$catch %>%
+      mutate(hr = ifelse(dead_bio, dead_bio/(dead_bio + vuln_bio), 0),
+             scen = scenario) %>%
+      select(Yr, hr, Fleet_Name) %>%
+      reshape2::dcast(list("Yr", "Fleet_Name"), value.var = "hr")
 
-  #out <- replist$exploitation %>%
-  #  select(Yr, F_std, replist$FleetNames[replist$IsFishFleet]) %>%
-  #  mutate(F_std = ifelse(is.na(F_std), 0, F_std),
-  #         FMSY = replist$derived_quants %>% filter(Label == "annF_MSY") %>% pull(Value),
-  #         scen = scenario,
-  #         F_FMSY = F_std/FMSY) %>%
-  #  filter(Yr <= 2023)
+    # Harvest rate
+    # Bio_smry is calculated at beginning of year
+    out <- replist$timeseries %>%
+      filter(Era == "TIME", Yr <= 2023) %>%
+      select(Yr, Bio_smry) %>%
+      left_join(total_catch, by = "Yr") %>%
+      left_join(hr_fleet, by = "Yr") %>%
+      mutate(F_std = deadB/Bio_smry, #total harvest rates
+             FMSY = replist$derived_quants %>% filter(Label == "annF_MSY") %>% pull(Value),
+             F_FMSY = F_std/FMSY,
+             scen = scenario)
+  }
+
+
 
   out
 }
@@ -526,13 +533,14 @@ SS3_vuln <- function(x, scen) {
 SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
                   figure = TRUE,
                   posterior = FALSE,
-                  probs = c(0.025, 0.5, 0.975)) {
+                  probs = c(0.025, 0.5, 0.975),
+                  instantaneous = FALSE) {
   type <- match.arg(type)
 
   if (posterior) {
 
     out <- Map(function(y, sc) {
-      lapply(1:length(y), function(z) .SS3_F(y[[z]], scenario = z)) %>%
+      lapply(1:length(y), function(z) .SS3_F(y[[z]], scenario = z, instantaneous = instantaneous)) %>%
         bind_rows() %>%
         rename(Sim = scen) %>%
         mutate(scen = sc) %>%
@@ -564,7 +572,7 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
     }
 
   } else {
-    out <- Map(.SS3_F, replist = replist, scenario = scenario) %>%
+    out <- Map(.SS3_F, replist = replist, scenario = scenario, instantaneous = instantaneous) %>%
       bind_rows()
 
     if (figure) {
@@ -575,7 +583,7 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
           geom_line() +
           facet_wrap(vars(scen)) +
           gfplot::theme_pbs() +
-          labs(x = "Year", y = "Harvest rate")
+          labs(x = "Year", y = ifelse(instantaneous, "Apical fishing mortality", "Harvest rate"))
         #xx <- replist[[1]]$derived_quants %>% filter(grepl("F_", Label))
 
       } else if (type == "FMSY") {
@@ -595,7 +603,7 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
           geom_line() +
           facet_wrap(vars(scen)) +
           gfplot::theme_pbs() +
-          labs(x = "Year", y = "Apical F", colour = "Gear", linetype = "Gear")
+          labs(x = "Year", y = ifelse(instantaneous, "Apical F", "Harvest rate"), colour = "Gear", linetype = "Gear")
 
       }
 
@@ -940,14 +948,14 @@ SS3_steep <- function(replist) {
 
   mat <- replist$endgrowth %>%
     filter(Sex == 1) %>%
-    select(int_Age, Len_Mat)
+    select(int_Age, Age_Mat)
 
   pups <- replist$recruit %>%
     select(Yr, SpawnBio)
 
   dat <- NF %>%
     left_join(mat, by = c("variable" = "int_Age")) %>%
-    mutate(value_mature = Len_Mat * value) %>%
+    mutate(value_mature = Age_Mat * value) %>%
     summarise(N_mature = sum(value_mature),
               p_mature = sum(value_mature)/sum(value), .by = Yr) %>%
     left_join(pups, by = c("Yr")) %>%
