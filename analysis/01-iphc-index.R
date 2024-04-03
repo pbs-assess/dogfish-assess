@@ -674,13 +674,22 @@ ggsave("figs/iphc/iphc_hbll_grid.png", g, width = 5, height = 5)
 
 p <- predict(fit_iphc_nb2, newdata = hbll, return_tmb_object = TRUE)
 ind <- get_index(p, bias_correct = TRUE)
+readr::write_csv(ind, file = "data/generated/iphc_index_on_hbll.csv")
+
 g <- ggplot(ind, aes(year, est)) +
   geom_linerange(aes(ymin = lwr, ymax = upr)) +
   geom_point() +
   expand_limits(y = 0) +
   labs(x = "Year", y = "IPHC index on HBLL grid")
 ggsave("figs/iphc/iphc_index_on_hbll.png", g, height = 3, width = 4)
-g
+
+hbll_wcvi <- filter(hbll, Y <= 51)
+p <- predict(fit_iphc_nb2, newdata = hbll_wcvi, return_tmb_object = TRUE)
+ind <- get_index(p, bias_correct = TRUE)
+readr::write_csv(ind, file = "data/generated/iphc_index_on_hbll_south51.csv")
+
+
+
 
 ## Generate IPHC index from data collected only in HBLL domain
 

@@ -213,7 +213,7 @@ fit_nb2 <- sdmTMB(
   time = "year",
   spatiotemporal = "rw",
   spatial = "on",
-  silent = FALSE,
+  silent = TRUE,
   anisotropy = TRUE,
   extra_time = 2013L
 )
@@ -487,3 +487,25 @@ gg <- plot(marginal_depth, gg = TRUE,
   coord_cartesian(xlim = c(0, 300), expand = FALSE) +
   labs(x = "Depth (m)", y = "log(CPUE)")
 ggsave("figs/hbll_out/depth_marginal.png", gg, height = 3, width = 4)
+
+
+# Predict on grid south of 51 degrees latitude (WCVI)
+hbll_wcvi <- filter(grid, latitude <= 51)
+p <- predict(fit_nb2_nohk, newdata = hbll_wcvi, return_tmb_object = TRUE)
+ind <- get_index(p, bias_correct = TRUE)
+readr::write_csv(ind, file = "data/generated/hbll_south51.csv")
+
+ind <- rbind(
+  read.csv("data/generated/iphc_index_on_hbll_south51.csv") %>%
+    mutate(name = "IPHC on HBLL grid, WCVI"),
+  read.csv("data/generated/hbll_south51.csv") %>%
+    mutate(name = "HBLL, WCVI")
+)
+
+g <- ggplot(ind, aes(year, est)) +
+  geom_linerange(aes(ymin = lwr, ymax = upr)) +
+  geom_point() +
+  #facet_wrap(vars(name), ncol = 1) +
+  expand_limits(y = 0) +
+  labs(x = "Year", y = "Index")
+ggsave("figs/compare_wcvi_index.png", g, height = 5, width = 4)
