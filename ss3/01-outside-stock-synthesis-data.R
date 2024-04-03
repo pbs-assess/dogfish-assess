@@ -365,14 +365,31 @@ mat <- data.frame(age = seq(10, 70)) %>%
          `Taylor and Gallucci 2009 (1940s)` = ifelse(age >= 18, 1/(1 + exp(-log(19) * (age - 43.3)/16.2)), 0),
          `Taylor and Gallucci 2009 (2000s)` = ifelse(age >= 18, 1/(1 + exp(-log(19) * (age - 31.5)/24.3)), 0)) %>%
   reshape2::melt(id.vars = "age") %>%
-  mutate(value = pmax(value, 0)) %>%
+  mutate(value = pmax(value, 0))
+g <- ggplot(mat, aes(age, value, colour = variable, shape = variable)) +
+  geom_line() +
+  geom_point() +
+  theme(legend.position = "bottom") +
+  guides(colour = guide_legend(ncol = 2)) +
+  labs(x = "Age", y = "Maturity", colour = NULL, shape = NULL)
+ggsave("figs/mat-lit.png", g, width = 5, height = 4)
+
+# Add synoptic maturity at age (see 99-outside-ss3-extra-figures.R)
+mat_syn <- readr::read_csv("data/ss3/synoptic-maturity-age.csv") %>%
+  rename(age = int_Age, variable = model, value = Len_Mat) %>%
+  select(age, variable, value)
+g <- rbind(
+   mat_syn,
+   mat
+ ) %>%
   ggplot(aes(age, value, colour = variable, shape = variable)) +
   geom_line() +
   geom_point() +
   theme(legend.position = "bottom") +
   guides(colour = guide_legend(ncol = 2)) +
   labs(x = "Age", y = "Maturity", colour = NULL, shape = NULL)
-ggsave("figs/mat-lit.png", mat, width = 5, height = 4)
+ggsave("figs/mat-lit-with-synoptic.png", g, width = 5, height = 4)
+
 
 mat_age <- data.frame(age = 0:70) %>%
   mutate(mat_high = ifelse(age >= 24, pnorm(a + b * age), 0),
