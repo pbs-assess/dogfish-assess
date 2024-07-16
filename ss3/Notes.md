@@ -10,4 +10,6 @@
 -   Survey catch as fleets
 -   Explore uncertainty in growth and maturity (A1-A4)
 -   Explore various indices (A5-A8)
--   Explore increase in natural mortality (B1-B3)
+-   Explore low M (A9)
+-   Explore increase in natural mortality in recent decades (B1-B3)
+-   Explore increase in M, with lower initial M (B4-B5)
