@@ -5,56 +5,86 @@ source("ss3/ss3_functions.R")
 
 # Compare SS models
 #ss_home <- here::here("ss3")
-ss_home <- "C:/users/qhuynh/Desktop/dogfish"
-
-# Set A models with growth and maturity scenarios
-mods <- c("A1", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat")
-model_name <- c("(A1) BCgrowth", "(A2) USgrowth", "(A3) BCgrowth, high mat", "(A4) USgrowth, high mat")
-
-fig_dir <- "figs/ss3/set_a_mat"
-
-# Set A models jackknifing indices
-mods <- c("A1", "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly")
-model_name <- c("(A1) BCgrowth + all indices", "(A6) IPHC + CPUE only", "(A6) SYN only", "(A7) HBLL only")
-
-fig_dir <- "figs/ss3/set_a_ind"
+ss_home <- "C:/users/quang/Documents/dogfish"
 
 
-# Set B (M change)
-mods <- c("A1", "B1_1990inc", "B2_2010step", "B3_2005step")
-model_name <- c("(A1) Constant M", "(B1) Linear increase 1990", "(B2) Step increase 2010", "(B3) Step increase 2005")
+# Specify which set of plots to generate here
+set_to_plot <- "growth"
 
-fig_dir <- "figs/ss3/set_b"
+set_to_plot <- match.arg(set_to_plot, choices = c("growth", "index", "Mchange", "lowbaseM"))
 
+if (set_to_plot == "growth") {
 
+  # Set A models with growth and maturity scenarios
+  mods <- c("A1", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat")
+  model_name <- c("(A1) BCgrowth", "(A2) USgrowth", "(A3) BCgrowth, high mat", "(A4) USgrowth, high mat")
 
+  fig_dir <- "figs/ss3/set_a_mat"
 
+  multi_rep <- lapply(mods, function(x) {
+    r4ss::SS_output(file.path(ss_home, x),
+                    verbose = FALSE,
+                    printstats = FALSE,
+                    hidewarn = TRUE)
+  })
+  saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_mat.rds"))
 
+} else if (set_to_plot == "index") {
 
+  # Set A models jackknifing indices
+  mods <- c("A1", "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly")
+  model_name <- c("(A1) BCgrowth + all indices", "(A6) IPHC + CPUE only", "(A6) SYN only", "(A7) HBLL only")
 
+  fig_dir <- "figs/ss3/set_a_ind"
+
+  multi_rep <- lapply(mods, function(x) {
+    r4ss::SS_output(file.path(ss_home, x),
+                    verbose = FALSE,
+                    printstats = FALSE,
+                    hidewarn = TRUE)
+  })
+  saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_jackknife.rds"))
+
+} else if (set_to_plot == "Mchange") {
+
+  # Set B (M change)
+  mods <- c("A1", "B1_1990inc", "B2_2010step", "B3_2005step")
+  model_name <- c("(A1) Constant M", "(B1) Linear increase 1990", "(B2) Step increase 2010", "(B3) Step increase 2005")
+
+  fig_dir <- "figs/ss3/set_b"
+
+  multi_rep <- lapply(mods, function(x) {
+    r4ss::SS_output(file.path(ss_home, x),
+                    verbose = FALSE,
+                    printstats = FALSE,
+                    hidewarn = TRUE)
+  })
+  saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_Minc.rds"))
+
+} else if (set_to_plot == "lowbaseM") {
+
+  # Compare low M (combination of A and B models)
+  mods <- c("A1", "A9_lowM", "B1_1990inc", "B4_1990inc_lowM", "B2_2010step", "B5_2010step_lowM")
+  model_name <- c("(A1) M = 0.074", "(A9) M = 0.05",
+                  "(B1) M = 0.074, inc. 1990", "(B4) M = 0.05, inc. 1990",
+                  "(B2) M = 0.074, Step increase 2010",  "(B5) M = 0.05, Step increase 2010")
+
+  fig_dir <- "figs/ss3/lowM"
+
+  multi_rep <- lapply(mods, function(x) {
+    r4ss::SS_output(file.path(ss_home, x),
+                    verbose = FALSE,
+                    printstats = FALSE,
+                    hidewarn = TRUE)
+  })
+  saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_lowM.rds"))
+}
 
 # Read and save r4ss report lists ----
 .ggsave <- function(filename, ...) {
   filename <- file.path(fig_dir, filename)
   ggsave(filename, ...)
 }
-
-multi_rep <- lapply(mods, function(x) {
-  r4ss::SS_output(file.path(ss_home, x),
-                  verbose = FALSE,
-                  printstats = FALSE,
-                  hidewarn = TRUE)
-})
-
-saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_mat.rds"))
-multi_rep <- readRDS(file = file.path(ss_home, "multi_rep_mat.rds"))
-
-saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_jackknife.rds"))
-multi_rep <- readRDS(file = file.path(ss_home, "multi_rep_jackknife.rds"))
-
-saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_Minc.rds"))
-multi_rep <- readRDS(file = file.path(ss_home, "multi_rep_Minc.rds"))
-
 
 # Check parameters and bounds
 multi_rep[[1]]$estimated_non_dev_parameters %>% View()

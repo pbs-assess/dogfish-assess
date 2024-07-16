@@ -1,7 +1,7 @@
 
 model_dir <- "m37_IPHC_g4"
 ss_home <- here::here("ss3")
-ss_home <- "C:/users/qhuynh/Desktop/dogfish"
+ss_home <- "C:/users/quang/Documents/dogfish"
 
 #### Fit ss3 model version 3.30.22.1 with custom compilation that fixes lognormal prior density function
 fit_ss3 <- function(model_dir = "model1",
@@ -34,13 +34,15 @@ fit_ss3 <- function(model_dir = "model1",
 # fit_ss3(model_dir, hessian = FALSE, ss_home = ss_home, max_phase = 10L)
 
 
-mods <- c("A1", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_exHS", "A6_IPHC", "A7_SYN", "B1_2005")
-snowfall::sfInit(parallel = TRUE, cpus = length(mods))
+mods <- c(#"A1",
+          "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_exHS", "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM",
+          "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
+snowfall::sfInit(parallel = TRUE, cpus = 6)
 snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 snowfall::sfStop()
 
 # Load r4ss list
-model_dir <- "B1_2005"
+model_dir <- "A1"
 covar <- TRUE
 replist <- r4ss::SS_output(
   file.path(ss_home, model_dir),
