@@ -173,7 +173,7 @@ iphc_nosog <- st_intersection(iphc_coast4sf, st_geometry(shelf)) %>%
  st_drop_geometry() %>%
  dplyr::select(-dmy)
 
-# Check of website and gfiphc data trends ----
+# Check website and gfiphc data trends ----
 d_website <- readRDS("data/generated/IPHC_coastdata_nosog.rds")
 d <- readRDS("data/generated/IPHC_coastdata_nosog_gfdata.rds") |>
   mutate(depth_m = exp(depth_m_log)) |>
@@ -279,10 +279,11 @@ coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", re
 
 dir.create("figs/iphc", showWarnings = FALSE, recursive = TRUE)
 
+theme_set(gfplot::theme_pbs())
 gg <- ggplot(d, aes(longitude, latitude, fill = bait/hooksobserved, colour = bait/hooksobserved)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
-  geom_point(pch = 21, alpha = 0.3) +
+  geom_point(pch = 21, alpha = 1, size = 0.4) +
   facet_wrap(vars(year)) +
   scale_fill_viridis_c(option = "C", limits = c(0, 1)) +
   scale_colour_viridis_c(option = "C", limits = c(0, 1)) +
@@ -290,21 +291,21 @@ gg <- ggplot(d, aes(longitude, latitude, fill = bait/hooksobserved, colour = bai
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   labs(x = "Longitude", y = "Latitude", fill = "Proportion baited hooks", colour = "Proportion baited hooks")
-ggsave("figs/iphc/baited_hooks.png", gg, height = 6, width = 5, dpi = 600)
+ggsave("figs/iphc/baited_hooks.png", gg, height = 9, width = 7, dpi = 200)
 
 d$numobs <- ifelse(is.na(d$N_it) == TRUE, d$N_it20, d$N_it)
 
 gg <- ggplot(d, aes(longitude, latitude, fill = numobs/exp(offset), colour = numobs/exp(offset))) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
-  geom_point(pch = 21, alpha = 0.3) +
+  geom_point(pch = 21, alpha = 1, size = 0.4) +
   facet_wrap(vars(year)) +
   theme(panel.spacing = unit(0, "in"),
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   scale_colour_viridis_c(trans = "log", breaks = c(0.006, 0.050, 0.37)) +
   scale_fill_viridis_c(trans = "log", breaks = c(0.006, 0.050, 0.37)) +
   labs(x = "Longitude", y = "Latitude", fill = "CPUE", colour = "CPUE")
-ggsave("figs/iphc/cpue.png", gg, height = 6, width = 5, dpi = 600)
+ggsave("figs/iphc/cpue.png", gg, height = 9, width = 7, dpi = 190)
 
 gg <- d %>%
   mutate(cpue = numobs/exp(offset)) %>%
@@ -356,8 +357,16 @@ fit_iphc_nb2 <- sdmTMB(
 saveRDS(fit_iphc_nb2, file = "data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 
+set.seed(123)
 r <- residuals(fit_iphc_nb2, type = "mle-mvn")
-qqnorm(r);abline(0, 1)
+png("figs/iphc/qq.png", width = 5, height = 5, res = 200, units = "in")
+qqnorm(r, main = "", asp = 1);abline(0, 1)
+dev.off()
+
+set.seed(1)
+s <- simulate(fit_iphc_nb2, nsim = 500, type = "mle-mvn")
+dharma_residuals(s, fit_iphc_nb2, test_uniformity = F)
+# ggsave(figs/)
 
 #check
 fit_iphc_nb2$data |> filter(N_it20 == 0) |> group_by(year) |> tally()
@@ -386,6 +395,7 @@ fit_iphc_nb2
 fit_iphc_nb2$sd_report
 sanity(fit_iphc_nb2)
 plot_anisotropy(fit_iphc_nb2)
+ggsave("figs/iphc/aniso.png", width = 4, height = 4)
 tidy(fit_iphc_nb2, conf.int = TRUE)
 tidy(fit_iphc_nb2, effects = "ran_pars", conf.int = TRUE)
 
@@ -529,7 +539,7 @@ gg <- grid %>% filter(year == 1998) %>%
   scale_fill_viridis_c(trans = "sqrt") +
   scale_colour_viridis_c(trans = "sqrt") +
   labs(x = "Longitude", y = "Latitude", colour = "Depth (m)", fill = "Depth (m)")
-ggsave("figs/iphc/prediction_grid_depth.png", gg, height = 4, width = 4, dpi = 600)
+ggsave("figs/iphc/prediction_grid_depth.png", gg, height = 4, width = 4, dpi = 200)
 
 # Omega ----
 rb_fill <- scale_fill_gradient2(high = "red", low = "blue", mid = "grey90")
@@ -541,34 +551,34 @@ gg <- ggplot(p$data, aes(longitude, latitude, fill = omega_s, colour = omega_s))
   geom_point(shape = 21) +
   rb_fill + rb_col +
   labs(x = "Longitude", y = "Latitude", colour = "Spatial effect", fill = "Spatial effect")
-ggsave("figs/iphc/prediction_grid_omega.png", gg, height = 4, width = 4, dpi = 600)
+ggsave("figs/iphc/prediction_grid_omega.png", gg, height = 4, width = 4, dpi = 200)
 
 # Epsilon ----
 gg <- ggplot(p$data, aes(longitude, latitude, fill = epsilon_st, colour = epsilon_st)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   facet_wrap(vars(year)) +
-  geom_tile(height = 0.25, width = 0.25) + #point(shape = 21) +
+  geom_point(size = 0.4) + #point(shape = 21) +
   rb_fill + rb_col +
   theme(panel.spacing = unit(0, "in"),
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   labs(x = "Longitude", y = "Latitude", colour = "Spatiotemporal\neffect", fill = "Spatiotemporal\neffect")
-ggsave("figs/iphc/prediction_grid_eps.png", gg, height = 6, width = 5, dpi = 600)
+ggsave("figs/iphc/prediction_grid_eps.png", gg, height = 9, width = 6, dpi = 200)
 
 # log-density ----
 gg <- ggplot(p$data, aes(longitude, latitude, fill = est, colour = est)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   facet_wrap(vars(year)) +
-  geom_tile(width = 0.25, height = 0.25) +
+  geom_point(size = 0.4) +
   scale_colour_viridis_c(option = "C") +
   scale_fill_viridis_c(option = "C") +
   theme(panel.spacing = unit(0, "in"),
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   labs(x = "Longitude", y = "Latitude", colour = "log density", fill = "log density")
-ggsave("figs/iphc/prediction_grid_density.png", gg, height = 6, width = 5, dpi = 600)
+ggsave("figs/iphc/prediction_grid_density.png", gg, height = 9, width = 6, dpi = 200)
 
 # Index ----
 # Compare geo-spatial index with nominal index (bootstrapped mean) ----
@@ -646,7 +656,7 @@ gg <- plot(marginal_depth, gg = TRUE,
            points.par = list(alpha = 0.2)) +
   coord_cartesian(xlim = c(0, 500), expand = FALSE) +
   labs(x = "Depth (m)", y = "log(CPUE)")
-ggsave("figs/iphc/depth_marginal.png", gg, height = 3, width = 4)
+ggsave("figs/iphc/depth_marginal.png", gg, height = 4, width = 5)
 
 
 # Generate IPHC index on HBLL grid - is decline in HBLL a function of habitat?

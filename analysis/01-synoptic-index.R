@@ -145,8 +145,21 @@ saveRDS(fit, file = "data/generated/synoptic-sdmTMB.rds")
 fit <- readRDS("data/generated/synoptic-sdmTMB.rds")
 sanity(fit)
 plot_anisotropy(fit)
+ggsave("figs/synoptic/aniso.png", width = 4, height = 4)
 fit
 fit$sd_report
+
+set.seed(123)
+r1 <- residuals(fit, model = 1, type = "mle-mvn")
+qqnorm(r1);abline(0, 1)
+r2 <- residuals(fit, model = 2, type = "mle-mvn")
+qqnorm(r2);abline(0, 1)
+
+set.seed(123)
+s <- simulate(fit, nsim = 300, type = "mle-mvn")
+dr <- dharma_residuals(s, fit, test_uniformity = F)
+ggplot(dr, aes(expected, observed)) + geom_abline(intercept = 0, slope = 1, colour = "red") + geom_point() + xlab("Expected") + ylab("Observed")
+ggsave("figs/synoptic/qq.png", width = 5, height = 5, dpi = 180)
 
 g <- gfplot::synoptic_grid |> dplyr::select(-survey_domain_year)
 g <- rename(g, depth_m = depth)
