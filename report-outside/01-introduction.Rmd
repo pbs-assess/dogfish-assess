@@ -1,4 +1,12 @@
 
 # Introduction
 
-Text here.
+Outside Pacific spiny dogfish was first assessed in 1979, as a trans-boundary population spanning the entire coast of British Columbia, Canada through Washington and Oregon, United States, including the Strait of Georgia and Puget Sound [@wood1979]. 
+Through age-structured matrix modeling, the natural mortality value was estimated to be 0.094 per year.
+The value generated an equilibrium age structure in an unfished population based on a fecundity at age schedule and the assumption that all age classes experience density-independent survival. 
+
+From an estimate of an unfished vulnerable biomass of 200 thousand tonnes in BC, including inside waters and consisting of market-sized dogfish older than 16--20 years, the maximum sustainable yield was estimated to be 8--10 thousand tonnes, where FMSY is 0.5 M. 
+Several density-dependent mechanisms for the stock were proposed. 
+
+Compensatory natural mortality was determined to be the most plausible, where M would need to be reduce to 40--50 percent of the unfished value to achieve MSY. In contrast, the compensatory somatic growth and fecundity needed to achieve the estimated MSY were found to be biologically implausible.
+Using the historical catch trend from 1937--1978, the stock was estimated to be 55 percent of unfished levels by 1949, but recovered to near unfished levels by 1960 with compensatory mortality.

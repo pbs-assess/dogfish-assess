@@ -39,7 +39,7 @@ where $\sigma_L$ is the residual standard deviation.
 For Pacific Spiny Dogfish, $a_1$ and $a_2$ were set to 0 and 999, respectively. 
 Separate growth curves were fitted for females and males.
 
-Age samples collected from various surveys, tag returns, and some fisheries (Table \@ref(tab:summary-age); @mcfarlane2009).
+Age samples were collected from various surveys, tag returns, and some fisheries (Table \@ref(tab:summary-age); @mcfarlane2009).
 As such, these data mostly do not reflect any size or age selection in a fishery (Jackie King, DFO, pers. comm. 2023).
 
 Samples collected in Canadian waters do not appear to have samples of smaller dogfish (Figure \@ref(fig:age-samp-area)).
