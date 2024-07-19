@@ -37,6 +37,61 @@ g <- ggplot(dc_sumry, aes(month, year)) +
   facet_grid(vars(gear_desc), vars(sampling_desc)) +
   geom_text(aes(label = n_fe))
 
+# Samples and specimens for summary:
+
+# dc <- readRDS("data/raw/commercial-samples.rds")
+# gg[[length(gg) + 1]] <- dc |> filter(grepl("5[ABCDE]+", major_stat_area_name)) |>
+#   tidy_sample_avail() |>
+#   plot_sample_avail(palette = "Reds", year_range = c(1966,1990)) +
+#   viridis::scale_fill_viridis(option = "D", end = 0.82, na.value = "transparent") +
+#   ggtitle("Outside stock commercial samples (1966-1990)")
+#
+# gg[[length(gg) + 1]] <- dc |> filter(grepl("5[ABCDE]+", major_stat_area_name)) |>
+#   tidy_sample_avail() |>
+#   plot_sample_avail(palette = "Reds", year_range = c(1991, yrs[2])) +
+#   viridis::scale_fill_viridis(option = "D", end = 0.82, na.value = "transparent") +
+#   ggtitle("Outside stock commercial samples (1991-2023)")
+
+
+# dc <- readRDS(here::here("data/raw/commercial-samples.rds"))
+dc_sumry <- dc %>%
+  filter(
+    major_stat_area_name != "4B: STRAIT OF GEORGIA",
+    !sampling_desc == "UNKNOWN",
+    #gear_desc %in% c("BOTTOM TRAWL", "LONGLINE", "MIDWATER TRAWL"),
+    !is.na(length)) %>%
+  mutate(month = lubridate::month(trip_start_date)) %>%
+  group_by(gear_desc, sampling_desc, year) %>%
+  summarise(n_fe = length(unique(fishing_event_id)), n_samp = sum(length > 0))
+
+# dplyr::rename(`Proportion positive count` = p_pos, `Proportion positive weight` = pw_pos) |>
+
+g1 <- dc_sumry |>
+  ggplot(aes(year, sampling_desc, fill = n_fe)) +
+  geom_tile(colour = "grey50") +
+  facet_wrap(~gear_desc, ncol = 1) +
+  geom_text(aes(label = n_fe), size = 2.5) +
+  scale_fill_distiller(palette = "Reds", direction = 1) +
+  gfplot::theme_pbs() +
+  coord_cartesian(xlim= c(1973, 2023))+
+  labs(fill = "", y = "", x = "") +
+  theme(legend.position = "none") +
+  ggtitle("Fishing events sampled")
+
+g2 <- dc_sumry |>
+  ggplot(aes(year, sampling_desc, fill = n_samp)) +
+  geom_tile(colour = "grey50") +
+  facet_wrap(~gear_desc, ncol = 1) +
+  geom_text(aes(label = n_samp), size = 2.5) +
+  coord_cartesian(xlim= c(1973, 2023))+
+  scale_fill_distiller(palette = "Purples", direction = 1) +
+  gfplot::theme_pbs() +
+  labs(fill = "", y = "", x = "") +
+  theme(legend.position = "none") +
+  ggtitle("Dogfish sampled")
+
+cowplot::plot_grid(g1, g2, ncol = 1)
+ggsave("figs/commercial-sample-counts.png", width = 13, height = 12, dpi = 200)
 
 # Survey length composition --------------------------------------------------
 
@@ -264,24 +319,28 @@ yrs <- c(1966, 2022)
 g1 <- d |> filter(survey_abbrev %in% c("HBLL INS N", "HBLL INS S", "DOG")) |>
   tidy_sample_avail() |>
   plot_sample_avail(palette = "Blues", year_range = yrs) +
+  viridis::scale_fill_viridis(option = "C", end = 0.82, na.value = "transparent") +
   ggtitle("Inside stock HBLL and Dogfish longline survey samples")
 
 g2 <- d |> filter(survey_abbrev %in% c("SYN WCHG", "SYN HS", "SYN QCS", "SYN WCVI")) |>
   tidy_sample_avail() |>
   plot_sample_avail(palette = "Blues", year_range = yrs) +
+  viridis::scale_fill_viridis(option = "C", end = 0.82, na.value = "transparent") +
   ggtitle("Outside stock synoptic trawl survey samples")
 
 g3 <- dc |> filter(grepl("4B", major_stat_area_name)) |>
   tidy_sample_avail() |>
   plot_sample_avail(palette = "Reds", year_range = yrs) +
+  viridis::scale_fill_viridis(option = "D", end = 0.82, na.value = "transparent") +
   ggtitle("Inside stock commercial samples")
 
 g4 <- dc |> filter(grepl("5[ABCDE]+", major_stat_area_name)) |>
   tidy_sample_avail() |>
   plot_sample_avail(palette = "Reds", year_range = yrs) +
+  viridis::scale_fill_viridis(option = "D", end = 0.82, na.value = "transparent") +
   ggtitle("Outside stock commercial samples")
 
-cowplot::plot_grid(g1, g2, g3, g4, ncol = 1L)
+cowplot::plot_grid(g2, g4, ncol = 1L)
 
 ggsave("figs/biosample-available.png", width = 11, height = 10, dpi = 150)
 
