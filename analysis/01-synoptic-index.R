@@ -40,17 +40,18 @@ d$log_area_swept <- log(d$area_swept)
 coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
   sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
 
-gg <- ggplot(d, aes(longitude, latitude, colour = catch_weight/area_swept, fill = catch_weight/area_swept)) +
-  geom_sf(data = coast, inherit.aes = FALSE) +
-  coord_sf(expand = FALSE) +
-  geom_point(pch = 21, alpha = 0.3) +
-  facet_wrap(vars(year)) +
-  theme(panel.spacing = unit(0, "in"),
-        axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  scale_colour_viridis_c(trans = "log", breaks = c(6e-6, 1e-4, 2.5e-3, 5e-2)) +
-  scale_fill_viridis_c(trans = "log", breaks = c(6e-6, 1e-4, 2.5e-3, 5e-2)) +
-  labs(x = "Longitude", y = "Latitude", colour = expression("CPUE (kg/"~m^2~")"), fill = expression("CPUE (kg/"~m^2~")"))
-ggsave("figs/synoptic/syn_cpue.png", gg, height = 6, width = 5, dpi = 600)
+
+library(rosettafish)
+source("analysis/plot_multiyear_survey_sets.R")
+dir.create("figs/synoptic", showWarnings = FALSE)
+g <- plot_multiyear_survey_sets(d, "SYN WCVI")
+ggsave("figs/synoptic/sets-wcvi.png", width = 10, height = 6, dpi = 160)
+g <- plot_multiyear_survey_sets(d, "SYN QCS")
+ggsave("figs/synoptic/sets-qcs.png", width = 10, height = 6, dpi = 160)
+g <- plot_multiyear_survey_sets(d, "SYN HS")
+ggsave("figs/synoptic/sets-hs.png", width = 10, height = 6, dpi = 160)
+g <- plot_multiyear_survey_sets(d, "SYN WCHG")
+ggsave("figs/synoptic/sets-wchg.png", width = 6, height = 7, dpi = 160)
 
 pzero <- d %>%
   summarise(p = mean(catch_weight == 0) %>% round(2) %>% format(), .by = year)
@@ -135,7 +136,7 @@ fit <- sdmTMB(
   time = "year",
   spatiotemporal = "rw",
   spatial = "on",
-  silent = TRUE,
+  silent = FALSE,
   anisotropy = TRUE,
   control = sdmTMBcontrol(newton_loops = 1L)
 )
@@ -183,7 +184,7 @@ ggplot(ind, aes(year, est, ymin = lwr, ymax = upr)) +
 
 ## Plot figures in prediction grid ----
 # Depth ----
-gg <- ggplot(grid %>% filter(year == yrs[1]), aes(longitude, latitude, fill = depth_m_log, colour = depth_m_log)) +
+gg <- ggplot(grid %>% filter(year == yrs[1]), aes(longitude, latitude, fill = depth_m, colour = depth_m)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   geom_tile(width = 0.025, height = 0.025) +
@@ -206,7 +207,7 @@ gg <- ggplot(p$data, aes(longitude, latitude, fill = plogis(est1), colour = plog
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   labs(x = "Longitude", y = "Latitude", colour = "Encounter\nprobability", fill = "Encounter\nprobability")
-ggsave("figs/synoptic/prediction_grid_encounter.png", gg, height = 6, width = 5, dpi = 600)
+ggsave("figs/synoptic/prediction_grid_encounter.png", gg, height = 8, width = 6.2, dpi = 200)
 
 
 # Omega ----
@@ -232,7 +233,7 @@ gg <- ggplot(p$data, aes(longitude, latitude, fill = epsilon_st2, colour = epsil
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   labs(x = "Longitude", y = "Latitude", colour = "Spatiotemporal\neffect", fill = "Spatiotemporal\neffect")
-ggsave("figs/synoptic/prediction_grid_eps.png", gg, height = 6, width = 5, dpi = 600)
+ggsave("figs/synoptic/prediction_grid_eps.png", gg, height = 8, width = 6.2, dpi = 200)
 
 # log-density ----
 gg <- ggplot(p$data, aes(longitude, latitude, fill = est2, colour = est2)) +
@@ -244,17 +245,18 @@ gg <- ggplot(p$data, aes(longitude, latitude, fill = est2, colour = est2)) +
   scale_fill_viridis_c(option = "C") +
   theme(panel.spacing = unit(0, "in"),
         legend.position = 'bottom',
-        axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+        axis.text.x = element_text(angle = 45, vjust = 0.5)
+        # axis.text = element_blank()
+    ) +
   labs(x = "Longitude", y = "Latitude", colour = "log density", fill = "log density")
-ggsave("figs/synoptic/prediction_grid_density.png", gg, height = 6, width = 5, dpi = 600)
+ggsave("figs/synoptic/prediction_grid_density.png", gg, height = 8, width = 6.2, dpi = 200)
 
 # Index ----
 gg <- ggplot(ind, aes(year, est)) +
   geom_pointrange(aes(ymin = lwr, ymax = upr)) +
   labs(x = "Year", y = "Synoptic Trawl Index") +
   expand_limits(y = 0)
-ggsave("figs/synoptic/syn_index.png", gg, height = 3, width = 4)
-
+ggsave("figs/synoptic/syn_index.png", gg, height = 5, width = 6)
 
 # Marginal effect of depth ----
 m1 <- visreg_delta(fit, xvar = "depth_m", breaks = seq(0, 1300, 50), scale = "response", plot = FALSE, model = 1)
@@ -308,7 +310,8 @@ g <- ind_area %>%
   gfplot::theme_pbs() +
   coord_cartesian(expand = FALSE) +
   labs(x = "Year", y = "Proportion biomass", fill = "Survey") +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") +
+  scale_fill_brewer(palette = "Set2")
 g2 <- ind_area %>%
   mutate(value = est) %>%
   ggplot(aes(year, value, fill = survey_abbrev)) +
@@ -316,7 +319,8 @@ g2 <- ind_area %>%
   gfplot::theme_pbs() +
   coord_cartesian(expand = FALSE) +
   labs(x = "Year", y = "Biomass estimate", fill = "Survey") +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") +
+  scale_fill_brewer(palette = "Set2")
 gout <- ggpubr::ggarrange(g2, g, ncol = 2, legend = "bottom", common.legend = TRUE)
 ggsave("figs/synoptic/syn_index_area_biomass.png", gout, height = 3, width = 6)
 
@@ -388,13 +392,14 @@ g <- ind_compare %>%
   geom_linerange(aes(ymin = lwr, ymax = upr),
                  position = position_dodge(0.5), linewidth = 0.25) +
   geom_point(position = position_dodge(0.5)) +
-  theme(panel.spacing = unit(0, "in"),
+  theme(panel.spacing = unit(0.04, "in"),
         legend.position = "bottom") +
   expand_limits(y = 0) +
   facet_wrap(vars(survey_abbrev), scales = "free_y") +
   scale_shape_manual(values = c(1, 16)) +
   coord_cartesian(xlim = c(2000, 2024), expand = FALSE) +
-  labs(x = "Year", y = "Relative Biomass Index", colour = "Method", shape = "Method")
-ggsave("figs/synoptic/syn_index_compare_design.png", g, height = 4, width = 6)
+  labs(x = "Year", y = "Relative Biomass Index", colour = "Method", shape = "Method") +
+  scale_colour_brewer(palette = "Set2")
+ggsave("figs/synoptic/syn_index_compare_design.png", g, height = 5, width = 6)
 
 
