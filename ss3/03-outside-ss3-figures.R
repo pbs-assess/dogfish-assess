@@ -29,6 +29,12 @@ if (set_to_plot == "growth") {
   })
   saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_mat.rds"))
 
+  # Save the model parameters in model 1 for Res. Doc.
+  multi_rep[[1]]$parameters %>%
+    mutate(`Estimated?` = ifelse(Phase > 0, "Yes", "Fixed")) %>%
+    select(Label, `Estimated?`, Value, Parm_StDev) %>%
+    readr::write_csv(file = "tables/ss3_par.csv")
+
 } else if (set_to_plot == "index") {
 
   # Set A models jackknifing indices
