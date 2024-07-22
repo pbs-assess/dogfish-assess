@@ -59,14 +59,18 @@ Four growth models were fitted to evaluate the sensitivity of the various sampli
 3. Same as 2, and excluded large females using a threshold of 95 cm for DFO samples (based on the length of 50 percent maturity) and 80 cm for the NWFSC samples [@gertseva2021].
 4. Same as 3, and excluded samples in inside waters (4B) for both sexes.
 
-Inclusion of the NWFSC samples reduced the magnitude of the $t_0$ parameter and reduced the length at age of the youngest dogfish for both sexes (Table \@ref(tab:vb-est), Figure \@ref(fig:vb-curve)).
+Inclusion of the NWFSC samples reduced the magnitude of the $a_0$ parameter and reduced the length at age of the youngest dogfish for both sexes (Table \@ref(tab:vb-est), Figure \@ref(fig:vb-curve)).
+
+There is high variability in length-at-age between individual samples and the estimated relationship.
+For both sexes, the residual standard deviation around the mean relationship reduces as age increases (Figure \@ref(fig:vb-resid)).
+The standard deviation appears to stabilize near age 40, where there are fewer samples (Figure \@ref(fig:vb-resid-value)). 
+
 Excluding the large females in Model 3 reduced the asymptotic length, albeit modestly.
 When the samples in 4B are excluded, there is a small reduction in asymptotic length and an increase in the $k$ parameter for females.
 The asymptotic length of males is smaller than of females, while males tend to reach the asymptotic length more quickly with age (based on the $k$ parameter).
-There is high variability in length-at-age between individual samples and the estimated relationship.
 
-Tagging studies show that most dogfish in inside waters do not frequently migrate and mix with those in outside waters and vice versa [@macfarlane2003].
-Therefore, Model 4 is believed to be the best descriptor of growth for Outside Spiny Dogfish.
+Model 2 is believed to be the best descriptor of growth for Outside Spiny Dogfish, after fitting to young dogfish to provide a smaller estimate of $a_0$.
+The estimate of the mean length at age 0 is between 20--30 cm, which is consistent with measurements of pup size near the end of the gestation period [@ketchen1972].
 
 ## Length-weight relationship
 
@@ -108,7 +112,7 @@ $$
 $$
 
 
-Two aspects of female maturity was evaluated here. 
+Two aspects of female maturity were evaluated here. 
 
 First, maturity on the basis on the presence of mature gonads (ova size 5-10 mm and thickened uterii >10 mm, code 55 in the biological samples) indicated that the size of 50 and 95 percent maturity at 86.3 and 96.2 cm, respectively (Figure \@ref(fig:mat-len)). 
 
@@ -124,6 +128,16 @@ knitr::include_graphics(here::here("figs/length-age-area.png"))
 
 ```{r vb-curve, fig.cap="A comparison of four von Bertalanffy growth curves (coloured lines) considered in this study. Points show all length-at-age samples used to fit Model 2. However, a subset were used to fit the other three models."}
 knitr::include_graphics(here::here("figs/length-age-comparison.png"))
+```
+
+(ref:fig-vb-resid) Logspace residuals in the fitted von Bertalanffy growth curve (Model 2) by sex and age, calculated as $\log(L_i/\hat{L}_i)$.
+
+```{r vb-resid, fig.cap="(ref:fig-vb-resid)"}
+knitr::include_graphics(here::here("figs/length-age-residual.png"))
+```
+
+```{r vb-resid-value, fig.cap="Standard deviation of the logspace residuals in the fitted von Bertalanffy growth curve (Model 2) by sex and age."}
+knitr::include_graphics(here::here("figs/length-age-residual-age.png"))
 ```
 
 ```{r summary-age, results="asis"}
