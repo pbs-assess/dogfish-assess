@@ -329,28 +329,28 @@ ss3_maturity_slope()
 vb <- function(Linf, K, t0, a) Linf * (1 - exp(-K * (a - t0)))
 
 # Decreasing variability in size at age
-# Use L2 = 40 in SS3. SD is constant above L2
-vb(97.7, 0.06, -5.73, 0) # Female age 40 = 91.42
-vb(84.4, 0.09, -4.35, 0) # Male age 40 = 82.8
-
+# Use A2 = 40 in SS3. SD is constant above A2
 # Ketchen 1972 Figure 3. Embryos after 2 years gestation are around 20-30 cm
-vb(97.7, 0.06, -5.73, 40) # Female age 0 = 28.4
-vb(84.4, 0.09, -4.35, 40) # Male age 40 = 27.3
+vb(97.7, 0.06, -5.73, 0) # Female age 0 = 28.42
+vb(84.4, 0.09, -4.35, 0) # Male age 0 = 27.34
+
+vb(97.7, 0.06, -5.73, 40) # Female age 40 = 91.42
+vb(84.4, 0.09, -4.35, 40) # Male age 40 = 82.84
 
 
 # Compare fecundity estimates from the literature
-fec <- data.frame(len = seq(25, 120, 5)) %>%
+fec <- data.frame(len = seq(50, 120, 1)) %>%
   mutate(`Ketchen 1972` = -9.96 + 0.176 * len,
          `Taylor and Gallucci 2009 (1940s)` = -15.5 + 0.214 * len,
          `Taylor and Gallucci 2009 (2000s)` = -14.7 + 0.214 * len) %>%
   reshape2::melt(id.vars = "len") %>%
   mutate(value = pmax(value, 0)) %>%
-  ggplot(aes(len, value, colour = variable, shape = variable)) +
+  ggplot(aes(len, value, linetype = variable)) +
   geom_line() +
-  geom_point() +
+  #geom_point() +
   theme(legend.position = "bottom") +
-  guides(colour = guide_legend(ncol = 2)) +
-  labs(x = "Length (cm)", y = "Fecundity", colour = NULL, shape = NULL)
+  guides(linetype = guide_legend(ncol = 2)) +
+  labs(x = "Length (cm)", y = "Fecundity", linetype = NULL)
 ggsave("figs/fec-lit.png", fec, width = 5, height = 4)
 
 #### Compare maturity at age from the literature ----
@@ -388,7 +388,7 @@ g <- rbind(
   theme(legend.position = "bottom") +
   guides(colour = guide_legend(ncol = 2)) +
   labs(x = "Age", y = "Maturity", colour = NULL, shape = NULL)
-ggsave("figs/mat-lit-with-synoptic.png", g, width = 5, height = 4)
+ggsave("figs/mat-lit-with-synoptic.png", g, width = 6, height = 4.5)
 
 
 mat_age <- data.frame(age = 0:70) %>%
