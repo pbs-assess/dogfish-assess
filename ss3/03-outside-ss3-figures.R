@@ -35,6 +35,26 @@ if (set_to_plot == "growth") {
     select(Label, `Estimated?`, Value, Parm_StDev) %>%
     readr::write_csv(file = "tables/ss3_par.csv")
 
+  g <- lapply(1:2, function(i) {
+    replist <- multi_rep[[i]]
+    label <- ifelse(i == 1, "BC growth", "US growth")
+    replist$endgrowth %>%
+      select(Sex, int_Age, Len_Beg) %>%
+      mutate(Sex = ifelse(Sex == 1, "Female", "Male")) %>%
+      mutate(Model = label)
+  }) %>%
+    bind_rows() %>%
+    ggplot(aes(int_Age, Len_Beg, linetype = Model)) +
+    geom_line() +
+    facet_wrap(vars(Sex)) +
+    #gfplot::theme_pbs() +
+    labs(x = "Age", y = "Length") +
+    expand_limits(y = 0)
+  ggsave("figs/ss3/growth-compare.png", g, width = 6, height = 2.5)
+
+
+
+
 } else if (set_to_plot == "index") {
 
   # Set A models jackknifing indices
