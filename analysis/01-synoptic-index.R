@@ -201,8 +201,8 @@ gg <- ggplot(grid %>% filter(year == yrs[1]), aes(longitude, latitude, fill = de
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   geom_tile(width = 0.025, height = 0.025) +
-  scale_fill_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750, 1250)) +
-  scale_colour_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750, 1250)) +
+  scale_fill_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750, 1250), option = "G") +
+  scale_colour_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750, 1250), option = "G") +
   labs(x = "Longitude", y = "Latitude", colour = "Depth (m)", fill = "Depth (m)")
 ggsave("figs/synoptic/prediction_grid_depth.png", gg, height = 4, width = 4, dpi = 600)
 

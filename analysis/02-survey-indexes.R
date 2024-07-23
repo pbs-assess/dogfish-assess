@@ -61,11 +61,59 @@ sumry <- s %>%
 
 g <- ggplot(sumry, aes(year, month, fill = n)) +
   geom_tile(colour = "black") +
-  geom_text(aes(label = n)) +
+  geom_text(aes(label = n), size = 3) +
   facet_wrap(vars(survey_abbrev), ncol = 2, scales = "free_x") +
   scale_fill_gradient2() +
   gfplot::theme_pbs() +
   theme(legend.position = "bottom") +
-  labs(x = "Year", y = "Month", fill = "Sets")
+  labs(x = "Year", y = "Month", fill = "Sets") +
+  scale_y_continuous(breaks = 1:12)
 ggsave("figs/survey_timing.png", g, height = 8, width = 10)
+
+
+
+###
+
+
+
+# IPHC - no hook competition
+iphc <- readRDS("data/generated/geostat-ind-iphc_gfdata.rds") %>%
+  mutate(fleet = "IPHC")
+
+# HBLL - NB2 likelihood - no hook competition
+hbll <- readRDS("data/generated/geostat-ind-hbll-out.rds") %>%
+  filter(year != 2013) %>% # No survey in 2013
+  mutate(fleet = "HBLL Outside") %>%
+  select(-survey_abbrev)
+
+# Synoptic Trawl
+syn <- readRDS("data/generated/geostat-ind-synoptic.rds") %>%
+  mutate(fleet = "Synoptic")
+
+hs_msa <- readRDS("data/generated/hs-msa-index.rds") %>%
+  mutate(fleet = "HS MSA")
+
+cpue <- readRDS("data/generated/geostat-spt-ind-cpue.rds") %>%
+  mutate(fleet = "Bottom Trawl CPUE")
+
+ind <- bind_rows(hbll, iphc, syn, hs_msa, cpue)
+
+
+g <- ind %>%
+  group_by(fleet) |>
+  mutate(geo_mean = exp(mean(log(est)))) |>
+  mutate(upr = upr / geo_mean) |>
+  mutate(lwr = lwr / geo_mean) |>
+  mutate(est = est / geo_mean) |>
+  ggplot(aes(year, est)) +
+  facet_wrap(vars(fleet), scales = "fixed", ncol = 2) +
+  geom_point() +
+  geom_line(linewidth = 0.25, linetype = 1, alpha = 0.3) +
+  geom_linerange(aes(ymin = lwr, ymax = upr)) +
+  gfplot::theme_pbs() +
+  expand_limits(y = 0) +
+  coord_cartesian(expand = FALSE, xlim = c(1980, 2025), ylim = c(0, 3.7)) +
+  labs(x = "Year", y = "Index")
+g
+ggsave("figs/indices-all.png", width = 6, height = 6, dpi = 200)
 
