@@ -1,0 +1,225 @@
+
+# Population Dynamics Model
+
+The historical abundance of Outside Pacific spiny dogfish was re-constructed through Stock Synthesis 3 (SS3), version 3.30.21 [@methot2013]. 
+The two-sex, age structured population model was fit to fishery and survey catch, indices of abundance, and length composition from both fisheries and surveys.
+
+## Biological parameters
+
+Sex-specific biological parameters were estimated from biological samples and fixed in the population model.
+Estimates from biological samples are presented in Appendix \@ref(app:growth), and the values imported into the SS3 control file are presented in Table \@ref(tab:ss3-par).
+
+Age samples were collected from various surveys, tag returns, and some fisheries.
+Growth was described with a von Bertalanffy function, and several growth fits were explored.
+There was notably high variation around the mean length-age relationship. 
+Several factors likely contribute to this behavior, including ageing error and cessation of annular ring deposition in pregnant females.
+Further discussion is provided in Appendix \@ref(app:growth).
+
+Age samples in BC were not collected for the youngest dogfish, i.e., less than 5 years, resulting in a large negative value for the $a_0$ parameter, theoretical age at size zero.
+When fitted with age samples from both BC and the 2010 Northwest Fisheries Science Center (NWFSC) bottom trawl survey [@gertseva2021], the growth curve for Outside dogfish had a more appropriate $a_0$ estimate, such that the size of newborn age-0 dogfish was approximately 20--30 cm.
+This is the range of uterine pup sizes observed near the end of the gestational period [@ketchen1972].
+This was primary growth curve used in the modeling was estimated primarily from age samples collected in BC, termed "BC growth".
+
+Variability in length-at-age decreased as age increased.
+Based on the lognormal residual standard deviation by age and sex in the fitted von Bertalanffy model (BC growth curve), the population model was configured so that the coefficient of variation (CV) in length at age linearly decreases from 0.25 to 0.075 for ages 0 to 40, respectively, for females.
+For males, the CV at age was slightly larger, where the decrease was from 0.25 to 0.1 for ages 0 to 40, respectively. The CV remained constant for ages 40 and above.
+
+An alternative growth curve was also explored from age samples collected in Washington and estimated in the 2021 U.S. assessment, termed "US growth".
+Compared to the primary growth curve, the alternative describes a larger but slower growing animal (Figure \@ref(fig:len-age)).
+
+Weight at length was estimated from survey samples in outside waters.
+
+Maturity at age estimates were obtained from the literature and shown in Figure \@ref(fig:mat-age) [@mcfarlane1987; @taylor2013]. 
+Maturity at length was also estimated from biological samples in the synoptic survey (Appendix \@ref(app:growth)). 
+For the age-structured model, conversion of maturity at size to maturity at age values is dependent on the length-age function (Figure \@ref(fig:mat-age)). 
+The conversion used a length-age key, a probability matrix, where the probability of length given age follows a Gaussian distribution with the mean from the von Bertalanffy equation and standard deviation from the CV in length-at-age.
+
+Due to uncertainty in the growth curve, and to facilitate sensitivity analyses, maturity was explicitly parameterized with respect to age in the population model.
+Two ogives were considered.
+The maturity at age ogive from @taylor2009 with early maturity (samples in the 2000s) was used as the base scenario, where the ages of 50 and 95 percent female maturity were 31.5 and 55.8 years, respectively.
+This ogive most closely resembled the maturity at length ogive from the synoptic survey (Figure \@ref(fig:mat-age)).
+The second maturity at age ogive from @mcfarlane1987, which sampled dogfish in the Strait of Georgia, was used in an alternative scenario. The maturity schedule consists of slightly older females, where the ages of 50 and 95 percent female maturity were 35.5 and 45 years, respectively.
+Male maturity was not modeled it is assumed that female abundance is the limiting factor in the spawning output of the population.
+
+To accommodate the two year gestation period for dogfish pups, the maturity ogive input into the model was set to half of their original values, i.e., with a maximum of 0.5 for any age class.
+In this manner, half of the mature population on average is calculated to produce young in a given year.
+
+Fecundity estimates $f$ were obtained from @ketchen1972, where the number of pups is a linear function of length $\ell$, with $f_\ell = 0.20 \ell - 13.24$ (Figure \@ref(fig:fec-age)).
+On average, females produce 6--7 young per litter.
+No fecundity at age estimates are available, so the model internally converts values from the fecundity at length schedule through the length-age key.
+
+Natural mortality was indirectly estimated to be 0.074 year^-1^ from the maximum observed age of 73 years (female) in the age samples, using the meta-analytic estimator in @hamel2022, where $M = 5.4/a_\textrm{max}$.
+The oldest male was 70 years.
+Given similar longevity between sexes, natural mortality was sex-invariant in the model.
+
+## Model structure
+
+The base model estimated the unfished recruitment $R_0$, productivity parameter $z_\textrm{frac}$, and selectivity parameters for the various fisheries and surveys (Table \@ref(tab:ss3-par)).
+No recruitment deviates were estimated since no information about cohort strength was evident in the size composition.
+
+The start year of the model was 1937, when it was assumed that the stock was in an unfished state, and the terminal year was 2023. 
+The maximum age in the model is 70 years.
+
+Model equations are provided in Table \@ref(tab:ss3-eq).
+
+### Stock-recruit relationship
+
+An explicit survival-based stock-recruit relationship (SRR) was used in the model, where recruitment $R$ in year $y$ is
+
+$$
+R_y = S_y \times \exp\left(-z_0 + (z_0 - z_\textrm{min})\left(1 - \frac{S_y}{S_0}\right)^\beta\right)
+$$ 
+
+where $S_y$ is the spawning output in year $y$, $S_0 = R_0\times\phi_0$ is the unfished spawning output as the product of unfished recruitment $R_0$ and spawning output per recruit $\phi_0$, $z_\textrm{min} = z_0(1 - z_\textrm{frac})$, and $z_0 = -\log(1/\phi_0)$. 
+
+$1/\phi_0$ is the unfished replacement line and is intrepretable as the survival of pups to the recruit life stage when the stock is at unfished levels.
+The term in the exponent is the corresponding instantaneous mortality rate (exponentiation converts the instantaneous rate to a survival term between 0--1).
+Since the term describes the density-dependent mechanism in the population, the pup-recruit mortality rate decreases as the stock declines.
+$z_0$ is the instantaneous rate when the stock is at $S_0$.
+$z_\textrm{min}$ is the mortality rate as the stock approaches zero, and is parameterized as a $z_\textrm{frac}$ proportion of $z_0$, i.e., $z_\textrm{min} = z_0(1 - z_\textrm{frac})$.
+When $\beta = 1$, the decline in the density-dependent mortality rate is linear with stock size.
+As $z_\textrm{frac}$ approaches zero, the mortality rate is independent of stock size, i.e., there is no density-dependence.
+
+Due to the longevity and low fecundity of dogfish, and many elasmobranch species in general, there are upper bounds to the maximum per-capita rate of recruitment in a closed population.
+The spawning output is measured in the number of pups, and the recruitment after density-dependent survival cannot exceed the pup production  [@forrest2009; @taylor2013; @deoliveira2013].
+As a result, there is an implied upper bound to steepness, the recruitment relative to $R_0$ when the stock is at $0.2 S_0$.
+Steepness cannot exceed $1/(5\phi_0)$ [@taylor2013].
+
+This upper bound can be illustrated with a simple example. 
+If the unfished population is 100 females that each produce 10 pups, then $S_0 = 1000$. If the pup survival is 0.6 ($1/\phi_0 = 0.6$), then the recruitment $R_0 = 600$. 
+At 20 percent of unfished, the population of 20 females produces 200 pups, which is also the maximum recruitment if pup survival were to be one.
+The maximum steepness is 0.33 (200/600).
+
+The unfished spawning output per recruit $\phi_0$ is calculated from natural mortality, maturity, and fecundity. Low fecundity implies an upper limit to natural mortality because $\phi_0$ must remain above one.
+With high natural mortality, it is possible to calculate $\phi_0 < 1$, which implies that a female cannot produce enough offspring over the course of her lifetime to replace herself.
+
+### Selectivity
+
+Selectivity at length was modeled using a double Gaussian formulation. 
+
+If female selectivity is dome shaped, then selectivity was parameterized with three parameters that control the size of full selectivity ($\mu^\textrm{Female}$), the width of the ascending limb ($\Delta^\textrm{Female, asc}$), and the width of the descending limb ($\Delta^\textrm{Female, dsc}$).
+If female selectivity is flat-topped, then the descending limb parameter was fixed to $\Delta^\textrm{Female, dsc} = 15$ which set selectivity to be effectively 1 at lengths greater than $\mu^\textrm{Female}$.
+
+Female selectivity at length $v_\ell$ was
+
+$$
+v_\ell^\textrm{Female} = 
+\begin{cases}
+\exp\left(\dfrac{-(\ell - \mu^\textrm{Female})^2}{\exp(\Delta^\textrm{Female, asc})}\right) \quad & \ell \le \mu^\textrm{Female}\\
+\exp\left(\dfrac{-(\ell - \mu^\textrm{Female})^2}{\exp(\Delta^\textrm{Female, dsc})}\right) \quad & \textrm{otherwise}
+\end{cases}
+$$
+
+Four additional selectivity parameters were estimated for males, with three parameters controlling the shape of the selectivity curve, as an offset from the corresponding female parameter, and a fourth parameter ($A^\textrm{Male}$) that specifies the relative apical selectivity (between 0-1).
+
+Male selectivity at length was
+
+$$
+v_\ell^\textrm{Male} = 
+A^\textrm{Male} \times
+\begin{cases}
+\exp\left(\dfrac{-(\ell - [\mu^\textrm{Female}+\mu^\textrm{Male}])^2}{\exp(\Delta^\textrm{Female, asc} + \Delta^\textrm{Male, asc})}\right) \quad & \ell \le \mu^\textrm{Female} + \mu^\textrm{Male}\\
+\exp\left(\dfrac{-(\ell - \mu^\textrm{Female})^2}{\exp(\Delta^\textrm{Female, dsc} + \Delta^\textrm{Male, dsc})}\right) \quad & \textrm{otherwise}
+\end{cases}
+$$
+
+The corresponding selectivity at age are obtained through the length-age key (Table \@ref(tab:ss3-eq)).
+
+## Model fitting
+
+The estimated parameters for the stock-recruit relationship are $R_0$ and $z_\textrm{frac}$.
+A uniform prior was used for $R_0$ and a beta prior was used for $z_\textrm{frac}$.
+
+For fisheries and/or surveys with length composition, either six parameters were estimated if the female selectivity was assumed to be flat-topped or seven parameters if dome-shaped.
+For fisheries and surveys without length data, selectivity was mirrored, i.e., borrowed from other fisheries and surveys in the model.
+
+The fleet structure of the fisheries in the model was broadly organized in terms of fishing gear and retention behavior (landings and discards).
+
+Data
+Likelihoods
+Reweighting length comps.
+
+The base model was fitted with the following structure:
+
+### Sensitivity analyses
+
+## MCMC
+
+After minimizing the objective function (the negative log posterior), the posterior was sampled using MCMC.
+
+We proceeded with the MCMC for a subset of the sensitivity models.
+
+## Tables
+
+```{r ss3-par, results="asis"}
+ss3_par <- readxl::read_excel(here::here("tables/ss3_par_annotate_dogfish.xlsx")) %>%
+  mutate(Parameter = .data$Parameter %>% strsplit("_") %>% 
+           sapply(paste0, collapse = "\\_"),
+         Value = round(.data$Value, 3),
+         `Standard Error` = .data$`Standard Error` %>% as.numeric() %>% round(3))
+
+csasdown::csas_table(
+  ss3_par,
+  font_size = 8,
+  format = "latex",
+  caption = "Parameters reported from SS3 for model A1.",
+  align = c("l", "l", "r", "r", "l")
+) %>%
+  kableExtra::column_spec(4, width = "1.5cm") %>%
+  kableExtra::column_spec(5, width = "5cm")
+```
+
+\begin{landscapepage}
+
+```{r ss3-eq, results="asis"}
+ss3_eq <- readxl::read_excel(here::here("tables/equations.xlsx"), sheet = "SS3_model") %>%
+  mutate(Equation = paste0("$", .data$Equation, "$"),
+         Number = 1:n())
+
+csasdown::csas_table(
+  ss3_eq,
+  caption = "Summary of SS3 model equations for Outside Spiny dogfish. Variables $a=0,1,...,A$ ($A=70$) indexes age, $y=1937,1938,...,2023$ indexes year, $f$ indexes fishery, $i$ indexes survey, $s = 1,2$ indexes sex (1 = females, 2 = males), $j$ indexes size bin, $\\ell_j$ is the corresponding length, $L_a$ is the mean length at age $a$, $\\sigma_a$ is the variability in length at age, $g()$ is the normal cumulative probability density function, $f_\\ell$ is female fecundity at length, $m_a$ is female maturity at age, $w_{a,s}$ is weight at age, and $R_0$ is unfished recruitment.",
+  format = "latex",
+  align = c("l", "l")
+)
+```
+
+```{r ss3-likelihoods, results="asis"}
+ss3_like <- readxl::read_excel(here::here("tables/equations.xlsx"), sheet = "SS3_likelihood") %>%
+  mutate(Equation = paste0("$", .data$Equation, "$"),
+         Number = 1:n())
+
+csasdown::csas_table(
+  ss3_like,
+  caption = "Summary of SS3 likelihood and prior equations. Variables $a$ indexes age, $y$ indexes year, $f$ indexes fishery, $i$ indexes survey, and $s$ indexes sex. The circumflex symbol denotes an estimate.",
+  format = "latex",
+  align = c("l", "l")
+) %>%
+  kableExtra::column_spec(1, width = "5cm") %>%
+  kableExtra::column_spec(2, width = "4cm")
+```
+
+\end{landscapepage}
+
+## Figures
+
+(ref:fig-len-age) Comparison of two growth curves, estimated from either samples in BC + US ("BC growth") or solely from US samples ("US growth"). The US growth curve has a larger asymptotic length with slower growth to the asymptote. For the BC growth curve, the asymptotic length $L_\infty = 97.7, 84.4$ cm and the growth coefficient $k = 0.058, 0.089$ for females and males, respectively. For the US growth curve, the asymptotic length $L_\infty = 119.0, 98.0$ cm and the growth coefficient $k = 0.028, 0.040$ for females and males, respectively [@gertseva2021].
+
+```{r len-age, fig.cap="(ref:fig-len-age)"}
+knitr::include_graphics(here::here("figs/ss3/growth-compare.png"))
+```
+
+(ref:fig-mat-age) Estimates of female maturity at age, either from the literature and converted from maturity at length from biological samples in the Synoptic survey and then converted to maturity at age in SS3 using the specified growth curve. @taylor2009 estimated two maturity ogives based on biological samples collected in Puget Sound in either the 1940s or 2000s, and the minimum age of a mature female was 18 years. For the synoptic survey, maturity at age was converted from maturity at length in conjunction with two growth curves (Figure \@ref(fig:len-age)). 
+
+```{r mat-age, fig.cap="(ref:fig-mat-age)"}
+knitr::include_graphics(here::here("figs/mat-lit-with-synoptic.png"))
+```
+
+(ref:fig-fec-age) Fecundity at length relationship from @ketchen1972 (left) and the corresponding fecundity at age is converted in conjunction with two growth curves (right, Figure \@ref(fig:len-age)). The minimum age of a mature female in the population model was set to 18 years.
+
+```{r fec-age, fig.cap="(ref:fig-fec-age)"}
+knitr::include_graphics(here::here("figs/ss3/fecundity.png"))
+```
+
+\clearpage
+
