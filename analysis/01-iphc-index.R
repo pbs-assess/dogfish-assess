@@ -536,8 +536,8 @@ gg <- grid %>% filter(year == 1998) %>%
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   geom_point(shape = 21) +
-  scale_fill_viridis_c(trans = "sqrt") +
-  scale_colour_viridis_c(trans = "sqrt") +
+  scale_fill_viridis_c(trans = "sqrt", option = "G", direction = -1) +
+  scale_colour_viridis_c(trans = "sqrt", option = "G", direction = -1) +
   labs(x = "Longitude", y = "Latitude", colour = "Depth (m)", fill = "Depth (m)")
 ggsave("figs/iphc/prediction_grid_depth.png", gg, height = 4, width = 4, dpi = 200)
 

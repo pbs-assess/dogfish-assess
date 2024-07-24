@@ -176,21 +176,52 @@ saveRDS(d, file = "data/generated/catch.rds")
 
 ## Outside only ----
 g <- d %>%
+  filter(year <= 2023) |>
   filter(area != "4B") %>%
   reshape2::melt(id.vars = c("year", "gear", "species_common_name", "area")) %>%
   mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
          value = value/1e6) %>%
+  mutate(variable = factor(variable, levels = c("Landings (kt)", "Discards (kt)"))) |>
   ggplot(aes(year, value, fill = gear)) +
   geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
-  #coord_cartesian(expand = FALSE) +
-  facet_grid(vars(variable), vars(area), scales = "free_y", switch = "y") +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = expansion(mult = c(0, .02))) +
+  facet_grid(vars(variable), vars(area), scales = "fixed", switch = "y") +
   theme_pbs() +
   scale_fill_manual(values = cols) +
-  expand_limits(y = 0) +
+  # expand_limits(y = 0) +
   labs(y = NULL, x = "Year", fill = "Gear") +
   theme(legend.position = "bottom",
-        strip.placement = "outside")
-ggsave("figs/reconstructed-catch-discards-outside.png", g, width = 6, height = 6)
+        strip.placement = "outside") +
+  guides(fill=guide_legend(nrow=2,byrow=TRUE))
+g
+ggsave("figs/reconstructed-catch-discards-outside.png", g, width = 5, height = 5)
+
+g <- d %>%
+  filter(year <= 2023) |>
+  filter(year >= 1980) |>
+  filter(area != "4B") %>%
+  reshape2::melt(id.vars = c("year", "gear", "species_common_name", "area")) %>%
+  mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
+    value = value/1e6) %>%
+  mutate(variable = factor(variable, levels = c("Landings (kt)", "Discards (kt)"))) |>
+  mutate(area = paste0(area, " (zoomed in to 1980-2023)")) |>
+  ggplot(aes(year, value, fill = gear)) +
+  geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = expansion(mult = c(0, .02))) +
+  facet_grid(vars(variable), vars(area), scales = "fixed", switch = "y") +
+  theme_pbs() +
+  scale_fill_manual(values = cols) +
+  coord_cartesian(xlim = c(1980, 2023)) +
+  # expand_limits(y = 0) +
+  labs(y = NULL, x = "Year", fill = "Gear") +
+  theme(legend.position = "bottom",
+    strip.placement = "outside") +
+  guides(fill=guide_legend(nrow=2,byrow=TRUE))
+g
+ggsave("figs/reconstructed-catch-discards-outside-zoom.png", g, width = 5, height = 5)
+
 
 g <- d %>%
   filter(area != "4B") %>%

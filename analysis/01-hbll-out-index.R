@@ -4,8 +4,6 @@ library(sdmTMB)
 library(rnaturalearth)
 theme_set(gfplot::theme_pbs())
 
-# setwd("C:/Users/tcarruth/Documents/GitHub/dogfish-assess")
-
 # built in data/raw/pull-raw-data.R
 s <- readRDS("data/raw/survey-sets.rds")
 d <- dplyr::filter(s, grepl("HBLL OUT", survey_abbrev))
@@ -106,19 +104,26 @@ gg <- ggplot(d, aes(longitude, latitude, fill = Pit, colour = Pit)) +
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   labs(x = "Longitude", y = "Latitude", fill = "Proportion baited hooks", colour = "Proportion baited hooks")
-ggsave("figs/hbll_out/baited_hooks.png", gg, height = 6, width = 5, dpi = 600)
+ggsave("figs/hbll_out/baited_hooks.png", gg, height = 9, width = 7, dpi = 150)
 
-gg <- ggplot(d, aes(longitude, latitude, fill = catch_count/exp(offset), colour = catch_count/exp(offset))) +
+source("analysis/plot_multiyear_survey_sets.R")
+plot_multiyear_survey_sets(d, "HBLL OUT N")
+
+gg <- ggplot(d, aes(longitude, latitude, fill = catch_count/exp(offset), colour = catch_count/exp(offset), size = catch_count/exp(offset))) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
-  geom_point(pch = 21, alpha = 0.3) +
+  geom_point(pch = 21, alpha = 0.9, fill = NA) +
   facet_wrap(vars(year)) +
   theme(panel.spacing = unit(0, "in"),
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  scale_colour_viridis_c(trans = "log", breaks = c(0.007, 0.05, 0.368, 2.72)) +
-  scale_fill_viridis_c(trans = "log", breaks = c(0.007, 0.05, 0.368, 2.72)) +
-  labs(x = "Longitude", y = "Latitude", fill = "CPUE", colour = "CPUE")
-ggsave("figs/hbll_out/cpue.png", gg, height = 6, width = 5, dpi = 600)
+  scale_colour_viridis_c(trans = "sqrt") +
+  # scale_fill_viridis_c(trans = "sqrt") +
+  scale_size_area() +
+  # scale_colour_viridis_c(trans = "log", breaks = c(0.007, 0.05, 0.368, 2.72)) +
+  # scale_fill_viridis_c(trans = "log", breaks = c(0.007, 0.05, 0.368, 2.72)) +
+  labs(x = "Longitude", y = "Latitude", fill = "CPUE", colour = "CPUE") +
+  labs(colour = "CPUE", size = "CPUE")
+ggsave("figs/hbll_out/cpue.png", gg, height = 9, width = 7.5, dpi = 200)
 
 gg <- d %>%
   mutate(cpue = catch_count/exp(offset)) %>%
@@ -175,9 +180,7 @@ g <- index_design %>%
   expand_limits(y = 0) +
   labs(x = "Year", y = "Index of abundance", linetype = "Survey", shape = "Survey") +
   scale_shape_manual(values = c(16, 1))
-ggsave("figs/hbll_out/hbll_index_design.png", g, height = 3, width = 4)
-
-
+ggsave("figs/hbll_out/hbll_index_design.png", g, height = 4, width = 5)
 
 
 ## Fit sdm model ----
@@ -213,7 +216,7 @@ fit_nb2 <- sdmTMB(
   time = "year",
   spatiotemporal = "rw",
   spatial = "on",
-  silent = TRUE,
+  silent = F,
   anisotropy = TRUE,
   extra_time = 2013L
 )
@@ -243,8 +246,16 @@ AIC(fit_nb2)
 plot_anisotropy(fit_nb2)
 plot_anisotropy(fit_nb2_julian)
 plot_anisotropy(fit_nb2_nohk)
+ggsave("figs/hbll_out/aniso.png", width = 4, height = 4)
+
 fit_nb2
 fit_nb2$sd_report
+
+set.seed(12345)
+r <- residuals(fit_nb2_nohk)
+png("figs/hbll_out/qq.png", width = 5, height = 5, units = "in", res = 200)
+qqnorm(r, main = "");abline(0, 1)
+dev.off()
 
 # Censored Poisson -----
 # Note on where pstar comes from:
@@ -262,6 +273,7 @@ fit_nb2$sd_report
 #   pstar <- pluck(pstar_list, 'pstar_df', 'pstar')
 # }
 
+if (FALSE) {
 for (pstar in c(0.8, 0.95, 1)) {
   #pstar <- 0.8
   #pstar <- 0.95
@@ -314,6 +326,7 @@ fit_cpois_1$sd_report
 
 AIC(fit_nb2, fit_nb2_julian, fit_nb2_nohk, fit_cpois) |>
   arrange(AIC)
+}
 
 # ----
 
@@ -361,10 +374,10 @@ ind_nohk <- left_join(ind_nohk, survs, by = join_by(year))
 # survs <- select(d, year, survey_abbrev) |> distinct()
 # ind_julian <- left_join(ind_julian, survs, by = join_by(year))
 
-p_cpois_1 <- predict(fit_cpois_1, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
-ind_cpois_1 <- get_index(p_cpois_1, bias_correct = TRUE)
-survs <- select(d, year, survey_abbrev) |> distinct()
-ind_cpois_1 <- left_join(ind_cpois_1, survs, by = join_by(year))
+# p_cpois_1 <- predict(fit_cpois_1, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
+# ind_cpois_1 <- get_index(p_cpois_1, bias_correct = TRUE)
+# survs <- select(d, year, survey_abbrev) |> distinct()
+# ind_cpois_1 <- left_join(ind_cpois_1, survs, by = join_by(year))
 
 # p_cpois_95 <- predict(fit_cpois_95, newdata = grid, return_tmb_object = TRUE, re_form_iid = NA)
 # ind_cpois_95 <- get_index(p_cpois_95, bias_correct = TRUE)
@@ -380,10 +393,10 @@ beepr::beep()
 
 indexes <- bind_rows(list(
   mutate(ind, type = "NB2 ICR hook competition"),
-  mutate(ind_nohk, type = "NB2 no hook competition"),
+  mutate(ind_nohk, type = "NB2 no hook competition")
   #mutate(ind_julian, type = "NB2 hook competition + day of year"),
-  mutate(ind_cpois_1, type = "Overdispersed Poisson\nno hook competition"))
-)
+  # mutate(ind_cpois_1, type = "Overdispersed Poisson\nno hook competition"))
+))
 gg <- group_by(indexes, type) |>
   mutate(lwr = lwr/est[1], upr = upr/est[1], est = est / est[1]) |>
   ggplot(aes(year, est, colour = type, fill = type)) +
@@ -423,10 +436,10 @@ gg <- ggplot(g, aes(longitude, latitude, fill = depth_m, colour = depth_m)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   geom_tile(width = 0.025, height = 0.025) +
-  scale_fill_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750)) +
-  scale_colour_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750)) +
+  scale_fill_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750), option = "G") +
+  scale_colour_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750), option = "G") +
   labs(x = "Longitude", y = "Latitude", colour = "Depth (m)", fill = "Depth (m)")
-ggsave("figs/hbll_out/prediction_grid_depth.png", gg, height = 4, width = 4, dpi = 600)
+ggsave("figs/hbll_out/prediction_grid_depth.png", gg, height = 4, width = 4, dpi = 200)
 
 # Omega ----
 rb_fill <- scale_fill_gradient2(high = "red", low = "blue", mid = "grey90")
@@ -438,7 +451,7 @@ gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = omega_s, colour = 
   geom_tile(width = 0.025, height = 0.025) +
   rb_fill + rb_col +
   labs(x = "Longitude", y = "Latitude", colour = "Spatial effect", fill = "Spatial effect")
-ggsave("figs/hbll_out/prediction_grid_omega.png", gg, height = 4, width = 4, dpi = 600)
+ggsave("figs/hbll_out/prediction_grid_omega.png", gg, height = 4, width = 4, dpi = 200)
 
 # Epsilon ----
 gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = epsilon_st, colour = epsilon_st)) +
@@ -451,7 +464,7 @@ gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = epsilon_st, colour
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   labs(x = "Longitude", y = "Latitude", colour = "Spatiotemporal\neffect", fill = "Spatiotemporal\neffect")
-ggsave("figs/hbll_out/prediction_grid_eps.png", gg, height = 6, width = 5, dpi = 600)
+ggsave("figs/hbll_out/prediction_grid_eps.png", gg, height = 9, width = 7, dpi = 200)
 
 # log-density ----
 gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = est, colour = est)) +
@@ -465,7 +478,7 @@ gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = est, colour = est)
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   labs(x = "Longitude", y = "Latitude", colour = "log density", fill = "log density")
-ggsave("figs/hbll_out/prediction_grid_density.png", gg, height = 6, width = 5, dpi = 600)
+ggsave("figs/hbll_out/prediction_grid_density.png", gg, height = 9, width = 7, dpi = 200)
 
 # Index ----
 gg <- ggplot(ind_nohk, aes(year, est)) +
@@ -486,7 +499,7 @@ gg <- plot(marginal_depth, gg = TRUE,
            points.par = list(alpha = 0.2)) +
   coord_cartesian(xlim = c(0, 300), expand = FALSE) +
   labs(x = "Depth (m)", y = "log(CPUE)")
-ggsave("figs/hbll_out/depth_marginal.png", gg, height = 3, width = 4)
+ggsave("figs/hbll_out/depth_marginal.png", gg, height = 4, width = 5)
 
 
 # Predict on grid south of 51 degrees latitude (WCVI)

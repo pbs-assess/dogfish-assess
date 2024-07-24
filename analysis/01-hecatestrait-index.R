@@ -1,3 +1,4 @@
+dir.create("figs/msa/", showWarnings = FALSE)
 # calculate a Hecate Strait multi species
 
 # Hecate Strait multi species trawl extends back to 1984
@@ -177,6 +178,15 @@ grid_hs_yrs$julian_small <- grid_hs_yrs$julian / 100
 grid_hs_yrs$offset_sm <- 0
 grid_hs_yrs$logbot_depthc <- grid_hs_yrs$logbot_depth - meanlogbotdepth
 
+
+ggplot(grid_hs, aes(UTM.lon, UTM.lat, fill = exp(logbot_depth), colour = exp(logbot_depth))) +
+  geom_tile(width = 2.1, height = 2.1) +
+  scale_fill_viridis_c(option = "G", direction = -1) +
+  scale_colour_viridis_c(option = "G", direction = -1) +
+  labs(colour = "Depth (m)", fill = "Depth (m)") +
+  coord_fixed()
+ggsave("figs/msa/depth-grid.png", width = 4, height = 5)
+
 d_sf2 |>
   group_by(year) |>
   summarize(catch = sum(catch_weight), effort = sum(area_swept)) |>
@@ -204,11 +214,19 @@ m <- sdmTMB(
   family = delta_lognormal()
 )
 
+set.seed(1234)
+s <- simulate(m, nsim = 500, type = "mle-mvn")
+dh <- dharma_residuals(s, m, test_uniformity = T)
+ggplot(dh, aes(expected, observed)) + geom_abline(intercept = 0, slope = 1, colour = "red") + geom_point(size = 2) + xlab("Expected") + ylab("Observed")
+ggsave("figs/msa/qq.png", width = 5, height = 5, dpi = 180)
+
 reduced_grid <- filter(grid_hs_yrs, year %in% d_sf2$year)
 
 print(m)
 sanity(m)
 plot_anisotropy(m)
+ggsave("figs/msa/aniso.png", width = 4, height = 4)
+
 saveRDS(m, "data/generated/m_HSMSdl.rds")
 m <- readRDS("data/generated/m_HSMSdl.rds")
 m$sd_report
@@ -229,9 +247,9 @@ ind_dl_filtered |>
   ylab("Relative biomass index") + xlab("Year") +
   coord_cartesian(expand = FALSE, ylim = c(0, max(ind_dl$upr) * 1.02),
     xlim = c(range(ind_dl$year) + c(-0.5, 0.5))) +
-  scale_x_continuous(breaks = seq(1984, 2002, 2)) +
-  ggtitle("RW fields")
-
+  scale_x_continuous(breaks = seq(1984, 2002, 2))
+  # ggtitle("RW fields")
+ggsave("figs/msa/index.png", width = 5, height = 4)
 saveRDS(ind_dl_filtered, "data/generated/hs-msa-index.rds")
 
 d_sf2$julian_scaled <- (d_sf2$julian - mean(d_sf2$julian))/sd(d_sf2$julian)
@@ -283,7 +301,7 @@ ind_iid |>
     xlim = c(range(ind_iid$year) + c(-0.5, 0.5))) +
   scale_x_continuous(breaks = seq(1984, 2002, 2)) +
   ggtitle("IID")
-
+ggsave("figs/msa/index-iid.png", width = 5, height = 4)
 d_sf2 |>
   ggplot() +
   geom_point(aes(year, julian, colour = log(catch_weight/exp(d_sf2$offset_sm))), size = 2,
@@ -292,16 +310,74 @@ d_sf2 |>
 
 plot(d_sf2$julian_small, d_sf2$catch_weight)
 
-ggplot(d_sf2, aes(UTM.lon, UTM.lat, size = catch_weight/exp(d_sf2$offset_sm),
-  colour = log(catch_weight/exp(d_sf2$offset_sm)))) +
+ggplot(d_sf2, aes(UTM.lon, UTM.lat, size = catch_weight/exp(offset_sm),
+  colour = log(catch_weight/exp(offset_sm)))) +
   geom_point(pch = 21) +
   facet_wrap(~year) +
   scale_size_area(max_size = 10) +
-  scale_colour_viridis_c(option = "A", direction = 1) +
-  coord_fixed()
+  scale_colour_viridis_c(option = "D", direction = 1) +
+  coord_fixed() +
+  labs(colour = "CPUE", size = "CPUE")
+ggsave("figs/msa/cpue-map.png", width = 7, height = 9)
 
 xx <- group_by(d_sf2, year) |> summarise(mj = mean(julian))
 left_join(ind_iid, xx) |> ggplot(aes(mj, est)) + geom_point() + xlab("Julian day") +
   ylab("Index value")
 
 saveRDS(ind_iid, "data/generated/hs-msa-index-iid.rds")
+#
+# ## Plot figures in prediction grid ----
+# # Depth ----
+# gg <- ggplot(reduced_grid, aes(UTM.lon, UTM.lat, fill = exp(logbot_depth), colour = exp(logbot_depth))) +
+#   geom_sf(data = coast, inherit.aes = FALSE) +
+#   coord_sf(expand = FALSE) +
+#   geom_tile(width = 0.025, height = 0.025) +
+#   scale_fill_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750)) +
+#   scale_colour_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750)) +
+#   labs(x = "Longitude", y = "Latitude", colour = "Depth (m)", fill = "Depth (m)")
+# ggsave("figs/hbll_out/prediction_grid_depth.png", gg, height = 4, width = 4, dpi = 200)
+#
+# # Omega ----
+# rb_fill <- scale_fill_gradient2(high = "red", low = "blue", mid = "grey90")
+# rb_col <- scale_colour_gradient2(high = "red", low = "blue", mid = "grey90")
+#
+# gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = omega_s, colour = omega_s)) +
+#   geom_sf(data = coast, inherit.aes = FALSE) +
+#   coord_sf(expand = FALSE) +
+#   geom_tile(width = 0.025, height = 0.025) +
+#   rb_fill + rb_col +
+#   labs(x = "Longitude", y = "Latitude", colour = "Spatial effect", fill = "Spatial effect")
+# ggsave("figs/hbll_out/prediction_grid_omega.png", gg, height = 4, width = 4, dpi = 200)
+#
+# # Epsilon ----
+# gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = epsilon_st, colour = epsilon_st)) +
+#   geom_sf(data = coast, inherit.aes = FALSE) +
+#   coord_sf(expand = FALSE) +
+#   facet_wrap(vars(year)) +
+#   geom_tile(width = 0.025, height = 0.025) +
+#   rb_fill + rb_col +
+#   theme(panel.spacing = unit(0, "in"),
+#     legend.position = 'bottom',
+#     axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+#   labs(x = "Longitude", y = "Latitude", colour = "Spatiotemporal\neffect", fill = "Spatiotemporal\neffect")
+# ggsave("figs/hbll_out/prediction_grid_eps.png", gg, height = 9, width = 7, dpi = 200)
+#
+# log-density ----
+
+pp <- predict(m, newdata = grid_hs_yrs)
+
+pp <- dplyr::filter(pp, year %in% unique(d_sf2$year))
+
+gg <- ggplot(pp, aes(UTM.lon, UTM.lat, fill = plogis(est1) * exp(est2), colour = plogis(est1) * exp(est2))) +
+  # geom_sf(data = coast, inherit.aes = FALSE) +
+  # coord_sf(expand = FALSE) +
+  facet_wrap(vars(year)) +
+  geom_tile(width = 2, height = 2) +
+  scale_colour_viridis_c(option = "C", trans = "sqrt") +
+  scale_fill_viridis_c(option = "C", trans = "sqrt") +
+  theme(panel.spacing = unit(0, "in"),
+    legend.position = 'bottom',
+    axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+  labs(x = "UTM", y = "UTM", colour = "Density", fill = "Density")
+ggsave("figs/msa/prediction_grid_density.png", gg, height = 9, width = 7, dpi = 200)
+
