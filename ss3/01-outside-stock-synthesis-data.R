@@ -28,19 +28,24 @@ ss3_catch <- function(csv = TRUE) {
               discard = 1e-3 * sum(discarded_kg)) %>%
     ungroup()
 
+  bottom_trawl_gear <- c("Trawl + hook and line", "Trawl", "Bottom trawl", "Unknown/trawl")
   f1 <- catch %>%
-    filter(grepl("trawl", gear) | grepl("Trawl", gear)) %>%
+    filter(gear %in% bottom_trawl_gear) %>%
     summarise(value = sum(landing), .by = year) %>%
     mutate(fleet = 1)
 
   f2 <- catch %>%
-    filter(grepl("trawl", gear) | grepl("Trawl", gear)) %>%
+    filter(gear %in% bottom_trawl_gear) %>%
     summarise(value = sum(discard), .by = year) %>%
     mutate(fleet = 2)
 
+  # Due to initial fleet set-up, discards + landings were combined for midwater trawl
+  # Incorporate alternative discard mortality values into the total catch series
+  # For all other fleets, incorporate the discard mortality in the SS3 control file
+  disc_mort <- 0.3
   f3 <- catch %>%
     filter(gear == "Midwater trawl") %>%
-    summarise(value = sum(landing + discard), .by = year) %>%
+    summarise(value = sum(landing + disc_mort * discard), .by = year) %>%
     mutate(fleet = 3)
 
   f4 <- catch %>%
@@ -94,16 +99,19 @@ ss3_catch <- function(csv = TRUE) {
     select(year, season, fleet, value, se) %>%
     arrange(fleet, year)
 
-  #g <- out %>%
-  #  mutate(fleet2 = paste(fleet, "-", names(fleet_index)[fleet])) %>%
-  #  ggplot(aes(year, value, fill = fleet2)) +
-  #  facet_wrap(vars(fleet2)) +
-  #  geom_col(width = 1) +
-  #  gfplot::theme_pbs() +
-  #  guides(fill = "none") +
-  #  labs(x = "Year", y = "Catch (t)")
-  #ggsave("figs/ss3/catch_fleet.png", g, height = 3, width = 6)
+  # Same y-axis for all fleets
+  g <- out %>%
+    mutate(fleet2 = paste(fleet, "-", names(fleet_index)[fleet]) %>% factor(fleet_factor)) %>%
+    ggplot(aes(year, value, fill = fleet2)) +
+    facet_wrap(vars(fleet2)) +
+    geom_col(width = 1) +
+    gfplot::theme_pbs() +
+    guides(fill = "none") +
+    coord_cartesian(expand = FALSE) +
+    labs(x = "Year", y = "Catch (t)")
+  ggsave("figs/ss3/catch_fleet.png", g, height = 4, width = 8)
 
+  # Unique y-axis
   g <- out %>%
     mutate(fleet2 = paste(fleet, "-", names(fleet_index)[fleet]) %>% factor(fleet_factor)) %>%
     ggplot(aes(year, value, fill = fleet2)) +
@@ -112,7 +120,7 @@ ss3_catch <- function(csv = TRUE) {
     gfplot::theme_pbs() +
     guides(fill = "none") +
     coord_cartesian(expand = FALSE) +
-    labs(x = "Year", y = "Catch")
+    labs(x = "Year", y = "Catch (t)")
   ggsave("figs/ss3/catch_fleet2.png", g, height = 4, width = 8)
 
   if (csv) write.csv(out, file = "data/ss3/ss3-catch.csv", row.names = FALSE)
