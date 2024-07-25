@@ -171,15 +171,15 @@
 #  Age Error from parameters
 #  catch multiplier
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_1_Bottom_Trawl_Landings
- 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_2_Bottom_Trawl_Discards
+ 0 2 3.333 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_2_Bottom_Trawl_Discards
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_3_MidwaterTrawl
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_4_HookLine_Landings
- 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_5_HookLine_Discards
+ 0 2 3.333 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_5_HookLine_Discards
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_6_IPHC
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_7_HBLL
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_8_SYN
- 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_9_iRec
- 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_10_Salmon_Bycatch
+ 0 2 3.333 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_9_iRec
+ 0 2 3.333 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_10_Salmon_Bycatch
 #  fraction female, by GP
  0 1 0.5 0 0 0 -50 0 0 0 0 0 0 0 # FracFemale_GP_1
 #
@@ -195,7 +195,7 @@
 1  # 0/1 to use steepness in initial equ recruitment calculation
 0  #  future feature:  0/1 to make realized sigmaR a function of SR curvature
 #_          LO            HI          INIT         PRIOR         PR_SD       PR_type      PHASE    env-var    use_dev   dev_mnyr   dev_mxyr     dev_PH      Block    Blk_Fxn #  parm_name
-             5            12       9.34396             0             0             0          1          0          0          0          0          0          0          0 # SR_LN(R0)
+             5            15       9.34396             0             0             0          1          0          0          0          0          0          0          0 # SR_LN(R0)
              0             1           0.4           0.5      0.287717             2          1          0          0          0          0          0          0          0 # SR_surv_zfrac
            0.2             5             1             0             0             0        -50          0          0          0          0          0          0          0 # SR_surv_Beta
            0.2             1           0.4             0             0             0        -50          0          0          0          0          0          0          0 # SR_sigmaR
