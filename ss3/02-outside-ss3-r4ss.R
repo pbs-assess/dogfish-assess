@@ -1,7 +1,6 @@
 
-model_dir <- "m37_IPHC_g4"
+
 ss_home <- here::here("ss3")
-ss_home <- "C:/users/quang/Documents/dogfish"
 
 #### Fit ss3 model version 3.30.22.1 with custom compilation that fixes lognormal prior density function
 fit_ss3 <- function(model_dir = "model1",
@@ -31,21 +30,24 @@ fit_ss3 <- function(model_dir = "model1",
   system(cmd)
 }
 
-# fit_ss3(model_dir, hessian = FALSE, ss_home = ss_home, max_phase = 10L)
-
-
-mods <- c(#"A1",
-          "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_exHS", "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM",
+mods <- c("A1",
+          "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_highdiscard",
+          "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM",
           "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
+
+# Fit a single model
+fit_ss3(mods[1], hessian = TRUE, ss_home = ss_home)
+
+# Fit all of many models in parallel
+
 snowfall::sfInit(parallel = TRUE, cpus = 6)
 snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 snowfall::sfStop()
 
 # Load r4ss list
-model_dir <- "A1"
 covar <- TRUE
 replist <- r4ss::SS_output(
-  file.path(ss_home, model_dir),
+  file.path(ss_home, mods[1]),
   verbose = FALSE,
   printstats = FALSE,
   covar = covar,
@@ -55,7 +57,7 @@ replist$Length_Comp_Fit_Summary
 
 
 # Save report list
-#saveRDS(replist, file = file.path(ss_home, paste0("r4ss_", model_dir, ".rds")))
+#saveRDS(replist, file = file.path(ss_home, paste0("r4ss_", mods[1], ".rds")))
 
 # Generate HTML report
 if (covar) {

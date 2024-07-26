@@ -1,6 +1,13 @@
 
+# Many functions were carried over from Outside Quillback analysis (single sex, 2-area model) (QH)
+# Functions not used for Outside Spiny Dogfish probably won't work (2 sex, single area, etc.)
 
-
+fleet_names <- data.frame(
+  Fleet_name = c("Bottom_Trawl_Landings", "Bottom_Trawl_Discards", "MidwaterTrawl", "HookLine_Landings",
+                 "Bottom_Trawl_CPUE", "HBLL", "HS_MSA", "IPHC", "SYN"),
+  FName = c("Bottom Trawl\nLandings", "Bottom Trawl\nDiscards", "Midwater Trawl", "Hook-Line\nLandings",
+            "Bottom Trawl CPUE", "HBLL Outside", "HS MSA", "IPHC", "Synoptic")
+)
 
 area_to_PFMA <- function(Area) ifelse(Area == 1, "North - 5BCDE", "South - 5A3CD")
 
@@ -139,21 +146,23 @@ SS3_B <- function(x, scenario, type = c("SSB", "SSBMSY", "SSB0", "B"), posterior
                                   "SSB" = "Spawning Biomass",
                                   "SSBMSY" = expression(B/B[MSY]),
                                   "SSB0" = expression(B/B[0]),
-                                  "B" = "Biomass (Age 1+)")) +
+                                  "B" = "Biomass")) +
       gfplot::theme_pbs()
   } else {
     out <- Map(.SS3_B, replist = x, scenario = scenario, type = type) %>%
       bind_rows()
-    g <- ggplot(out, aes(Yr, y, linetype = Area)) +
+    g <- ggplot(out, aes(Yr, y, linetype = Area, colour = scen)) +
       geom_line() +
       expand_limits(y = 0) +
-      facet_wrap(vars(scen), ncol = 2) +
+      #facet_wrap(vars(scen), ncol = 2) +
       labs(x = "Year", y = switch(type,
                                   "SSB" = "Spawning Biomass",
                                   "SSBMSY" = expression(B/B[MSY]),
                                   "SSB0" = expression(B/B[0]),
-                                  "B" = "Biomass (Age 1+)")) +
+                                  "B" = "Biomass (Age 1+)"),
+           colour = "Model") +
       gfplot::theme_pbs() +
+      theme(legend.position = "bottom") +
       scale_linetype_manual(values = c(1, 2, 3))
   }
   g
@@ -317,12 +326,13 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
   } else {
     out %>%
       filter(Area == "Coastwide") %>%
-      ggplot(aes(Yr, Recruit_0)) +
+      ggplot(aes(Yr, Recruit_0, colour = scen)) +
       geom_line() +
       expand_limits(y = 0) +
-      facet_wrap(vars(scen), ncol = 2) +
+      #facet_wrap(vars(scen), ncol = 2) +
       gfplot::theme_pbs() +
-      labs(x = "Year", y = "Recruitment")
+      theme(legend.position = "bottom") +
+      labs(x = "Year", y = "Recruitment", colour = "Model")
 
   }
 }
@@ -435,15 +445,26 @@ SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"),
   type <- match.arg(type)
   out <- Map(.SS3_sel, replist = x, scenario = sc, MoreArgs = list(type = type, fleet_name = fleet_name, bin_width = bin_width, scale_max_1 = scale_max_1)) %>%
     bind_rows() %>%
-    mutate(Sex = ifelse(Sex == 1, "Female", "Male"))
+    mutate(Sex = ifelse(Sex == 1, "Female", "Male")) %>%
+    left_join(fleet_names, by = c("FleetName" = "Fleet_name")) %>%
+    mutate(FName = factor(FName, levels = fleet_names$FName))
 
-  g <- ggplot(out, aes(variable, value, colour = FleetName, linetype = Sex)) +
-    geom_line() +
+  #g <- ggplot(out, aes(variable, value, colour = scen)) +
+  #  geom_line() +
+  #  coord_cartesian(ylim = c(0, 1)) +
+  #  facet_grid(vars(FName), vars(Sex)) +
+  #  gfplot::theme_pbs() +
+  #  labs(x = ifelse(type == "Lsel", "Length", "Age"), y = "Selectivity", colour = "Model") +
+  #  theme(panel.spacing = unit(0, "in"),
+  #        legend.position = "bottom")
+
+  g <- ggplot(out, aes(variable, value, colour = FName)) +
+    geom_line(aes(linetype = Sex)) +
     coord_cartesian(ylim = c(0, 1)) +
-    facet_grid(vars(FleetName), vars(scen)) +
+    facet_grid(vars(FName), vars(scen)) +
+    guides(colour = "none") +
     gfplot::theme_pbs() +
     labs(x = ifelse(type == "Lsel", "Length", "Age"), y = "Selectivity") +
-    guides(colour = "none") +
     theme(panel.spacing = unit(0, "in"),
           legend.position = "bottom")
 
@@ -823,13 +844,15 @@ SS3_compresid <- function(x, scenario, fleet, type = c("length", "age"),
   if (type == "length") {
 
     len <- SS3_lencomp(x, scenario, fleet = fleet, mean_length = FALSE) %>%
-      bind_rows()
+      bind_rows() %>%
+      left_join(fleet_names, by = c("FleetName" = "Fleet_name")) %>%
+      mutate(FName = factor(FName, levels = fleet_names$FName))
 
     if (figure == "heat") {
 
       g <- len %>%
         ggplot(aes(Yr, Bin)) +
-        facet_grid(vars(FleetName), vars(Sex)) +
+        facet_grid(vars(FName), vars(Sex)) +
         geom_tile(height = bin_width, width = 1, aes(fill = Pearson), colour = "grey60", linewidth = 0.1) +
         gfplot::theme_pbs() +
         scale_fill_gradient2(high = "red", low = "blue", mid = "grey90") +
@@ -840,7 +863,7 @@ SS3_compresid <- function(x, scenario, fleet, type = c("length", "age"),
       g <- len %>%
         ggplot(aes(Pearson)) +
         geom_histogram(binwidth = 0.25, aes(y = after_stat(count)), fill = "grey80", colour = "black") +
-        facet_wrap(vars(FleetName), ncol = 3) +
+        facet_wrap(vars(FName), ncol = 3) +
         coord_cartesian(xlim = c(-3, 3)) +
         geom_vline(xintercept = 0, linetype = 2) +
         gfplot::theme_pbs() +
