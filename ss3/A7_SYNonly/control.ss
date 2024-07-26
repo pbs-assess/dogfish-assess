@@ -389,17 +389,17 @@
              0             1           0.1           0.5      0.287717             2          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_HookLine_Landings(4)
 # 5   HookLine_Discards LenSelex
 # 6   IPHC LenSelex
-            35           200           150            95          28.5             6          3          0          0          0          0          0          0          0  #  Size_DblN_peak_IPHC(6)
+            35           200           150            95          28.5             6          -3          0          0          0          0          0          0          0  #  Size_DblN_peak_IPHC(6)
            -10            50           -10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_IPHC(6)
-           -10            10       6.25389           5.7           0.3             6          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_IPHC(6)
+           -10            10       6.25389           5.7           0.3             6          -3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_IPHC(6)
            -10            50            15             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_descend_se_IPHC(6)
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_start_logit_IPHC(6)
           -999           999          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_IPHC(6)
-          -100             0      -32.0789           -20          28.5             6          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_IPHC(6)
-           -10            10       -9.9887          -1.7           0.3             6          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_IPHC(6)
-           -50            10       1.68605         -11.8           0.3             6          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_IPHC(6)
+          -100             0      -32.0789           -20          28.5             6          -3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_IPHC(6)
+           -10            10       -9.9887          -1.7           0.3             6          -3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_IPHC(6)
+           -50            10       1.68605         -11.8           0.3             6          -3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_IPHC(6)
           -999           100          -999             0             0             0        -50          0          0          0          0          0          0          0  #  SzSel_Male_Final_IPHC(6)
-             0             1      0.639827           0.5      0.287717             2          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_IPHC(6)
+             0             1      0.639827           0.5      0.287717             2          -3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_IPHC(6)
 # 7   HBLL LenSelex
 # 8   SYN LenSelex
             35           110       66.5916            65          19.5             6          3          0          0          0          0          0          0          0  #  Size_DblN_peak_SYN(8)

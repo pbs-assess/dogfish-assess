@@ -402,17 +402,17 @@
              0             1      0.639827           0.5      0.287717             2          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_IPHC(6)
 # 7   HBLL LenSelex
 # 8   SYN LenSelex
-            35           110       66.5916            65          19.5             6          3          0          0          0          0          0          0          0  #  Size_DblN_peak_SYN(8)
+            35           110       66.5916            65          19.5             6          -3          0          0          0          0          0          0          0  #  Size_DblN_peak_SYN(8)
            -10            50           -10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_SYN(8)
-           -10            10        5.5921           4.6           0.3             6          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_SYN(8)
+           -10            10        5.5921           4.6           0.3             6          -3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_SYN(8)
            -10            50            15             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_descend_se_SYN(8)
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_start_logit_SYN(8)
           -999           999          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_SYN(8)
-          -100           100       4.91395             0          19.5             6          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_SYN(8)
-           -10            10        1.0886             0           0.3             6          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_SYN(8)
-           -50            10      -5.64713         -10.4           0.3             6          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_SYN(8)
+          -100           100       4.91395             0          19.5             6          -3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_SYN(8)
+           -10            10        1.0886             0           0.3             6          -3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_SYN(8)
+           -50            10      -5.64713         -10.4           0.3             6          -3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_SYN(8)
           -999           100          -999             0             0             0        -50          0          0          0          0          0          0          0  #  SzSel_Male_Final_SYN(8)
-             0             1       0.81194           0.5      0.287717             2          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_SYN(8)
+             0             1       0.81194           0.5      0.287717             2          -3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_SYN(8)
 # 1   Bottom_Trawl_Landings AgeSelex
 # 2   Bottom_Trawl_Discards AgeSelex
 # 3   MidwaterTrawl AgeSelex
