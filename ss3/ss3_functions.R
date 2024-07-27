@@ -3,10 +3,10 @@
 # Functions not used for Outside Spiny Dogfish probably won't work (2 sex, single area, etc.)
 
 fleet_names <- data.frame(
-  Fleet_name = c("Bottom_Trawl_Landings", "Bottom_Trawl_Discards", "MidwaterTrawl", "HookLine_Landings",
-                 "Bottom_Trawl_CPUE", "HBLL", "HS_MSA", "IPHC", "SYN"),
-  FName = c("Bottom Trawl\nLandings", "Bottom Trawl\nDiscards", "Midwater Trawl", "Hook-Line\nLandings",
-            "Bottom Trawl CPUE", "HBLL Outside", "HS MSA", "IPHC", "Synoptic")
+  Fleet_name = c("Bottom_Trawl_Landings", "Bottom_Trawl_Discards", "MidwaterTrawl", "HookLine_Landings", "HookLine_Discards",
+                 "Bottom_Trawl_CPUE", "HBLL", "HS_MSA", "IPHC", "SYN", "iRec", "Salmon_Bycatch"),
+  FName = c("Bottom Trawl\nLandings", "Bottom Trawl\nDiscards", "Midwater Trawl", "Hook-Line\nLandings", "Hook-Line\nDiscards",
+            "Bottom Trawl CPUE", "HBLL Outside", "HS MSA", "IPHC", "Synoptic", "iRec", "Salmon_Bycatch")
 )
 
 area_to_PFMA <- function(Area) ifelse(Area == 1, "North - 5BCDE", "South - 5A3CD")
@@ -1358,6 +1358,85 @@ SS3_agestructure <- function(x, scenario, ff, vars = c("LRP", "Current", "Unfish
 }
 
 
+SS3_apicalF <- function(replist, by_fleet = TRUE) {
+
+  Fatage <- replist$fatage %>%
+    filter(Era == "TIME") %>%
+    select(Fleet, Sex, Yr, as.character(0:70))
+
+  if (by_fleet) {
+
+    Fapical_fleet <- Fatage %>%
+      reshape2::melt(id.vars = c("Fleet", "Sex", "Yr")) %>%
+      summarise(value = max(.data$value), .by = c(Fleet, Yr)) %>%
+      #left_join(fleet_names, by = c("FleetName" = "Fleet_name")) %>%
+      mutate(FleetName = replist$FleetNames[.data$Fleet]) %>%
+      left_join(fleet_names, by = c("FleetName" = "Fleet_name")) %>%
+      mutate(FName = factor(FName, levels = fleet_names$FName))
+
+    out <- Fapical_pop %>%
+      filter(Sex == "Female") %>%
+      rename(F_std = value) %>%
+      left_join(Fapical_fleet %>% reshape2::dcast(list("Yr", "Fleet"))) %>%
+      mutate()
+
+    g <- ggplot(Fapical_fleet, aes(Yr, value)) +
+      geom_line() +
+      gfplot::theme_pbs() +
+      facet_wrap(vars(FName), scales = "free_y") +
+      labs(x = "Year", y = "Apical F")
+
+  } else {
+
+    Fapical_pop <- Fatage %>%
+      reshape2::melt(id.vars = c("Fleet", "Sex", "Yr")) %>%
+      rename(Age = variable) %>%
+      summarise(value = sum(.data$value), .by = c(Yr, Age, Sex)) %>%
+      summarise(Age = .data$Age[which.max(.data$value)],
+                value = max(.data$value),
+                .by = c(Yr, Sex)) %>%
+      mutate(Sex = ifelse(Sex == 1, "Female", "Male"))
+
+    # Female F is higher than Male F
+    g <- ggplot(Fapical_pop, aes(Yr, value, linetype = Sex)) +
+      geom_line() +
+      labs(x = "Year", y = "Apical F", linetype = "Sex")
+
+  }
+
+  g
+}
+
+SS3_selannual <- function(replist, do_sel = TRUE) {
+
+  Fatage <- replist$fatage %>%
+    filter(Era == "TIME") %>%
+    select(Fleet, Sex, Yr, as.character(0:70))
+
+  Fage_pop <- Fatage %>%
+    reshape2::melt(id.vars = c("Fleet", "Sex", "Yr")) %>%
+    mutate(Age = as.character(variable) %>% as.numeric()) %>%
+    summarise(value = sum(.data$value), .by = c(Yr, Age, Sex)) %>%
+    mutate(sel = value/max(value), .by = c(Yr, Sex)) %>%
+    filter(!is.na(sel))
+
+  if (do_sel) {
+    g <- Fage_pop %>%
+      filter(Sex == 1) %>%
+      ggplot(aes(Yr, Age, fill = sel)) +
+      geom_tile(width = 1, height = 1, colour = NA) +
+      scale_fill_viridis_c() +
+      coord_cartesian(expand = FALSE) +
+      labs(x = "Year", y = "Age", fill = "Realized\nSelectivity")
+  } else {
+    g <- ggplot(Fage_pop, aes(Yr, Age, fill = value)) +
+      geom_tile(width = 1, height = 1, colour = NA) +
+      scale_fill_viridis_c() +
+      coord_cartesian(expand = FALSE) +
+      labs(x = "Year", y = "Age", fill = "Fishing\nmortality")
+  }
+  g
+}
 
 pars_fn <- function(replist, OM_name) {
 
