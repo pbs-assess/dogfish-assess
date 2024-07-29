@@ -56,6 +56,7 @@ Given similar longevity between sexes, natural mortality was sex-invariant in th
 
 The base model estimated the unfished recruitment in log-space $\log(R_0)$, productivity parameter $z_\textrm{frac}$, and selectivity parameters for the various fisheries and surveys (Table \@ref(tab:ss3-par)).
 No recruitment deviates were estimated since no information about cohort strength was evident in the size composition.
+Preliminary models estimated recruitment deviates that were deemed to be spurious because they did not change the fit and stock estimates compared to those in simpler models without deviates.
 
 The start year of the model was 1937, when it was assumed that the stock was in an unfished state, and the terminal year was 2023. 
 The maximum age in the model wa 70 years.
@@ -187,7 +188,7 @@ The base model (labeled "A1") was fitted with the following structure:
 
 ### Sensitivity analyses
 
-Additional sensitivity runs (relative to the base model) explored the impact of various modeling assumptions on the inferred stock history.
+Additional sensitivity runs (relative to the base model) explored the impact of various modeling assumptions, particularly in the choice of biological parameters (maturity, growth, natural mortality), and index representing stock trend, on the estimated stock biomass.
 
 The model names with the "A" prefix denote time-invariant natural mortality.
 
@@ -248,11 +249,6 @@ csasdown::csas_table(
   align = c("l", "l")
 )
 ```
-
-
-$$
-\mathcal{K} = \{\mu^\textrm{Female},\mu^\textrm{Male},\Delta^\textrm{Female, asc},\Delta^\textrm{Female, dsc},\Delta^\textrm{Male, asc},\Delta^\textrm{Male, dsc}\}
-$$
 
 ```{r ss3-likelihoods, results="asis"}
 ss3_like <- readxl::read_excel(here::here("tables/equations.xlsx"), sheet = "SS3_likelihood") %>%

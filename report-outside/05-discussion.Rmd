@@ -1,0 +1,35 @@
+
+
+# DISCUSSION
+
+Various factors hinder our ability to produce a robust assessment model for management advice.
+Currently, three major surveys catch spiny dogfish in Outside waters, each of which have different trends over time.
+Since all three have significant coverage over dogfish habitat, it is difficult to exclude any index of abundance series.
+
+The population models developed in this paper had difficulty fitting to the Synoptic survey, which was presumably the most representative survey it since samples predominantly dogfish habitat, i.e., muddy habitat. 
+Fast declines in the Synoptic index could not be explained from the catch history alone because age-structured models incorporate lags in productivity due to the late maturity and longevity of dogfish, and constrain how quickly the stock can decline and increase.
+The best fit to the Synoptic index occurred when an increase in natural mortality was modeled.
+
+Overall, the model was most sensitive to the assumption of time-varying natural mortality.
+However, no suitable model could be obtained to coincide the start of the increase with pinniped population counts that contribute to additional predation mortality.
+The most suitable models had increases in natural mortality much later, i.e., 2010, to follow the decline in the Synoptic index.
+In summary, the model could not reconcile the timing of the decline in the Synoptic index with the increase in pinniped.
+
+Low fecundity limits the density-dependent dynamics, i.e., steepness, of the population. 
+Diagnostic procedures differed in the plausibility of potential steepness values. 
+The likelihood profile indicated there was little density-dependence, precluding calculation of fishery reference points.
+On the other hand, there was no discernible difference in the index fits between all steepness values up to the maximum value, with no further guidance to inform the most likely value.
+
+Sensitivity analyses to evaluate uncertainties in other biological parameters did not significantly alter the historical stock abundance.
+The population trajectory was considerably constrained by low fecundity. 
+However, there is no indication whether the behavior in the model could be indicative of robustness or misspecification in the values of the biological parameters.
+More consideration could be given for additional density-dependent dynamics, such as the natural survival in adults, to account for historical rebounds in the population [@wood1979]. 
+However, density-dependent M is not currently likely to be the most important factor affecting dogfish abundance.
+
+While length data is likely not informative on stock depletion, they do indicate that there is discard mortality on immature females.
+Vulnerability of immature females reduces survival to mature ages.
+However, the extent to which discarding affects population status is clouded by the uncertainties in steepness and the discard mortality rate.
+
+It is not likely that continued collection of the current catch and survey data can improve the stock assessment model in the future.
+Assessment models perform best when supporting data, e.g., fishery CPUE or survey indices, inform how much the stock declined in the period of highest catches.
+These data are not available when the largest fishery catches were observed in the early 20th century.

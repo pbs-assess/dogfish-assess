@@ -1,0 +1,212 @@
+
+# MODEL RESULTS
+
+## Base model
+
+The model estimated a large, fast decline in the spawning output of the population in the 1940s as a result of the vitamin A fishery (Figures \@ref(fig:ss3-spawn)--\@ref(fig:ss3-dep)). 
+In the resulting decades, through the mid 1970s, the spawning output increased and then declined again, albeit at a slower rate, through to 2010. 
+Since 2010, the spawning output has been relatively constant at low levels.
+In contrast to the spawning output, the total stock biomass gradually declined at different rates since the 1930s (Figure \@ref(fig:ss3-biomass)).
+
+Total biomass does not reveal the delayed effects of fishing on the age structure (Figure \@ref(fig:ss3-n-age)).
+The lagged effects on the age structure is readily apparent for males, where the decline in recruitment (age zero) then cascades towards older age classes moving forward in time.
+The vitamin A fishery quickly decreased the abundance of older-aged females (30+ years) in the 1950s, although the abundance of younger fish in the population (age 20) was less impacted. 
+Young cohorts that were invulnerable to the early fishery rebuilt the abundance of older females in the 1970s--1980s.
+However, low recruitment during the 1940s contributed to the second decline in the older age classes into recent years.
+
+The selectivity of the bottom trawl landings and hook-line landings was estimated that the respective catch consisted predominantly of large females (Figure \@ref(fig:ss3-sel-len)). 
+When converted to the selectivity-at-age, the selectivity ogive was to the right of the base maturity curve (Figure \@ref(fig:ss3-sel-age)).
+On the other hand, the selectivity of the bottom trawl discards, along with discards in other fishing fleets and in the midwater trawl, comprised of younger, immature fish.
+
+The model fit the declines in the indices of abundance, which reflect stock trends in more recent decades, fairly well from the fishery CPUE, IPHC survey, and HS MSA survey (Figure \@ref(fig:ss3-index)). 
+Overall, these indices show a slow decline year over year.
+The model did not fit the HBLL Outside and Synoptic indices well. 
+The HBLL index had a marked decline after 2014 while the trend in Synoptic index had a downwards concavity in the 2010s.
+
+The model appeared to have some difficulty estimating the selectivity of the IPHC survey, as the inflection point of the selectivity ogive was greater than the largest observed size class (Figure \@ref(fig:ss3-sel-len)). 
+Since the size composition in the Synoptic survey was smaller than in the IPHC survey, selectivity for the former was estimated to be dome-shaped.
+
+Fits to the length composition are shown in Figures \@ref(fig:ss3-len-1)--\@ref(fig:ss3-len-6). 
+The corresponding mean length calculated from the observed and predicted proportions are shown in Figure \@ref(fig:ss3-mean-length).
+The mean length from the Bottom Trawl Discards appeared to the most erratic, presumably as a result of opportunistic sampling, while the trend in the other fleets and surveys were more consistent through time.
+
+Length composition data do not appear to be informative about stock depletion. 
+This can be demonstrated through the predicted length composition produced by the model in 1937, in unfished conditions, and in the most recent years of data (Figure \@ref(fig:ss3-len-pred)). 
+Despite depletion estimates of less than 0.4 during the 2000s, the shape of the length composition, and the corresponding mean lengths, change little compared to those in 1937.
+In contrast, age composition data would be more likely to reveal a truncated age structure as the population (and survival) declines.
+Length composition are uninformative likely here due to the low M/K ratio and the high variability in length-at-age relationship.
+With the low M/K ratio, fish near the asymptotic length comprise of many age classes, and the length composition is less sensitive to the loss of the oldest fish compared to a high M/K stock [@hordyk2015].
+
+The effective selectivity is calculated annually from the fishing mortality at age, with $v^\textrm{eff}_{y,a,s} = F_{y,a,s}/\textrm{max}_a F_{y,a,s}$, and shows the relative mortality experienced by age class for all fishery removals. 
+The age of apical effective selectivity has oscillated several times (Figure \@ref(fig:ss3-sel-eff)).
+Whereas the apical selectivity was initially on the oldest age classes, the age of apical selectivity shifted to younger, immature age classes when fishery removals were primarily discards, e.g., 1970s and 2020s.
+
+The estimate of the productivity parameter $z_\textrm{frac}$ hit the lower bound of zero, inferring that there is no density-dependence in the population, i.e., steepness is 0.2 and there are no MSY-based reference points.
+The likelihood profile showed that the $z_\textrm{frac}$ estimate was influenced by both the indices of abundance and length composition (Figure \@ref(fig:ss3-zfrac-profile)).
+In light of the low catches since the 1980s (relative to the early 20th century), the stock must be as unproductive as possible to produce the observed declines in the index.
+However, no discernible difference in the fit to the indices were observed among the values of $z_\textrm{frac}$ (Figure \@ref(fig:ss3-zfrac-fit)).
+
+Alternative assumptions of $z_\textrm{frac}$ affect the size of the population, with lower stock sizes implied from higher $z_\textrm{frac}$, although the depletion to 2023 appears to be more robust to the productivity parameter (Figure \@ref(fig:ss3-zfrac-ts)).
+Fishing mortality has exceeded $F_\textrm{MSY}$ for much of the stock history.
+
+The yield curve was calculated with the $z_\textrm{frac}$ profile using the effective selectivity in 2023, reflecting current exploitation patterns, where the age of apical selectivity is 10 years.
+The shape and skew of the yield curve does not appear to vary with respect to $z_\textrm{frac}$ (Figure \@ref(fig:ss3-yield-curve-dep)), although the height, i.e., maximum sustainable yield, and the corresponding fishing mortality (FMSY) increases with $z_\textrm{frac}$ (Figure \@ref(fig:ss3-yield-curve-F)).
+
+The unfished replacement line, i.e., pup survival, is $1/\phi_0 = 0.442$ and the maximum steepness is 0.452. 
+In comparison, the survival implied from the adult natural mortality rate is $\exp(-M) = 0.929$.
+The $z_\textrm{frac} = 0.909$ could be an upper limit to the productivity of Outside dogfish where pup survival is equal to 0.929, as it is generally believed that juvenile survival does not exceed adult survival [@hoenig1990].
+
+No significant retrospective pattern was observed in the base model (Figure \@ref(fig:ss3-retro-A1)).
+
+## Sensitivity analysis
+
+The first set of sensitivity analyses explored alternative growth parameters, maturity parameters, and discard mortality rate in the fishery.
+Estimates of spawning output and biomass was slightly higher with either the US growth curve (compared to the BC growth curve) or the higher discard mortality rate assumption (Figure \@ref(fig:ss3-spawn)--\@ref(fig:ss3-biomass)). 
+With the later maturity ogive, the spawning output is lower but the biomass is higher than with the base maturity at age. 
+Estimates of depletion in 2023 do not significantly differ among these models (Figure \@ref(fig:ss3-dep)).
+No significant change in the fit to the indices were observed (Figure \@ref(fig:ss3-index)).
+
+There were erratic selectivity estimates for Hook-Line Landings when the US growth curve was used, where the fleet selected for small fish despite the presence of only larger fish in the length composition (Figure \@ref(fig:ss3-sel-len)). 
+This behavior could not be sufficiently addressed at the time of writing.
+
+The second set of sensitivity analyses explored alternative hypotheses on recent stock trends by index. 
+The base model fit to the IPHC and fishery CPUE the best, as there was little to no difference in the index fit and spawning estimates between models (A1) and (A6) (Figures \@ref(fig:ss3-sens-index-fit) and \@ref(fig:ss3-sens-index-spawn)).
+
+The model still could not fit the Synoptic index even when it was the sole index in the likelihood in model (A6) (Figure \@ref(fig:ss3-sens-index-fit)).
+This behavior indicated that the model structure could not explain the trend in this index. 
+While the model could fit to the HBLL Outside index in model (A7), estimates of recent and current stock abundance were close to zero.
+It is not believed that dogfish is functionally extirpated in Outside waters.
+Thus, this model was not an acceptable representation on stock trend.
+
+The last set of sensitivity analyses explored alternative assumptions on natural mortality. 
+Compared to the base model, a lower, constant natural mortality of 0.05 did not significantly change either the fit to the index and the historical stock trajectory (Figures \@ref(fig:ss3-sens-m-fit) and \@ref(fig:ss3-sens-m-dep)).
+
+Models with a change in natural mortality estimated an increase to 0.13--0.17 by 2023 (Figure \@ref(fig:ss3-sens-m)).
+For example, model B2 estimated an increase in natural mortality from 0.074 to 0.156.
+Model with a change in M had a much better fit to the Synoptic index compared to the base model, along with reasonably good fits to the Bottom Trawl CPUE, IPHC index, and HS MSA index (Figure \@ref(fig:ss3-sens-m-fit)).
+A notable bend in the predicted index occurred in the year of the M change.
+No model could suitably fit the HBLL Outside index.
+
+Lower constant M had little effect on stock depletion (Figure \@ref(fig:ss3-sens-m-dep)).
+Large impacts on the stock depletion were observed depending on the timing of the M change.
+With M increases in 2010 (B2 and B5), the stock followed a similar trajectory as the base model, but was less depleted for much of the 20th century, i.e., higher $S/S_0$, until 2010 when a sizable decrease occurred.
+
+Models with earlier increases in M around 1990, i.e., in models B1 and B4, did not produce plausible stock trends, even though this was when pinniped populations started increasing.
+Similar behavior was seen in model B3 with the M increase in 2005.
+In these models, the stock was estimated to be lightly fished through most of the 20th century and the only stock decline occurred as a result of the M increase.
+This trend is not corroborated by historical observations of declining dogfish abundance following periods of high catches.
+Thus, these models were not further considered.
+
+```{r ss3-spawn, fig.cap="Estimates of the spawning output (pup production) for Outside spiny dogfish from the base model (A1) and sensitivity models (A2-A5)."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/spawning_est.png"))
+```
+
+```{r ss3-dep, fig.cap="Estimates of the spawning depletion ($S/S_0$) from the base model (A1) and sensitivity models (A2-A5)."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/depletion_est.png"))
+```
+
+```{r ss3-biomass, fig.cap="Estimates of stock biomass by sex from the base model (A1) and sensitivity models (A2-A5)."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/biomass_est.png"))
+```
+
+```{r ss3-n-age, fig.cap="Estimates of abundance at age for six age classes from the base model (A1). This figure is intended to illustrate the lagged effects of fishing on the age structure of the population."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/N_age_A1.png"))
+```
+
+```{r ss3-sel-len, fig.cap="Estimates of selectivity at length by sex for fleets and surveys with length composition data from the base model (A1) and sensitivity models (A2-A5). For other fleets and surveys, the selectivity was mirrored to one of these selectivity ogives (see Modeling section)."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/sel_len.png"))
+```
+
+(ref:fig-ss3-sel-age) Estimates of selectivity at age by sex for fleets and surveys with length composition data from the base model (A1) and sensitivity models (A2-A5). For other fleets and surveys, the selectivity was mirrored to one of these selectivity ogives (see Modeling section). Selectivity at age is converted from selectivity at length (Figure \@ref(fig:ss3-sel-len)) using the growth curve in the model. The black, dotted line denotes the female maturity at age ogive. The maximum proportion mature is 0.5 to account for a two year gestation period, such that half the mature population spawns annually
+
+```{r ss3-sel-age, fig.cap="(ref:fig-ss3-sel-age)"}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/sel_age.png"))
+```
+
+```{r ss3-index, fig.cap="Observed indices of abundance (black points with 95\\% confidence intervals) and predicted values (coloured lines) from the base model (A1) and sensitivity models (A2-A5)."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/index_fit.png"))
+```
+
+```{r ss3-len-1, fig.cap="Observed length proportions (bars) and predicted values (coloured lines) for Bottom Trawl Landings from the base model (A1) and sensitivity models (A2-A5). Grey bars and solid lines correspond to females while white bars and dotted lines correspond to males. Proportions sum to one when combined across both sexes. Numbers in the lower right corners of the panels are the annual sample sizes and are downweighted in the likelihood."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/len_comp_fleet_1.png"))
+```
+
+```{r ss3-len-2, fig.cap="Observed length proportions (bars) and predicted values (coloured lines) for Bottom Trawl Discards from the base model (A1) and sensitivity models (A2-A5). Grey bars and solid lines correspond to females while white bars and dotted lines correspond to males. Proportions sum to one when combined across both sexes. Numbers in the lower right corners of the panels are the annual sample sizes and are downweighted in the likelihood."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/len_comp_fleet_2.png"))
+```
+
+```{r ss3-len-3, fig.cap="Observed length proportions (bars) and predicted values (coloured lines) for Midwater Trawl from the base model (A1) and sensitivity models (A2-A5). Grey bars and solid lines correspond to females while white bars and dotted lines correspond to males. Proportions sum to one when combined across both sexes. Numbers in the lower right corners of the panels are the annual sample sizes and are downweighted in the likelihood."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/len_comp_fleet_3.png"))
+```
+
+```{r ss3-len-4, fig.cap="Observed length proportions (bars) and predicted values (coloured lines) for Hook-Line Landings from the base model (A1) and sensitivity models (A2-A5). Grey bars and solid lines correspond to females while white bars and dotted lines correspond to males. Proportions sum to one when combined across both sexes. Numbers in the lower right corners of the panels are the annual sample sizes and are downweighted in the likelihood."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/len_comp_fleet_4.png"))
+```
+
+```{r ss3-len-5, fig.cap="Observed length proportions (bars) and predicted values (coloured lines) for the IPHC survey from the base model (A1) and sensitivity models (A2-A5). Grey bars and solid lines correspond to females while white bars and dotted lines correspond to males. Proportions sum to one when combined across both sexes. Numbers in the lower right corners of the panels are the annual sample sizes and are downweighted in the likelihood."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/len_comp_fleet_6.png"))
+```
+
+```{r ss3-len-6, out.width="5in", fig.cap="Observed length proportions (bars) and predicted values (coloured lines) for the Synoptic survey from the base model (A1) and sensitivity models (A2-A5). Grey bars and solid lines correspond to females while white bars and dotted lines correspond to males. Proportions sum to one when combined across both sexes. Numbers in the lower right corners of the panels are the annual sample sizes and are downweighted in the likelihood."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/len_comp_fleet_8.png"))
+```
+
+```{r ss3-mean-length, fig.cap="Observed (points) and predicted (lines) mean lengths calculated from the length composition from the base model (A1) and sensitivity models (A2-A5). Filled points and lines correspond to females while open points and dotted lines correspond to males."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/mean_length.png"))
+```
+
+```{r ss3-len-pred, out.width="4.5in", fig.cap="Comparison of the predicted length proportions in 1937 (first year of model, assumed unfished conditions) and in the 2000s, corresponding to the last year of length data for the various fleets and surveys from the base model (A1). In each panel the upper and lower numbers report the mean length for females and males, respectively. This figure is intended to illustrate the insensitivity of the length data to changes in stock depletion across time."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/len_comp_1937_model1.png"))
+```
+
+```{r ss3-sel-eff, fig.cap="Annual effective selectivity for females calculated from the F-at-age vector in base model A1. The age class with a value of one experiences the highest (apical) fishing mortality."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/sel_annual_A1.png"))
+```
+
+```{r ss3-zfrac-profile, fig.cap="Left: Likelihood profile of $z_\\textrm{frac}$ in the base model (A1). The solid black line is the total negative log-likelihood and the coloured lines correspond to individual data components. Right: Likelihood profile where values of $z_\\textrm{frac}$ is converted to the steepness."}
+knitr::include_graphics(here::here("figs/ss3/prof/like_zfrac.png"))
+```
+
+```{r ss3-zfrac-fit, fig.cap="Fits to the indices of abundance in the likelihood profile of $z_\\textrm{frac}$ in the base model (A1)."}
+knitr::include_graphics(here::here("figs/ss3/prof/prof_zfrac_index.png"))
+```
+
+```{r ss3-zfrac-ts, fig.cap="Time series of state variables in base model (A1) to the range of values of $z_\\textrm{frac}$ evaluated in the likelihood profile. Symbol $S/S_\\textrm{MSY}$ and $F/F_\\textrm{MSY}$is the spawning output and fishing mortality, respectively, relative to values at maximum sustainable yield."}
+knitr::include_graphics(here::here("figs/ss3/prof/prof_zfrac_SB.png"))
+```
+
+```{r ss3-yield-curve-dep, fig.cap="Yield curves calculated for the range of values of $z_\\textrm{frac}$ evaluated in the likelihood profile. The effective selectivity in 2023 was used to calculate the total yield. The vertical dashed and dotted lines correspond to 40\\% and 80\\% $S_\\textrm{MSY}$, values of the limit reference point (LRP) and upper stock reference (USR), respectively, identified in DFO's Precautionary Approach (PA) policy."}
+knitr::include_graphics(here::here("figs/ss3/prof/zfrac_yield_curve.png"))
+```
+
+```{r ss3-yield-curve-F, fig.cap="Yield curves as a function of fishing mortality calculated for the range of values of $z_\\textrm{frac}$ evaluated in the likelihood profile. The effective selectivity in 2023 was used to calculate the total yield."}
+knitr::include_graphics(here::here("figs/ss3/prof/zfrac_yield_curve_F.png"))
+```
+
+```{r ss3-retro-A1, out.width="4in", fig.cap="Spawning output, recruitment, and depletion time series in the retrospective analysis of the base model (A1). Colours indicate the number of recent years for which data are removed from the model. A value of zero corresponds to the original model fitted to all years of data."}
+knitr::include_graphics(here::here("figs/ss3/ret_A1.png"))
+```
+
+```{r ss3-sens-index-fit, fig.cap="Fits to the indices of abundance in the sensitivity analyses from jackknifing survey series."}
+knitr::include_graphics(here::here("figs/ss3/set_a_ind/index_fit.png"))
+```
+
+```{r ss3-sens-index-spawn, fig.cap="Comparison of historical estimates of spawning output in the sensitivity analyses from jackknifing survey series."}
+knitr::include_graphics(here::here("figs/ss3/set_a_ind/spawning_est.png"))
+```
+
+```{r ss3-sens-m-fit, fig.cap="Fits to the indices of abundance in the sensitivity analyses of alternative natural mortality assumptions."}
+knitr::include_graphics(here::here("figs/ss3/set_b/index_fit.png"))
+```
+
+```{r ss3-sens-m, fig.cap="Time series of natural mortality among the sensitivity models."}
+knitr::include_graphics(here::here("figs/ss3/set_b/M_year.png"))
+```
+
+```{r ss3-sens-m-dep, fig.cap="Comparison of depletion estimates in the sensitivity analyses of alternative natural mortality assumptions."}
+knitr::include_graphics(here::here("figs/ss3/set_b/depletion_est.png"))
+```
+
+
+\clearpage
+

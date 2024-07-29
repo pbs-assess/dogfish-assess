@@ -1,9 +1,12 @@
 book_filename: "resdoc"
 rmd_files: ["index.Rmd",
             "01-introduction.Rmd",
-            "04-references.Rmd",
+            "03-model.Rmd",
+            "04-results.Rmd",
+            "05-discussion.Rmd",
+            "98-references.Rmd",
             "99-app-a1-survey.Rmd",
-            # "99-app-a2-len-std.Rmd",
+            "99-app-a2-len-std.Rmd",
             "99-app-b-fishery.Rmd",
             "99-app-c-growth-maturity.Rmd"
             ]

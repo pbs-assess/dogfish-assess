@@ -27,7 +27,8 @@ saveRDS(zfrac_prof, file = file.path(ss_home, "zfrac_prof.rds"))
 
 # Plot state variables
 g1 <- SS3_prof(zfrac_prof, zfrac, SpawnBio) +
-  labs(x = "Year", y = "Spawning output", colour = expression(z[frac]))
+  labs(x = "Year", y = "Spawning output", colour = expression(z[frac])) +
+  guides(colour = guide_legend(nrow = 2))
 g2 <- SS3_prof(zfrac_prof, zfrac, pred_recr) +
   labs(x = "Year", y = "Recruitment", colour = expression(z[frac]))
 g3 <- SS3_prof(zfrac_prof, zfrac, dep) +
@@ -49,14 +50,17 @@ g5 <- local({
     ggplot(aes(Yr, F_FMSY, colour = factor(scen))) +
     geom_hline(yintercept = 1, linetype = 2) +
     geom_line() +
-    coord_cartesian(ylim = c(0, 50)) +
+    coord_trans(y = "sqrt", ylim = c(0, 20)) +
     expand_limits(y = 0) +
     labs(x = "Year", y = expression(F/F[MSY]), colour = expression(z[frac]))
 })
 g <- ggpubr::ggarrange(plotlist = list(g1, g2, g3, g4, g5), common.legend = TRUE, legend = "bottom")
 ggsave("figs/ss3/prof/prof_zfrac_SB.png", g, height = 6, width = 10)
 
-g <- SS3_SR(zfrac_prof, paste("zfrac = ", zfrac))
+g <- SS3_SR(zfrac_prof, paste("zfrac = ", zfrac)) +
+  labs(x = "Spawning output") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+g$facet$params$ncol <- 3
 ggsave("figs/ss3/prof/prof_zfrac_SR.png", g, height = 6, width = 6)
 
 
@@ -85,7 +89,7 @@ ggsave("figs/ss3/prof/zfrac_yield_curve.png", g, height = 6, width = 6)
 
 g <- SS3_yieldcurve(zfrac_prof, paste0("zfrac = ", zfrac), xvar = "F") +
   theme(legend.position = "bottom") +
-  labs(x = "Harvest rate")
+  labs(x = "Fishing mortality")
 g$facet$params$ncol <- 3
 ggsave("figs/ss3/prof/zfrac_yield_curve_F.png", g, height = 6, width = 6)
 
