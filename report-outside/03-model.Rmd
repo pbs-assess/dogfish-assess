@@ -54,11 +54,11 @@ Given similar longevity between sexes, natural mortality was sex-invariant in th
 
 ## Model structure
 
-The base model estimated the unfished recruitment $R_0$, productivity parameter $z_\textrm{frac}$, and selectivity parameters for the various fisheries and surveys (Table \@ref(tab:ss3-par)).
+The base model estimated the unfished recruitment in log-space $\log(R_0)$, productivity parameter $z_\textrm{frac}$, and selectivity parameters for the various fisheries and surveys (Table \@ref(tab:ss3-par)).
 No recruitment deviates were estimated since no information about cohort strength was evident in the size composition.
 
 The start year of the model was 1937, when it was assumed that the stock was in an unfished state, and the terminal year was 2023. 
-The maximum age in the model is 70 years.
+The maximum age in the model wa 70 years.
 
 Model equations are provided in Table \@ref(tab:ss3-eq).
 
@@ -72,18 +72,23 @@ $$
 
 where $S_y$ is the spawning output in year $y$, $S_0 = R_0\times\phi_0$ is the unfished spawning output as the product of unfished recruitment $R_0$ and spawning output per recruit $\phi_0$, $z_\textrm{min} = z_0(1 - z_\textrm{frac})$, and $z_0 = -\log(1/\phi_0)$. 
 
-$1/\phi_0$ is the unfished replacement line and is intrepretable as the survival of pups to the recruit life stage when the stock is at unfished levels.
+The inverse of spawning output per recruit $\phi_0$ is the unfished replacement line and is intrepretable as the survival of pups to the recruit life stage when the stock is at unfished levels.
 The term in the exponent is the corresponding instantaneous mortality rate (exponentiation converts the instantaneous rate to a survival term between 0--1).
 Since the term describes the density-dependent mechanism in the population, the pup-recruit mortality rate decreases as the stock declines.
-$z_0$ is the instantaneous rate when the stock is at $S_0$.
-$z_\textrm{min}$ is the mortality rate as the stock approaches zero, and is parameterized as a $z_\textrm{frac}$ proportion of $z_0$, i.e., $z_\textrm{min} = z_0(1 - z_\textrm{frac})$.
+The symbol $z_0$ is the instantaneous rate when the stock is at $S_0$.
+The symbol $z_\textrm{min}$ is the mortality rate as the stock approaches zero, and is parameterized as a $z_\textrm{frac}$ proportion of $z_0$, i.e., $z_\textrm{min} = z_0(1 - z_\textrm{frac})$.
 When $\beta = 1$, the decline in the density-dependent mortality rate is linear with stock size.
 As $z_\textrm{frac}$ approaches zero, the mortality rate is independent of stock size, i.e., there is no density-dependence.
 
+Steepness, the recruitment relative to $R_0$ when the stock is at $0.2 S_0$, is calculated as 
+
+$$
+h = 0.2\exp(z_0 z_\textrm{frac}(1-0.2^\beta))
+$$
+
 Due to the longevity and low fecundity of dogfish, and many elasmobranch species in general, there are upper bounds to the maximum per-capita rate of recruitment in a closed population.
 The spawning output is measured in the number of pups, and the recruitment after density-dependent survival cannot exceed the pup production  [@forrest2009; @taylor2013; @deoliveira2013].
-As a result, there is an implied upper bound to steepness, the recruitment relative to $R_0$ when the stock is at $0.2 S_0$.
-Steepness cannot exceed $1/(5\phi_0)$ [@taylor2013].
+As a result, there is an implied upper bound to steepness, where steepness cannot exceed $1/(5\phi_0)$ [@taylor2013].
 
 This upper bound can be illustrated with a simple example. 
 If the unfished population is 100 females that each produce 10 pups, then $S_0 = 1000$. If the pup survival is 0.6 ($1/\phi_0 = 0.6$), then the recruitment $R_0 = 600$. 
@@ -127,27 +132,87 @@ The corresponding selectivity at age are obtained through the length-age key (Ta
 
 ## Model fitting
 
-The estimated parameters for the stock-recruit relationship are $R_0$ and $z_\textrm{frac}$.
-A uniform prior was used for $R_0$ and a beta prior was used for $z_\textrm{frac}$.
+The estimated parameters for the stock-recruit relationship are $\log(R_0)$ and $z_\textrm{frac}$.
+A uniform prior was used for the $\log(R_0)$ parameter with a lower bound of 9 and upper bound of 15. 
+A beta prior was used for $z_\textrm{frac}$ with mean of 0.5 and standard deviation of 0.287, corresponding to a symmetrical, weakly informative prior with slightly lower prior density at the bounds of 0 and 1.
+The mean and standard deviation corresponds to beta distribution parameters $\alpha = 1.01$ and $\beta = 0.01$.
 
-For fisheries and/or surveys with length composition, either six parameters were estimated if the female selectivity was assumed to be flat-topped or seven parameters if dome-shaped.
+For fisheries and/or surveys with length composition, six parameters were estimated if the female selectivity was assumed to be flat-topped or seven parameters if dome-shaped.
+From the length composition (summed across all years), the modal length $L_\textrm{mode}$ was used as the prior mean for the female length of full selectivity $\mu^\textrm{Female}$.
+The prior mean for for the male length of full selectivity $\mu^\textrm{Male}$ was the difference between the modal lengths in the female and male length composition. 
+For both sexes, the standard deviation of the prior was set to 30 percent of the mean.
+A normal distribution was used for both parameters.
+
+The $\Delta$ control the selectivity limbs and are estimated in logspace. They were estimated assuming a normal prior distribution with a prior standard deviation of 0.3.
+The length at the 5th percentile $L_\textrm{5\%}$ of the length composition, i.e., from the empirical cumulative distribution function, was used to calculate the prior mean of $\Delta^\textrm{Female, asc}$ was set to $\log(L_\textrm{mode} - L_\textrm{5\%})$. 
+$\Delta$ are logspace parameters, estimated with a prior standard deviation of 0.3.
+If dome selectivity was assumed, then the prior mean of $\Delta^\textrm{Female, dsc}$ was set to $\log(L_\textrm{95\%} - L_\textrm{mode})$, where $L_\textrm{95\%}$ is the size at the 95th percentile of the length composition. 
+The process was repeated for the male parameters, where the difference in female and male values was used as the prior mean for the males, since these parameters are estimated as offsets.
+
 For fisheries and surveys without length data, selectivity was mirrored, i.e., borrowed from other fisheries and surveys in the model.
+The fleet structure of the fisheries in the model was broadly organized in terms of fishing gear and retention behavior (landings vs. discards), due to the differences in length composition upon visual inspection.
+For example, trawl landings comprised primarily of large females while trawl discards comprised of smaller animals with an even sex ratio.
 
-The fleet structure of the fisheries in the model was broadly organized in terms of fishing gear and retention behavior (landings and discards).
+The following fleets were modeled:
 
-Data
-Likelihoods
-Reweighting length comps.
+1. Bottom Trawl Landings. Female selectivity is flat-topped.
+2. Bottom Trawl Discards. Female selectivity is dome-shaped.
+3. Midwater Trawl, where catches included both landings and dead discards, the latter calculated according to the presumed discard mortality rate, since the length composition for retained and discarded catch were similar. Female selectivity is dome-shaped.
+4. Hook & Line Landings. Female selectivity is flat-topped.
+5. Hook & Line Discards, where the selectivity was mirrored to Bottom Trawl Discards since there were no size samples collected.
+6. IPHC Survey. Female selectivity is flat-topped.
+7. HBLL Outside Survey, where the selectivity was mirrored to the IPHC survey.
+8. Synoptic Survey. Female selectivity is dome-shaped.
+9. Recreational catch as recorded in the iREC survey (Internet Recreational Effort and Catch reporting program), selectivity was mirrored to Bottom Trawl Discards.
+10. Salmon Bycatch, selectivity was mirrored to Bottom Trawl Discards.
+11. HS MSA Survey, where selectivity was mirrored to the Synoptic survey.
+12. Bottom Trawl CPUE, used as an index of abundance with selectivity mirrored to Bottom Trawl Discards.
 
-The base model was fitted with the following structure:
+Survey catch was also included in the model since it constituted a notable proportion of the total removals in recent years.
+For each index series, catchability is an implicit parameter, which is calculated internally from the observed values and state variables in the model.
+
+The model likelihood included a component for the indices of abundance from the surveys and fishery CPUE, using a lognormal distribution with the standard deviation calculated from the standardization method.
+
+The multinomial likelihood was used for the length composition.
+The sample size was input into the model.
+Following a preliminary fit of the base model, the sample sizes were adjusted, i.e., downweighted, using the McAllister-Ianelli method in order to balance the variance between the length composition and the indices of abundance. 
+These weighting factors were identical in all models.
+
+The base model (labeled "A1") was fitted with the following structure:
+
+- Two-sex model with length-at-age specified using the BC growth curve
+- Maturity at age following the @taylor2013 ogive for the 2000s 
+- Natural mortality fixed at 0.074
+- Fit to all indices of abundance
 
 ### Sensitivity analyses
 
-## MCMC
+Additional sensitivity runs (relative to the base model) explored the impact of various modeling assumptions on the inferred stock history.
+
+The model names with the "A" prefix denote time-invariant natural mortality.
+
+- A2: Length-at-age specified with the growth curve estimated in the US assessment [@gertseva2021]
+- A3: Older maturity at age, specified by the [@mcfarlane1987] ogive
+- A4: Use both the US growth curve and older maturity ogive
+- A5: Assume 100 percent discard mortality 
+- A6: Fit to only the IPHC index and fishery bycatch CPUE. These indices were grouped together since they describe a steady decline in the population over time.
+- A7: Fit to only the Synoptic index
+- A8: Fit to only the HBLL Outside index
+- A9: Fix natural mortality to 0.05
+
+The model names with the "B" prefix denote time-changing natural mortality. 
+Several models were fitted to attribute the recent decrease in the indices to non-fishery mortality:
+
+- B1: Estimate an increase in natural mortality starting in 1990 when the pinniped population started to increase. The increase is linear year over year. A single additional parameter is estimated.
+- B2: Estimate an increase in natural mortality starting in 2010 as a stepwise change. A single additional parameter is estimated.
+- B3: Estimate an increase in natural mortality starting in 2005 as a stepwise change.
+- B4: Same as B1, but the natural mortality prior to 1990 is 0.05 (instead of 0.074)
+- B5: Same as B2, but the natural mortality prior to 1990 is 0.05 (instead of 0.074)
+
+### MCMC
 
 After minimizing the objective function (the negative log posterior), the posterior was sampled using MCMC.
-
-We proceeded with the MCMC for a subset of the sensitivity models.
+We proceeded with the MCMC for models A1 and B2. 
 
 ## Tables
 
@@ -162,7 +227,7 @@ csasdown::csas_table(
   ss3_par,
   font_size = 8,
   format = "latex",
-  caption = "Parameters reported from SS3 for model A1.",
+  caption = "Parameters reported from SS3 for model A1, including the parameter name in the report file, value, and standard error (if estimated) calculated from inverting the Hessian matrix. Male biological parameters are parameterized as offsets from the female parameter in logspace. For example, if the male parameter were $y$ and the female parameter were $x$, the offset in the control and report files should be $\\log(y/x)$.",
   align = c("l", "l", "r", "r", "l")
 ) %>%
   kableExtra::column_spec(4, width = "1.5cm") %>%
@@ -184,6 +249,11 @@ csasdown::csas_table(
 )
 ```
 
+
+$$
+\mathcal{K} = \{\mu^\textrm{Female},\mu^\textrm{Male},\Delta^\textrm{Female, asc},\Delta^\textrm{Female, dsc},\Delta^\textrm{Male, asc},\Delta^\textrm{Male, dsc}\}
+$$
+
 ```{r ss3-likelihoods, results="asis"}
 ss3_like <- readxl::read_excel(here::here("tables/equations.xlsx"), sheet = "SS3_likelihood") %>%
   mutate(Equation = paste0("$", .data$Equation, "$"),
@@ -191,7 +261,7 @@ ss3_like <- readxl::read_excel(here::here("tables/equations.xlsx"), sheet = "SS3
 
 csasdown::csas_table(
   ss3_like,
-  caption = "Summary of SS3 likelihood and prior equations. Variables $a$ indexes age, $y$ indexes year, $f$ indexes fishery, $i$ indexes survey, and $s$ indexes sex. The circumflex symbol denotes an estimate.",
+  caption = "Summary of SS3 likelihood and prior equations. Variables $a$ indexes age, $y$ indexes year, $f$ indexes fishery, $i$ indexes survey, $s$ indexes sex, $k$ indexes selectivity parameters. $m$ is the prior mean, $\\textrm{SD}$ is the prior standard deviation, $I$ is the observed index, $N$ is the sample size of the length composition, $p$ is the proportion by length and sex, $A^\\textrm{Male}$ is the male apical selectivity, $x$ is the estimated selectivity parameter. For the beta distribution, $\\alpha = (1-m)(\\frac{m(1-m)}{\\textrm{SD}^2} - 1)$ and $\\beta = m(\\frac{m(1-m)}{\\textrm{SD}^2} - 1)$. Set $\\mathcal{K} = \\{\\mu^\\textrm{Female},\\mu^\\textrm{Male},\\Delta^\\textrm{Female, asc},\\Delta^\\textrm{Female, dsc},\\Delta^\\textrm{Male, asc},\\Delta^\\textrm{Male, dsc}\\}$ denotes the set of selectivity parameters, excluding $A$. The circumflex symbol denotes an estimate.",
   format = "latex",
   align = c("l", "l")
 ) %>%

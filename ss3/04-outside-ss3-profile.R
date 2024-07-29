@@ -1,7 +1,7 @@
 
 
 ss_home <- here::here("ss3")
-ss_home <- "C:/users/qhuynh/Desktop/dogfish"
+#ss_home <- "C:/users/quang/Desktop/dogfish"
 
 source("ss3/ss3_functions.R")
 
@@ -23,6 +23,7 @@ zfrac_prof <- r4ss::SSgetoutput(
   keyvec = 1:length(zfrac),
   dirvec = file.path(ss_home, "A1_zfracprof")
 )
+saveRDS(zfrac_prof, file = file.path(ss_home, "zfrac_prof.rds"))
 
 # Plot state variables
 g1 <- SS3_prof(zfrac_prof, zfrac, SpawnBio) +
@@ -121,6 +122,7 @@ R0_prof <- r4ss::SSgetoutput(
   getcomp = FALSE,
   getcovar = FALSE
 )
+saveRDS(R0_prof, file = file.path(ss_home, "R0_prof.rds"))
 
 g1 <- SS3_prof(R0_prof, logR0, SpawnBio) +
   labs(x = "Year", y = "Spawning output", colour = expression(log(R[0])))

@@ -3,16 +3,16 @@ library(adnuts)
 
 # Run MCMC
 #ss_home <- here::here("ss3")
-ss_home <- "C:/users/qhuynh/Desktop/dogfish"
+ss_home <- "C:/users/quang/Desktop/dogfish"
 
-SS_dir <- c("m37_flatselsurv_IPHC_g4")
-par_base <- R2admb::read_pars(file.path(ss_home, SS_dir[1], "ss"))
+SS_dir <- c("A1", "B2_2010step")
 
 
 for(i in 1:length(SS_dir)) {
 
   # Fit MPD
   #system("ss3.exe -nox -nohess")
+  par_base <- R2admb::read_pars(file.path(ss_home, SS_dir[i], "ss"))
 
   set.seed((i + 12) * 100)
   init <- lapply(1:2, function(chains) {
@@ -35,6 +35,7 @@ for(i in 1:length(SS_dir)) {
                    cores = 2,
                    verbose = FALSE,
                    skip_unbounded = FALSE,
+                   admb_args = "modelname ss",
                    seeds = c(4, 10))
   tictoc::toc()
   message("Done.\n\n")
