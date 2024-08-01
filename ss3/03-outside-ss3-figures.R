@@ -162,10 +162,10 @@ if (set_to_plot == "growth") {
 } else if (set_to_plot == "M") {
 
   # Compare low M (combination of A and B models)
-  #mods <- c("A1", "A9_lowM", "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
-  #model_name <- c("(A1) M = 0.074", "(A9) M = 0.05",
-  #                "(B1) M = 0.074, inc. 1990", "(B2) M = 0.074, step 2010",
-  #                "(B3) M = 0.074, step 2005", "(B4) M = 0.05, inc. 1990", "(B5) M = 0.05, inc. 2010")
+  mods <- c("A1", "A9_lowM", "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
+  model_name <- c("(A1) M = 0.074", "(A9) M = 0.05",
+                  "(B1) M = 0.074, inc. 1990", "(B2) M = 0.074, step 2010",
+                  "(B3) M = 0.074, step 2005", "(B4) M = 0.05, inc. 1990", "(B5) M = 0.05, inc. 2010")
 
   mods <- c("A1", "A9_lowM", "B2_2010step")
   model_name <- c("(A1) M = 0.074", "(A9) M = 0.05", "(B2) M = 0.074, step 2010")
@@ -331,7 +331,7 @@ g <- Map(SS3_lencomp, multi_rep, model_name, MoreArgs = list(fleet = fleet_int))
   mutate(FName = factor(FName, levels = fleet_names$FName)) %>%
   ggplot(aes(Yr, Exp, linetype = Sex, shape = Sex)) +
   facet_grid(vars(FName), vars(scen), scales = "free_y") +
-  geom_point(aes(y = Obs, colour = FleetName)) +
+  geom_point(aes(y = Obs, colour = FName)) +
   geom_line() +
   labs(x = "Year", y = "Mean length") +
   theme(panel.spacing = unit(0, "in"),
@@ -422,6 +422,14 @@ if (set_to_plot == "growth") {
     ggtitle(model_name[1])
   .ggsave("N_len_A1.png", g2, height = 6, width = 5)
 
+  # Exploitation and apical F
+  g <- SS3_apicalF(multi_rep[[1]])
+  g$facet$params$ncol <- 3
+  .ggsave("apicalF_fleet_A1.png", g, height = 6, width = 8)
+
+  g <- SS3_apicalF(multi_rep[[1]], FALSE)
+  .ggsave("apicalF_sex_A1.png", g, height = 2, width = 4)
+
   # Plot annual selectivity
   g <- SS3_selannual(multi_rep[[1]])
   .ggsave("sel_annual_A1.png", g, height = 4, width = 6)
@@ -429,16 +437,16 @@ if (set_to_plot == "growth") {
 }
 
 # Exploitation and apical F
-g <- SS3_F(multi_rep, model_name, instantaneous = TRUE) +
-  coord_cartesian(ylim = c(0, 0.25), expand = FALSE)
-.ggsave("harvest_rate_total.png", g, height = 4, width = 6)
-
-g <- SS3_F(multi_rep, model_name, type = "fleet") +
-  labs(y = "Harvest rate") +
-  coord_cartesian(ylim = c(0, 1), expand = FALSE)
-.ggsave("harvest_rate_fleet.png", g, height = 4, width = 6)
-
-g <- SS3_vuln(multi_rep, model_name)
+#g <- SS3_F(multi_rep, model_name, instantaneous = TRUE) +
+#  coord_cartesian(ylim = c(0, 0.25), expand = FALSE)
+#.ggsave("harvest_rate_total.png", g, height = 4, width = 6)
+#
+#g <- SS3_F(multi_rep, model_name, type = "fleet") +
+#  labs(y = "Harvest rate") +
+#  coord_cartesian(ylim = c(0, 1), expand = FALSE)
+#.ggsave("harvest_rate_fleet.png", g, height = 4, width = 6)
+#
+#g <- SS3_vuln(multi_rep, model_name)
 
 
 #g <- SS3_F(multi_rep, model_name, type = "FMSY") +
