@@ -326,7 +326,9 @@ g <- ind_area %>%
   theme(legend.position = "bottom") +
   scale_fill_brewer(palette = "Set2")
 g2 <- ind_area %>%
-  mutate(value = est) %>%
+  mutate(value = est * 4 * 1000*1000) |> # 2km x 2km in t
+  mutate(value = value / 1000) |> # from kg to t
+  mutate(value = value / 1000) |> # from t to 1000 t
   ggplot(aes(year, value, fill = survey_abbrev)) +
   geom_col(width = 1, colour = NA) +
   gfplot::theme_pbs() +
@@ -336,6 +338,7 @@ g2 <- ind_area %>%
   scale_fill_brewer(palette = "Set2")
 gout <- ggpubr::ggarrange(g2, g, ncol = 2, legend = "bottom", common.legend = TRUE)
 ggsave("figs/synoptic/syn_index_area_biomass.png", gout, height = 3, width = 6)
+
 
 # Compare with design-based index
 ## Design-based index ----
