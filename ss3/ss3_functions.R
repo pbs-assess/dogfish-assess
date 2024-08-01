@@ -1363,6 +1363,14 @@ SS3_apicalF <- function(replist, by_fleet = TRUE) {
   Fatage <- replist$fatage %>%
     filter(Era == "TIME") %>%
     select(Fleet, Sex, Yr, as.character(0:70))
+  Fapical_pop <- Fatage %>%
+      reshape2::melt(id.vars = c("Fleet", "Sex", "Yr")) %>%
+      rename(Age = variable) %>%
+      summarise(value = sum(.data$value), .by = c(Yr, Age, Sex)) %>%
+      summarise(Age = .data$Age[which.max(.data$value)],
+                value = max(.data$value),
+                .by = c(Yr, Sex)) %>%
+      mutate(Sex = ifelse(Sex == 1, "Female", "Male"))
 
   if (by_fleet) {
 
@@ -1387,15 +1395,6 @@ SS3_apicalF <- function(replist, by_fleet = TRUE) {
       labs(x = "Year", y = "Apical F")
 
   } else {
-
-    Fapical_pop <- Fatage %>%
-      reshape2::melt(id.vars = c("Fleet", "Sex", "Yr")) %>%
-      rename(Age = variable) %>%
-      summarise(value = sum(.data$value), .by = c(Yr, Age, Sex)) %>%
-      summarise(Age = .data$Age[which.max(.data$value)],
-                value = max(.data$value),
-                .by = c(Yr, Sex)) %>%
-      mutate(Sex = ifelse(Sex == 1, "Female", "Male"))
 
     # Female F is higher than Male F
     g <- ggplot(Fapical_pop, aes(Yr, value, linetype = Sex)) +

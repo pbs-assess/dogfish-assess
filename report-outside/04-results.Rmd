@@ -95,7 +95,7 @@ Models with earlier increases in M around 1990, i.e., in models B1 and B4, did n
 Similar behavior was seen in model B3 with the M increase in 2005.
 In these models, the stock was estimated to be lightly fished through most of the 20th century and the only stock decline occurred as a result of the M increase.
 This trend is not corroborated by historical observations of declining dogfish abundance following periods of high catches.
-Thus, these models were not further considered.
+Thus, these models were not considered credible.
 
 ```{r ss3-spawn, fig.cap="Estimates of the spawning output (pup production) for Outside spiny dogfish from the base model (A1) and sensitivity models (A2-A5)."}
 knitr::include_graphics(here::here("figs/ss3/set_a_mat/spawning_est.png"))

@@ -204,7 +204,7 @@ The model names with the "A" prefix denote time-invariant natural mortality.
 The model names with the "B" prefix denote time-changing natural mortality. 
 Several models were fitted to attribute the recent decrease in the indices to non-fishery mortality:
 
-- B1: Estimate an increase in natural mortality starting in 1990 when the pinniped population started to increase. The increase is linear year over year. A single additional parameter is estimated.
+- B1: Estimate an increase in natural mortality starting in 1990 when the pinniped population, and hypothesized predation mortality on dogfish, started to increase [@oleksiuk2018]. The increase is linear year over year. A single additional parameter is estimated.
 - B2: Estimate an increase in natural mortality starting in 2010 as a stepwise change. A single additional parameter is estimated.
 - B3: Estimate an increase in natural mortality starting in 2005 as a stepwise change.
 - B4: Same as B1, but the natural mortality prior to 1990 is 0.05 (instead of 0.074)
