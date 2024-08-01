@@ -63,7 +63,20 @@ g <- SS3_SR(zfrac_prof, paste("zfrac = ", zfrac)) +
 g$facet$params$ncol <- 3
 ggsave("figs/ss3/prof/prof_zfrac_SR.png", g, height = 6, width = 6)
 
-
+g <- Map(SS3_index, zfrac_prof, zfrac, figure = FALSE) %>%
+  bind_rows() %>%
+  left_join(fleet_names, by = "Fleet_name") %>%
+  ggplot(aes(Yr, Obs, ymin = exp(log(Obs) - 1.96 * SE), ymax = exp(log(Obs) + 1.96 * SE))) +
+  geom_linerange() +
+  geom_point() +
+  geom_line(aes(y = Exp, colour = factor(scen))) +
+  expand_limits(y = 0) +
+  facet_wrap(vars(FName), scales = "free_y") +
+  gfplot::theme_pbs() +
+  labs(x = "Year", y = "Index", colour = expression(z[frac])) +
+  guides(colour = guide_legend(ncol = 6)) +
+  theme(panel.spacing = unit(0, "in"), legend.position = "bottom")
+ggsave("figs/ss3/prof/prof_zfrac_index.png", g, height = 4.5, width = 6)
 
 # Plot likelihood profile
 g1 <- SS3_prof_like(zfrac_prof, zfrac, by_fleet = FALSE) +
