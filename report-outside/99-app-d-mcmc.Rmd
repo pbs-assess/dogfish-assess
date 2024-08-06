@@ -1,0 +1,69 @@
+<!-- The following code should appear at the beginning of the first appendix.
+After that, all subsequent sections will be turned into appendices. -->
+
+`r if(knitr:::is_latex_output()) '\\Appendices'`
+
+`r if(!knitr:::is_latex_output()) '# (APPENDIX) Appendix {-}'`
+
+# MARKOV CHAIN MONTE CARLO SIMULATIONS {#app:mcmc}
+
+Here, we present MCMC diagnostics and posteriors from model A1 (with constant natural mortality) and B2 (with stepwise increase in natural mortality in 2010).
+For both models, adnuts reported good posterior behavior, as the effective sample size was high (ratio to the total MCMC iterations close to 1), Monte Carlo standard error low (less than 10 percent of the posterior standard deviation), and the $\hat{R}$ metric was below 1.1 for all parameters.
+No divergence was detected in the NUTS algorithm.
+
+Trace plots indicated low to no autocorrelation in the posterior with the thin rate of 5 (Figures \@ref(fig:trace-A1-1)--\@ref(fig:trace-B2-2)).
+Marginal posterior distributions were approximately normally distributed, except for parameters with estimates near their respective bounds, for example, the $z_\textrm{frac}$ productivity parameter and the male apical selectivity parameters (all bounded between 0--1, Figures \@ref(fig:post-A1-1)--\@ref(fig:post-B2-2)). 
+These parameters had skewed posteriors.
+
+Correlation plots for the stock recruit parameters are shown in Figures \@ref(fig:corr-A1) and \@ref(fig:corr-B2).
+Time series of the spawning output and depletion ($S/S_0$) are in Figure \@ref(fig:post-ts).
+The estimate of $\log(R_0)$ in B2 is more uncertain than in model A1 and is manifested in the wider interval for spawning output for the former. 
+The uncertainty in B2 is higher because the model is also attempting to estimate a change in natural mortality. Both parameters are positively correlated since a larger mortality rate requires a larger population to realize the historical catch.
+
+```{r trace-A1-1, fig.cap="Trace plots of the MCMC in model A1 for the log-posterior and stock recruit parameters."}
+knitr::include_graphics(here::here("figs/mcmc/posterior_wormplot_A1.png"))
+```
+
+(ref:fig-trace-A1-2) Trace plots of the MCMC in model A1 for selectivity parameters. Parameter names are defined in Table \@ref(tab:ss3-par).
+
+```{r trace-A1-2, out.width="6in", fig.cap="(ref:fig-trace-A1-2)"}
+knitr::include_graphics(here::here("figs/mcmc/posterior_wormplot_sel_A1.png"))
+```
+
+```{r trace-B2-1, fig.cap="Trace plots of the MCMC in model B2 for the log-posterior and stock recruit parameters."}
+knitr::include_graphics(here::here("figs/mcmc/posterior_wormplot_B2_2010step.png"))
+```
+
+```{r trace-B2-2, out.width="6in", fig.cap="Trace plots of the MCMC in model B2 for selectivity parameters."}
+knitr::include_graphics(here::here("figs/mcmc/posterior_wormplot_sel_B2_2010step.png"))
+```
+
+```{r post-A1-1, fig.cap="Marginal posterior distribution for the log-posterior and stock recruit parameters in model A1."}
+knitr::include_graphics(here::here("figs/mcmc/posterior_density_A1.png"))
+```
+
+```{r post-A1-2, out.width="5in", fig.cap="Marginal posterior distribution for the selectivity parameters in model A1."}
+knitr::include_graphics(here::here("figs/mcmc/posterior_density_sel_A1.png"))
+```
+
+```{r post-B2-1, fig.cap="Marginal posterior distribution for the log-posterior, stock recruit parameters, and 2010 natural mortality change in model B2."}
+knitr::include_graphics(here::here("figs/mcmc/posterior_density_B2_2010step.png"))
+```
+
+```{r post-B2-2, out.width="5in", fig.cap="Marginal posterior distribution for the selectivity parameters in model A1."}
+knitr::include_graphics(here::here("figs/mcmc/posterior_density_sel_B2_2010step.png"))
+```
+
+```{r corr-A1, fig.cap="Pair plots of individual MCMC samples in the log-posterior and stock recruitment parameters in model A1. The reported numbers are the correlation between pairs of parameters."}
+knitr::include_graphics(here::here("figs/mcmc/pairs_A1.png"))
+```
+
+```{r corr-B2, fig.cap="Pair plots of individual MCMC samples in the log-posterior, stock recruitment parameters, and 2010 change in natural mortality in model B2. The reported numbers are the correlation between pairs of parameters."}
+knitr::include_graphics(here::here("figs/mcmc/pairs_B2_2010step.png"))
+```
+
+```{r post-ts, fig.cap="Time series of spawning output and depletion ($S/S_0$) by model. Solid lines represent the posterior median and the the dotted line span the 95\\% probability interval."}
+knitr::include_graphics(here::here("figs/mcmc/posterior_ts.png"))
+```
+
+\clearpage

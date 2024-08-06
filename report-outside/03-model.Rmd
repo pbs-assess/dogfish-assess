@@ -204,7 +204,7 @@ The model names with the "A" prefix denote time-invariant natural mortality.
 The model names with the "B" prefix denote time-changing natural mortality. 
 Several models were fitted to attribute the recent decrease in the indices to non-fishery mortality:
 
-- B1: Estimate an increase in natural mortality starting in 1990 when the pinniped population, and hypothesized predation mortality on dogfish, started to increase [@oleksiuk2018]. The increase is linear year over year. A single additional parameter is estimated.
+- B1: Estimate an increase in natural mortality starting in 1990 when the pinniped population, and hypothesized predation mortality on dogfish, started to increase [@olesiuk2018]. The increase is linear year over year. A single additional parameter is estimated.
 - B2: Estimate an increase in natural mortality starting in 2010 as a stepwise change. A single additional parameter is estimated.
 - B3: Estimate an increase in natural mortality starting in 2005 as a stepwise change.
 - B4: Same as B1, but the natural mortality prior to 1990 is 0.05 (instead of 0.074)
@@ -212,8 +212,12 @@ Several models were fitted to attribute the recent decrease in the indices to no
 
 ### MCMC
 
-After minimizing the objective function (the negative log posterior), the posterior was sampled using MCMC.
-We proceeded with the MCMC for models A1 and B2. 
+After fitting the model by minimizing the negative log posterior, a subset of models was sampled with Bayesian MCMC (Markov Chain Monte Carlo) for general diagnostics purposes, for example, evidence of over-parameterization.
+The No U-Turn Sampling (NUTS) algorithm was utilized using the adnuts R package [@adnuts].
+A total of 3,500 iterations were used with a burn-in period of 1,000 iterations and thin rate of 5 to characterize the posterior on 2 chains. 
+
+We proceeded with the MCMC for models A1 and B2. Results are presented in Appendix \@ref(app:mcmc).
+Structural issues with the models explored here precluded the use of MCMC to produce probabilistic decision tables.
 
 ## Tables
 

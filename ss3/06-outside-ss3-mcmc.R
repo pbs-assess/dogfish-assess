@@ -2,16 +2,15 @@
 library(adnuts)
 
 # Run MCMC
-#ss_home <- here::here("ss3")
-ss_home <- "C:/users/quang/Desktop/dogfish"
+ss_home <- here::here("ss3")
+#ss_home <- "C:/users/quang/Desktop/dogfish"
 
 SS_dir <- c("A1", "B2_2010step")
-
 
 for(i in 1:length(SS_dir)) {
 
   # Fit MPD
-  #system("ss3.exe -nox -nohess")
+  #system("ss3.exe -nox -nohess modelname ss")
   par_base <- R2admb::read_pars(file.path(ss_home, SS_dir[i], "ss"))
 
   set.seed((i + 12) * 100)
@@ -49,9 +48,15 @@ for(i in 1:length(SS_dir)) {
 ### Run mceval - run separately from MCMC
 # Configure starter.ss to return Report.sso for every 5th iteration to get 200 posterior samples
 # Also need posterior.sso
-#MSEtool::setup(length(SS_dir))
-#sfLapply(SS_dir, function(x) {
-#  setwd(paste0("C:/users/qhuynh/Desktop/SS3/", x, "_mceval"))
-#  system("ss.exe -nox -mceval", show.output.on.console = FALSE)
-#})
-#sfStop()
+library(snowfall)
+sfInit(parallel = TRUE, cpus = length(SS_dir))
+sfExport("ss_home")
+sfLapply(SS_dir, function(x) {
+  setwd(file.path(ss_home, paste0(x, "_mceval")))
+  system("ss.exe -nox -mceval modelname ss", show.output.on.console = FALSE)
+})
+sfStop()
+
+mcmc_output <- lapply(
+
+)
