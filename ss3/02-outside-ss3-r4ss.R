@@ -13,7 +13,7 @@ fit_ss3 <- function(model_dir = "model1",
   on.exit(setwd(dir_cur))
 
   if (.Platform$OS.type == "unix") {
-    cmd <- "./ss modelname ss"
+    cmd <- "ss modelname ss"
   } else {
     cmd <- "ss.exe modelname ss"
   }
