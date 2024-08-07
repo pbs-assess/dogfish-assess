@@ -5,8 +5,18 @@ ss_home <- here::here("ss3")
 
 source("ss3/ss3_functions.R")
 
+dir.create(file.path(ss_home, "A1_zfracprof"), showWarnings = FALSE)
+file.copy(
+  from = list.files(file.path(ss_home, "A1"), full.names = TRUE),
+  to = file.path(ss_home, "A1_zfracprof"))
+
 # Profile zfrac
 zfrac <- c(1e-3, seq(0.1, 1, 0.1))
+
+# run and fix:
+# Error in r4ss::profile(file.path(ss_home, "A1_zfracprof"), string = "SR_surv_zfrac",  :
+    # starter file should be changed to change
+  # 'control.ss' to 'control_modified.ss'
 
 x <- r4ss::profile(
   file.path(ss_home, "A1_zfracprof"),
