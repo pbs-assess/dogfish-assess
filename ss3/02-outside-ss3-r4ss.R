@@ -38,8 +38,10 @@ mods <- c("A1",
 # Fit a single model
 fit_ss3(mods[1], hessian = TRUE, ss_home = ss_home)
 
-# Fit all of many models in parallel
+# Sequential:
+# lapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 
+# Fit all of many models in parallel
 snowfall::sfInit(parallel = TRUE, cpus = 6)
 snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 snowfall::sfStop()
