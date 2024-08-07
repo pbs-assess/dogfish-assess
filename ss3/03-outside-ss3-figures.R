@@ -323,6 +323,11 @@ g <- SS3_sel(multi_rep, model_name, type = "Lsel", bin_width = 5, do_mat = FALSE
 g <- SS3_sel(multi_rep, model_name, bin_width = 5)
 .ggsave("sel_age.png", g, height = 6, width = 8)
 
+# Selectivity at age (converted from size based, also show maturity ogive)
+g <- SS3_sel(multi_rep, model_name, bin_width = 5, scale_max_1 = TRUE)
+.ggsave("sel_age_max1.png", g, height = 6, width = 8)
+
+
 # Mean length
 fleet_int <- c(1:8)
 g <- Map(SS3_lencomp, multi_rep, model_name, MoreArgs = list(fleet = fleet_int)) %>%

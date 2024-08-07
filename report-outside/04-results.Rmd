@@ -15,7 +15,7 @@ Young cohorts that were invulnerable to the early fishery rebuilt the abundance 
 However, low recruitment during the 1940s contributed to the second decline in the older age classes into recent years.
 
 The selectivity of the bottom trawl landings and hook-line landings was estimated that the respective catch consisted predominantly of large females (Figure \@ref(fig:ss3-sel-len)). 
-When converted to the selectivity-at-age, the selectivity ogive was to the right of the base maturity curve (Figure \@ref(fig:ss3-sel-age)).
+When converted to the selectivity-at-age, the selectivity ogive was to the right of the base maturity curve (Figures \@ref(fig:ss3-sel-age)) and \@ref(fig:ss3-sel-age2)).
 On the other hand, the selectivity of the bottom trawl discards, along with discards in other fishing fleets and in the midwater trawl, comprised of younger, immature fish.
 
 The model fit the declines in the indices of abundance, which reflect stock trends in more recent decades, fairly well from the fishery CPUE, IPHC survey, and HS MSA survey (Figure \@ref(fig:ss3-index)). 
@@ -117,10 +117,14 @@ knitr::include_graphics(here::here("figs/ss3/set_a_mat/N_age_A1.png"))
 knitr::include_graphics(here::here("figs/ss3/set_a_mat/sel_len.png"))
 ```
 
-(ref:fig-ss3-sel-age) Estimates of selectivity at age by sex for fleets and surveys with length composition data from the base model (A1) and sensitivity models (A2-A5). For other fleets and surveys, the selectivity was mirrored to one of these selectivity ogives (see Modeling section). Selectivity at age is converted from selectivity at length (Figure \@ref(fig:ss3-sel-len)) using the growth curve in the model. The black, dotted line denotes the female maturity at age ogive. The maximum proportion mature is 0.5 to account for a two year gestation period, such that half the mature population spawns annually
+(ref:fig-ss3-sel-age) Estimates of selectivity at age by sex for fleets and surveys with length composition data from the base model (A1) and sensitivity models (A2-A5). For other fleets and surveys, the selectivity was mirrored to one of these selectivity ogives (see Modeling section). Selectivity at age is converted from selectivity at length (Figure \@ref(fig:ss3-sel-len)) using the growth curve in the model. For fleets with apical value less than one, year-specific apical fishing mortality should calculated from the F-at-age vector. The black, dotted line denotes the female maturity at age ogive. The maximum proportion mature is 0.5 to account for a two year gestation period, such that half the mature population spawns annually.
 
 ```{r ss3-sel-age, fig.cap="(ref:fig-ss3-sel-age)"}
 knitr::include_graphics(here::here("figs/ss3/set_a_mat/sel_age.png"))
+```
+
+```{r ss3-sel-age2, fig.cap="Estimates of selectivity at age rescaled where the apical value for females is 1. The black, dotted line denotes the female maturity at age ogive. The maximum proportion mature is 0.5 to account for a two year gestation period, such that half the mature population spawns annually."}
+knitr::include_graphics(here::here("figs/ss3/set_a_mat/sel_age_max1.png"))
 ```
 
 ```{r ss3-index, fig.cap="Observed indices of abundance (black points with 95\\% confidence intervals) and predicted values (coloured lines) from the base model (A1) and sensitivity models (A2-A5)."}
