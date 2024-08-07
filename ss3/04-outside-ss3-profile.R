@@ -1,4 +1,5 @@
-
+library(dplyr)
+library(ggplot2)
 
 ss_home <- here::here("ss3")
 #ss_home <- "C:/users/quang/Desktop/dogfish"
@@ -116,17 +117,27 @@ g <- SS3_yieldcurve(zfrac_prof, paste0("zfrac = ", zfrac), xvar = "F") +
 g$facet$params$ncol <- 3
 ggsave("figs/ss3/prof/zfrac_yield_curve_F.png", g, height = 6, width = 6)
 
+# Selectivity curves:
 
+purrr::map2_dfr(zfrac_prof, zfrac, \(x, y) {
+  mutate(.SS3_sel(x), zfrac_val = y)
+}) |>
+  left_join(fleet_names, by = c("FleetName" = "Fleet_name")) %>%
+  mutate(FName = factor(FName, levels = fleet_names$FName)) |>
+  mutate(Sex = ifelse(Sex == 1, "Female", "Male")) |>
+  mutate(value = value/max(value), .by = c(FName, zfrac_val)) |>
+  ggplot(aes(variable, value, colour = as.factor(zfrac_val), group = zfrac_val)) +
+  geom_line() +
+  facet_grid(FName~Sex) +
+  gfplot::theme_pbs() + labs(x = "Length (cm)", y = "Selectivity") +
+  labs(colour = expression(z[frac]))
+ggsave("figs/ss3/prof/zfrac_selectivity.png", height = 7, width = 6)
 
 #zfrac2 <- r4ss::SSsummarize(zfrac_prof)
 #r4ss::SSplotComparisons(zfrac2, legendlabels = paste("zfrac =", seq(0.1, 0.9, 0.1)))
 #r4ss::SSplotProfile(zfrac2, profile.string = "SR_surv_zfrac", profile.label = expression(z[frac]))
 
 #readr::write_excel_csv(likelihoods, file = "ss3/tables/likelihoods.csv")
-
-
-
-
 
 # Profile R0
 logR0 <- seq(8.5, 12.5, 0.25)
