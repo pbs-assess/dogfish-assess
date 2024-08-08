@@ -6,21 +6,24 @@ ss_home <- here::here("ss3")
 
 source("ss3/ss3_functions.R")
 
-dir.create(file.path(ss_home, "A1_zfracprof"), showWarnings = FALSE)
+zdir <- "A1_zfracprof" # See also "A10_extraSD_zfracprof"
+
+if (!dir.exists(file.path(ss_home)))
+dir.create(file.path(ss_home, zdir), showWarnings = FALSE)
 file.copy(
   from = list.files(file.path(ss_home, "A1"), full.names = TRUE),
-  to = file.path(ss_home, "A1_zfracprof"))
+  to = file.path(ss_home, zdir))
 
 # Profile zfrac
 zfrac <- c(1e-3, seq(0.1, 1, 0.1))
 
 # run and fix:
-# Error in r4ss::profile(file.path(ss_home, "A1_zfracprof"), string = "SR_surv_zfrac",  :
+# Error in r4ss::profile(file.path(ss_home, zdir), string = "SR_surv_zfrac",  :
     # starter file should be changed to change
   # 'control.ss' to 'control_modified.ss'
 
 x <- r4ss::profile(
-  file.path(ss_home, "A1_zfracprof"),
+  file.path(ss_home, zdir),
   string = "SR_surv_zfrac",
   profilevec = zfrac,
   #overwrite = TRUE,
@@ -32,7 +35,7 @@ x <- r4ss::profile(
 
 zfrac_prof <- r4ss::SSgetoutput(
   keyvec = 1:length(zfrac),
-  dirvec = file.path(ss_home, "A1_zfracprof")
+  dirvec = file.path(ss_home, zdir)
 )
 saveRDS(zfrac_prof, file = file.path(ss_home, "zfrac_prof.rds"))
 
@@ -118,7 +121,6 @@ g$facet$params$ncol <- 3
 ggsave("figs/ss3/prof/zfrac_yield_curve_F.png", g, height = 6, width = 6)
 
 # Selectivity curves:
-
 purrr::map2_dfr(zfrac_prof, zfrac, \(x, y) {
   mutate(.SS3_sel(x), zfrac_val = y)
 }) |>
