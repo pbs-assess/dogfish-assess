@@ -167,8 +167,8 @@ if (set_to_plot == "growth") {
                   "(B1) M = 0.074, inc. 1990", "(B2) M = 0.074, step 2010",
                   "(B3) M = 0.074, step 2005", "(B4) M = 0.05, inc. 1990", "(B5) M = 0.05, inc. 2010")
 
-  mods <- c("A1", "A9_lowM", "B2_2010step")
-  model_name <- c("(A1) M = 0.074", "(A9) M = 0.05", "(B2) M = 0.074, step 2010")
+  #mods <- c("A1", "A9_lowM", "B2_2010step")
+  #model_name <- c("(A1) M = 0.074", "(A9) M = 0.05", "(B2) M = 0.074, step 2010")
 
   fig_dir <- "figs/ss3/set_b"
 
@@ -286,7 +286,7 @@ g <- SS3_B(multi_rep, model_name) +
 g <- SS3_B(multi_rep, model_name, type = "SSB0") +
   guides(linetype = 'none') +
   labs(y = "Spawning depletion") +
-  coord_cartesian(expand = FALSE) +
+  coord_cartesian(expand = FALSE, ylim = c(0, 1.1)) +
   guides(colour = guide_legend(ncol = 2))
 .ggsave("depletion_est.png", g, height = 5, width = 6)
 
