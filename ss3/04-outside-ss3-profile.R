@@ -141,6 +141,26 @@ ggsave("figs/ss3/prof/zfrac_selectivity.png", height = 7, width = 6)
 
 #readr::write_excel_csv(likelihoods, file = "ss3/tables/likelihoods.csv")
 
+# Potential removal reference
+# Always double check in the forecast file that Btarget is 0.4 B0, SPR target = 0.4, etc.
+RR <- lapply(1:length(zfrac_prof), function(x) {
+  zfrac_prof[[x]]$derived_quants %>%
+    filter(Label %in% c("annF_Btgt", "annF_SPR", "annF_MSY")) %>%
+    select(Label, Value) %>%
+    mutate(zfrac = .env$zfrac[x])
+}) %>%
+  bind_rows() %>%
+  mutate(type = ifelse(Label == "annF_Btgt", "F[0.4~S[0]]", ifelse(Label == "annF_SPR", "F[0.4~SPR]", "F[MSY]")))
+
+g <- ggplot(RR, aes(zfrac, Value)) +
+  geom_point() +
+  geom_line() +
+  gfplot::theme_pbs() +
+  facet_wrap(vars(type), labeller = label_parsed) +
+  labs(x = expression(z[frac]))
+ggsave("figs/ss3/prof/zfrac_rr.png", height = 2, width = 6)
+
+
 # Profile R0
 logR0 <- seq(8.5, 12.5, 0.25)
 
