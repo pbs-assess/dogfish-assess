@@ -185,3 +185,62 @@ g <- SS3_prof_like(R0_prof[-1], logR0[-1], by_fleet = TRUE, component = c("Lengt
   labs(x = expression(log(R[0])))
 ggsave("figs/ss3/prof/like_R0_fleet.png", g, height = 3, width = 6)
 
+
+# Profile M
+M <- seq(0.03, 0.09, 0.01)
+
+x <- r4ss::profile(
+  file.path(ss_home, "A1_Mprof"),
+  string = "NatM_uniform_Fem_GP_1",
+  profilevec = M,
+  #overwrite = FALSE,
+  exe = "ss",
+  verbose = FALSE,
+  prior_check = FALSE,
+  extras = "-nox -nohess modelname ss"
+)
+
+
+M_prof <- r4ss::SSgetoutput(
+  keyvec = 1:length(M),
+  dirvec = file.path(ss_home, "A1_Mprof"),
+  getcomp = FALSE,
+  getcovar = FALSE
+)
+saveRDS(M_prof, file = file.path(ss_home, "M_prof.rds"))
+
+g1 <- SS3_prof(M_prof, M, SpawnBio) +
+  labs(x = "Year", y = "Spawning output", colour = "M")
+g2 <- SS3_prof(M_prof, M, pred_recr) +
+  labs(x = "Year", y = "Recruitment", colour = "M")
+g3 <- SS3_prof(M_prof, M, dep) +
+  labs(x = "Year", y = "Spawning depletion", colour = "M") +
+  expand_limits(y = 0)
+g <- ggpubr::ggarrange(g1, g2, g3, ncol = 1, common.legend = TRUE, legend = "bottom")
+ggsave("figs/ss3/prof/prof_M_SB.png", g, height = 6, width = 5)
+
+g <- SS3_SR(M_prof, paste("M = ", M))
+ggsave("figs/ss3/prof/prof_M_SR.png", g, height = 6, width = 6)
+
+g <- SS3_prof_like(M_prof, M, by_fleet = FALSE) +
+  labs(x = "M")
+ggsave("figs/ss3/prof/like_M.png", g, height = 3, width = 5)
+
+g <- SS3_prof_like(M_prof, M, by_fleet = TRUE, component = c("Length_like", "Surv_like")) +
+  labs(x = "M")
+ggsave("figs/ss3/prof/like_M_fleet.png", g, height = 3, width = 6)
+
+g <- Map(SS3_index, M_prof, M, figure = FALSE) %>%
+  bind_rows() %>%
+  left_join(fleet_names, by = "Fleet_name") %>%
+  ggplot(aes(Yr, Obs, ymin = exp(log(Obs) - 1.96 * SE), ymax = exp(log(Obs) + 1.96 * SE))) +
+  geom_linerange() +
+  geom_point() +
+  geom_line(aes(y = Exp, colour = factor(scen))) +
+  expand_limits(y = 0) +
+  facet_wrap(vars(FName), scales = "free_y") +
+  gfplot::theme_pbs() +
+  labs(x = "Year", y = "Index", colour = "M") +
+  guides(colour = guide_legend(ncol = 6)) +
+  theme(panel.spacing = unit(0, "in"), legend.position = "bottom")
+ggsave("figs/ss3/prof/prof_M_index.png", g, height = 4.5, width = 6)
