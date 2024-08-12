@@ -405,3 +405,13 @@ mat_age <- data.frame(age = 0:70) %>%
          mat_low = ifelse(age >= 18, 1/(1 + exp(-log(19) * (age - 31.5)/24.3)), 0),
          mat_adjust_low = round(mat_low * 0.5, 3))
 write.csv(mat_age, file = "data/ss3/mat_age.csv")
+
+## priors on zfrac:
+# estBetaParams <- function(mu, var) {
+#   alpha <- ((1 - mu) / var - 1 / mu) * mu ^ 2
+#   beta <- alpha * (1 / mu - 1)
+#   return(params = list(alpha = alpha, beta = beta))
+# }
+# p <- estBetaParams(0.5, 0.287717^2)
+# x <- seq(0, 1, length.out = 200)
+# plot(x, dbeta(x, p$alpha, p$beta), main = "mean: 0.4, sd = 0.2")
