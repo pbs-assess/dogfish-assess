@@ -38,14 +38,18 @@ mods <- c("A1", "A0",
           "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
 
 # # Make sure starter matches...
-# for (i in seq_along(mods)) {
-#   to <- file.path(ss_home, mods[i], "starter.ss")
-#   message("Copying starter.ss to:", to)
-#   file.copy(file.path(ss_home, "A0/starter.ss"), to)
-# }
+tocopy <- seq_along(mods)[-2] # copying 2
+for (i in tocopy) {
+  to <- file.path(ss_home, mods[i], "starter.ss")
+  message("Copying starter.ss to:", to)
+  file.copy(file.path(ss_home, "A0/starter.ss"), to, overwrite = TRUE)
+  to <- file.path(ss_home, mods[i], "forecast.ss")
+  message("Copying forecast.ss to:", to)
+  file.copy(file.path(ss_home, "A0/forecast.ss"), to, overwrite = TRUE)
+}
 
 # Fit a single model
-fit_ss3(mods[19], hessian = TRUE, ss_home = ss_home)
+fit_ss3(mods[2], hessian = TRUE, ss_home = ss_home)
 if (FALSE) {
   r4ss::SS_output("ss3/A0") |> r4ss::SS_plots()
 }
@@ -54,7 +58,7 @@ if (FALSE) {
 # lapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 
 # Fit all of many models in parallel
-snowfall::sfInit(parallel = TRUE, cpus = 6)
+snowfall::sfInit(parallel = TRUE, cpus = parallel::detectCores())
 snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 snowfall::sfStop()
 
