@@ -39,6 +39,7 @@ mods <- c("A1",
 
 # Fit a single model
 fit_ss3(mods[1], hessian = TRUE, ss_home = ss_home)
+# r4ss::SS_output("ss3/A1") |> r4ss::SS_plots()
 
 # Sequential:
 # lapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
