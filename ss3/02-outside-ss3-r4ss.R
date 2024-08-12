@@ -32,14 +32,23 @@ fit_ss3 <- function(model_dir = "model1",
   system(cmd)
 }
 
-mods <- c("A1",
+mods <- c("A1", "A0",
           "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_highdiscard",
-          "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM",
+          "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM", "A10_highM", "A11_low_zfrac", "A12_high_zfrac", "A13_extraSD",
           "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
 
+# # Make sure starter matches...
+# for (i in seq_along(mods)) {
+#   to <- file.path(ss_home, mods[i], "starter.ss")
+#   message("Copying starter.ss to:", to)
+#   file.copy(file.path(ss_home, "A0/starter.ss"), to)
+# }
+
 # Fit a single model
-fit_ss3(mods[1], hessian = TRUE, ss_home = ss_home)
-# r4ss::SS_output("ss3/A1") |> r4ss::SS_plots()
+fit_ss3(mods[19], hessian = TRUE, ss_home = ss_home)
+if (FALSE) {
+  r4ss::SS_output("ss3/A0") |> r4ss::SS_plots()
+}
 
 # Sequential:
 # lapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
@@ -52,7 +61,7 @@ snowfall::sfStop()
 # Load r4ss list
 covar <- TRUE
 replist <- r4ss::SS_output(
-  file.path(ss_home, mods[1]),
+  file.path(ss_home, mods[2]),
   verbose = FALSE,
   printstats = FALSE,
   covar = covar,
@@ -72,6 +81,7 @@ if (covar) {
   r4ss::SS_plots(replist, verbose = FALSE, plot = c(1:21, 23:26))
 }
 
+library(dplyr)
 
 # Report and plot various output in R
 replist$estimated_non_dev_parameters |>
@@ -81,7 +91,7 @@ replist$estimated_non_dev_parameters |>
 
 r4ss::SSplotSelex(replist, fleets = 1)
 r4ss::SSplotTimeseries(replist, subplot = 12)
-r4ss::SSplotRecdevs(replist)
+# r4ss::SSplotRecdevs(replist)
 r4ss::SSplotCatch(replist)
 r4ss::SSplotIndices(replist)
 r4ss::SSplotComps(replist)
