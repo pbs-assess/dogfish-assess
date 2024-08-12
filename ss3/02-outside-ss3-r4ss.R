@@ -6,7 +6,8 @@ ss_home <- here::here("ss3")
 fit_ss3 <- function(model_dir = "model1",
                     hessian = FALSE,
                     ss_home = here::here("ss3"),
-                    max_phase) {
+                    max_phase,
+                    extra_args = "") {
   dir_cur <- getwd()
   dir_run <- file.path(ss_home, model_dir)
   setwd(dir_run)
@@ -24,6 +25,7 @@ fit_ss3 <- function(model_dir = "model1",
   if (!missing(max_phase) && is.integer(max_phase)) {
     cmd <- paste(cmd, "-maxph", max_phase)
   }
+  cmd <- paste(cmd, extra_args)
   message("File directory: ", dir_run)
   message("Command: ", cmd)
 
@@ -37,6 +39,7 @@ mods <- c("A1",
 
 # Fit a single model
 fit_ss3(mods[1], hessian = TRUE, ss_home = ss_home)
+# r4ss::SS_output("ss3/A1") |> r4ss::SS_plots()
 
 # Sequential:
 # lapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)

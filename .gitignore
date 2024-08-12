@@ -45,3 +45,13 @@ runnumber.ss
 *_book
 *csas-style
 *.Rapp.history
+
+*.b04
+*.p04
+*.r04
+
+plots_Start*
+
+init.pin
+ss.psv
+*.csv
