@@ -6,13 +6,13 @@
 #_data_and_control_files: data.ss // control.ss
 0  # 0 means do not read wtatage.ss; 1 means read and use wtatage.ss and also read and use growth parameters
 1  #_N_Growth_Patterns (Growth Patterns, Morphs, Bio Patterns, GP are terms used interchangeably in SS)
-1 #_N_platoons_Within_GrowthPattern 
+1 #_N_platoons_Within_GrowthPattern
 #_Cond 1 #_Platoon_within/between_stdev_ratio (no read if N_platoons=1)
 #_Cond  1 #vector_platoon_dist_(-1_in_first_val_gives_normal_approx)
 #
 4 # recr_dist_method for parameters:  2=main effects for GP, Area, Settle timing; 3=each Settle entity; 4=none (only when N_GP*Nsettle*pop==1)
 1 # not yet implemented; Future usage: Spawner-Recruitment: 1=global; 2=by area
-1 #  number of recruitment settlement assignments 
+1 #  number of recruitment settlement assignments
 0 # unused option
 #GPattern month  area  age (for each settlement assignment)
  1 1 1 0
@@ -22,10 +22,10 @@
 #_Cond 1 1 1 2 4 10 # example move definition for seas=1, morph=1, source=1 dest=2, age1=4, age2=10
 #
 0 #_Nblock_Patterns
-#_Cond 0 #_blocks_per_pattern 
+#_Cond 0 #_blocks_per_pattern
 # begin and end years of blocks
 #
-# controls for all timevary parameters 
+# controls for all timevary parameters
 1 #_time-vary parm bound check (1=warn relative to base parm bounds; 3=no bound check); Also see env (3) and dev (5) options to constrain with base bounds
 #
 # AUTOGEN
@@ -41,7 +41,7 @@
 #
 #_Prior_codes:  0=none; 6=normal; 1=symmetric beta; 2=CASAL's beta; 3=lognormal; 4=lognormal with biascorr; 5=gamma
 #
-# setup for M, growth, wt-len, maturity, fecundity, (hermaphro), recr_distr, cohort_grow, (movement), (age error), (catch_mult), sex ratio 
+# setup for M, growth, wt-len, maturity, fecundity, (hermaphro), recr_distr, cohort_grow, (movement), (age error), (catch_mult), sex ratio
 #
 0 #_natM_type:_0=1Parm; 1=N_breakpoints;_2=Lorenzen;_3=agespecific;_4=agespec_withseasinterpolate
   #_no additional input for selected M option; read 1P per morph
@@ -135,7 +135,7 @@
 #_growth_parms
 #_ LO HI INIT PRIOR PR_SD PR_type PHASE env_var&link dev_link dev_minyr dev_maxyr dev_PH Block Block_Fxn
 # Sex: 1  BioPattern: 1  NatMort
- 0.01 0.114 0.074 0 0 0 -50 0 0 0 0 0 0 0 # NatM_p_1_Fem_GP_1
+ 0.01 0.114 0.082 0 0 0 -50 0 0 0 0 0 0 0 # NatM_p_1_Fem_GP_1
 # Sex: 1  BioPattern: 1  Growth
  1 55 28.4 0 0 0 -50 0 0 0 0 0 0 0 # L_at_Amin_Fem_GP_1
  30 100 90.87 0 0 0 -50 0 0 0 0 0 0 0 # L_at_Amax_Fem_GP_1
@@ -162,7 +162,7 @@
  0 0.1 3.54e-06 0 0 0 -50 0 0 0 0 0 0 0 # Wtlen_1_Mal_GP_1
  2 4 3.03 0 0 0 -50 0 0 0 0 0 0 0 # Wtlen_2_Mal_GP_1
 # Hermaphroditism
-#  Recruitment Distribution  
+#  Recruitment Distribution
 #  Cohort growth dev base
  -5 5 1 0 0 0 -50 0 0 0 0 0 0 0 # CohortGrowDev
 #  Movement
@@ -193,7 +193,7 @@
 0  #  future feature:  0/1 to make realized sigmaR a function of SR curvature
 #_          LO            HI          INIT         PRIOR         PR_SD       PR_type      PHASE    env-var    use_dev   dev_mnyr   dev_mxyr     dev_PH      Block    Blk_Fxn #  parm_name
              5            15       9.34396             0             0             0          1          0          0          0          0          0          0          0 # SR_LN(R0)
-             0             1           0.4           0.5      0.287717             2          1          0          0          0          0          0          0          0 # SR_surv_zfrac
+             0             1           0.4           0.5      0.287717             2         -1          0          0          0          0          0          0          0 # SR_surv_zfrac
            0.2             5             1             0             0             0        -50          0          0          0          0          0          0          0 # SR_surv_Beta
            0.2             1           0.4             0             0             0        -50          0          0          0          0          0          0          0 # SR_sigmaR
             -1             1             0             0             0             0        -50          0          0          0          0          0          0          0 # SR_regime
@@ -202,7 +202,7 @@
 1 #do_recdev:  0=none; 1=devvector (R=F(SSB)+dev); 2=deviations (R=F(SSB)+dev); 3=deviations (R=R0*dev; dev2=R-f(SSB)); 4=like 3 with sum(dev2) adding penalty
 1960 # first year of main recr_devs; early devs can preceed this era
 2022 # last year of main recr_devs; forecast devs start in following year
--3 #_recdev phase 
+-3 #_recdev phase
 0 # (0/1) to read 13 advanced options
 #_Cond 0 #_recdev_early_start (0=none; neg value makes relative to recdev_start)
 #_Cond -4 #_recdev_early_phase
@@ -228,7 +228,7 @@
 #  0 0
 # implementation error by year in forecast:  0
 #
-#Fishing Mortality info 
+#Fishing Mortality info
 0.05 # F ballpark value in units of annual_F
 -1920 # F ballpark year (neg value to disable)
 3 # F_Method:  1=Pope; 2=instan. F; 3=hybrid (hybrid is recommended)
@@ -258,7 +258,7 @@
 #_5:  0/1 for biasadj or not
 #_6:  0/1 to float
 #_   fleet      link link_info  extra_se   biasadj     float  #  fleetname
-         6         1         0         1         0         1  #  IPHC
+         6         1         0         0         0         1  #  IPHC
          7         1         0         0         0         1  #  HBLL
          8         1         0         0         0         1  #  SYN
          11        1         0         0         0         1  #  HS_MSA
@@ -268,7 +268,6 @@
 #_Q_parms(if_any);Qunits_are_ln(q)
 #_          LO            HI          INIT         PRIOR         PR_SD       PR_type      PHASE    env-var    use_dev   dev_mnyr   dev_mxyr     dev_PH      Block    Blk_Fxn  #  parm_name
            -10            10      -3.95461             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_IPHC(6)
-           -10            10             0             0             0             0          4          0          0          0          0          0          0          0  #  Q_extraSD_IPHC(6)
             -5             5      -2.64842             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_HBLL(7)
             -5             5      -8.95677             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_SYN(8)
             -5             5      -8.95677             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_HS_MSA(11)
@@ -290,7 +289,7 @@
 #Pattern:_23; parm=6; double_normal where final value is directly equal to sp(6) so can be >1.0
 #Pattern:_24; parm=6; double_normal with sel(minL) and sel(maxL), using joiners
 #Pattern:_25; parm=3; exponential-logistic in size
-#Pattern:_27; parm=3+special; cubic spline 
+#Pattern:_27; parm=3+special; cubic spline
 #Pattern:_42; parm=2+special+3; // like 27, with 2 additional param for scaling (average over bin range)
 #_discard_options:_0=none;_1=define_retention;_2=retention&mortality;_3=all_discarded_dead;_4=define_dome-shaped_retention
 #_Pattern Discard Male Special
@@ -434,7 +433,7 @@
 # no timevary parameters
 #
 #
-# Input variance adjustments factors: 
+# Input variance adjustments factors:
  #_1=add_to_survey_CV
  #_2=add_to_discard_stddev
  #_3=add_to_bodywt_CV
@@ -452,9 +451,9 @@
  -9999   1    0  # terminator
 #
 1 #_maxlambdaphase
-1 #_sd_offset; must be 1 if any growthCV, sigmaR, or survey extraSD is an estimated parameter
+0 #_sd_offset; must be 1 if any growthCV, sigmaR, or survey extraSD is an estimated parameter
 # read 0 changes to default Lambdas (default value is 1.0)
-# Like_comp codes:  1=surv; 2=disc; 3=mnwt; 4=length; 5=age; 6=SizeFreq; 7=sizeage; 8=catch; 9=init_equ_catch; 
+# Like_comp codes:  1=surv; 2=disc; 3=mnwt; 4=length; 5=age; 6=SizeFreq; 7=sizeage; 8=catch; 9=init_equ_catch;
 # 10=recrdev; 11=parm_prior; 12=parm_dev; 13=CrashPen; 14=Morphcomp; 15=Tag-comp; 16=Tag-negbin; 17=F_ballpark; 18=initEQregime
 #like_comp fleet  phase  value  sizefreq_method
 -9999  1  1  1  1  #  terminator
