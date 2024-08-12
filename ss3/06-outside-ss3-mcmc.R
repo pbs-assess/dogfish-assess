@@ -13,6 +13,11 @@ for(i in 1:length(SS_dir)) {
   #system("ss3.exe -nox -nohess modelname ss")
   par_base <- R2admb::read_pars(file.path(ss_home, SS_dir[i], "ss"))
 
+  # Covariance matrix as the NUTS mass matrix
+  npar <- par_base$npar
+  vcov <- par_base$vcov[1:npar, 1:npar]
+
+  # Set initial values
   set.seed((i + 12) * 100)
   init <- lapply(1:2, function(chains) {
     lapply(names(par_base$coeflist), function(x) {
@@ -32,6 +37,7 @@ for(i in 1:length(SS_dir)) {
                    thin = 5,
                    chains = 2,
                    cores = 2,
+                   control = list(metric = vcov),
                    verbose = FALSE,
                    skip_unbounded = FALSE,
                    admb_args = "modelname ss",
@@ -57,6 +63,3 @@ sfLapply(SS_dir, function(x) {
 })
 sfStop()
 
-mcmc_output <- lapply(
-
-)
