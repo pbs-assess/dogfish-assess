@@ -58,7 +58,7 @@ if (FALSE) {
 # lapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 
 # Fit all of many models in parallel
-snowfall::sfInit(parallel = TRUE, cpus = parallel::detectCores())
+snowfall::sfInit(parallel = TRUE, cpus = floor(parallel::detectCores() / 2))
 snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 snowfall::sfStop()
 
