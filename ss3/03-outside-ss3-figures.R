@@ -32,7 +32,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
 
   if (set_to_plot == "zfrac") {
     mods <- c("A0", "A11_low_zfrac", "A12_high_zfrac")
-    model_name <- c("(A0) zfrac = 0.4, Beta = 1.0", "(A11) zfrac = 0.2, Beta = 0.6", "(A3) zfrac = 0.6, Beta = 2")
+    model_name <- c("(A0) zfrac = 0.4, Beta = 1.0\n(base)", "(A11) zfrac = 0.2, Beta = 0.6\n(low productivity)", "(A3) zfrac = 0.6, Beta = 2\n(high productivity)")
     fig_dir <- "figs/ss3/set_a_zfrac"
     multi_rep <- lapply(mods, function(x) {
       r4ss::SS_output(file.path(ss_home, x),
@@ -46,7 +46,8 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
 
     # Set A models with growth and maturity scenarios
     mods <- c("A0", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_highdiscard")
-    model_name <- c("(A0) BCgrowth", "(A2) USgrowth", "(A3) BCgrowth, high mat", "(A4) USgrowth, high mat", "(A5) 100% discard m.")
+
+    model_name <- c("(A0) BC growth\n(base)", "(A2) US growth", "(A3) BC growth,\nhigh maturity", "(A4) USgrowth,\nhigh maturity", "(A5) 100% discard\nmortality")
 
     fig_dir <- "figs/ss3/set_a_mat"
 
@@ -175,8 +176,8 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
   } else if (set_to_plot == "index") {
 
     # Set A models jackknifing indices
-    mods <- c("A0", "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly")
-    model_name <- c("(A0) All indices", "(A6) IPHC + CPUE", "(A6) SYN", "(A7) HBLL")
+    mods <- c("A0", "A6_IPHC+CPUE", "A7_SYNonly") #, "A8_HBLLonly")
+    model_name <- c("(A0) All indices (base)", "(A6) IPHC + CPUE", "(A7) SYN") # "(A8) HBLL")
 
     fig_dir <- "figs/ss3/set_a_ind"
 
@@ -191,8 +192,9 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
   } else if (set_to_plot == "M") {
 
     # Compare low M (combination of A and B models)
+
     mods <- c("A0", "A9_lowM", "A10_highM", "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
-    model_name <- c("(A0) M = 0.074", "(A9) M = 0.05", "(A10) M = 0.082",
+    model_name <- c("(A0) M = 0.074 (base)", "(A9) M = 0.05 (low M)", "(A10) M = 0.082 (high M)",
       "(B1) M = 0.074, inc. 1990", "(B2) M = 0.074, step 2010",
       "(B3) M = 0.074, step 2005", "(B4) M = 0.05, inc. 1990", "(B5) M = 0.05, inc. 2010")
 
@@ -221,11 +223,13 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
 
     g <- bind_rows(Minc) %>%
       filter(Sex == 1) %>%
+      filter(year <= 2023) |>
       ggplot(aes(Yr, M, colour = scen)) +
       geom_line() +
       #facet_wrap(vars(Sex)) +
       # gfplot::theme_pbs() +
       expand_limits(y = 0) +
+      coord_cartesian(expand = FALSE) |>
       labs(x = "Year", y = "Natural mortality", colour = "Model")
     .ggsave("M_year.png", g, height = 3, width = 6)
 
@@ -294,7 +298,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
   # Plot SR
   g <- SS3_SR(multi_rep, model_name) +
     labs(x = "Spawning output (pup production)")
-  .ggsave("srr.png", g, height = 4, width = 6)
+  .ggsave("srr.png", g, height = 4, width = if (set_to_plot == "zfrac") 8 else 6)
 
   # Plot recruitment
   g <- SS3_recruitment(multi_rep, model_name) +
@@ -411,7 +415,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
         scale_fill_manual(values = c("grey80", "white")) +
         coord_cartesian(xlim = c(30, 120)) +
         labs(x = "Length", y = "Proportion", colour = "Model") +
-        guides(colour = guide_legend(nrow = 2), fill = "none", linetype = "none") +
+        guides(colour = guide_legend(nrow = 3), fill = "none", linetype = "none") +
         ggtitle(unique(len$FName))
       # theme_bw()
       .ggsave(paste0("len_comp_fleet_", ff, ".png"), g, height = heights[ff], width = 6)
