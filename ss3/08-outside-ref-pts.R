@@ -1,8 +1,9 @@
 library(tidyverse)
 library(r4ss)
 
+dir.create("figs/refpts/", showWarnings = F)
 library(ggplot2)
-options(ggplot2.continuous.colour = "viridis")
+# options(ggplot2.continuous.colour = "viridis")
 # scale_colour_discrete <- function(...) {
 #   scale_colour_brewer(..., palette = "Set2")
 # }
@@ -52,7 +53,7 @@ keep <- which(!mods %in% reject)
 mods <- mods[keep]
 model_name <- model_name[keep]
 multi_rep <- lapply(mods, function(x) {
-  cat("-")
+  cat(x, "\n")
   r4ss::SS_output(file.path(ss_home, x),
     verbose = FALSE,
     printstats = FALSE,
@@ -97,19 +98,23 @@ get_b_ratio <- function(replist) {
   row.names(dd) <- NULL
   dd
 }
-out <- seq_along(multi_rep) |>
+out_depl <- seq_along(multi_rep) |>
   purrr::map_dfr(\(i)
     get_b_ratio(multi_rep[[i]]) |>
   mutate(scen = model_name[i])) |>
   mutate(scen = forcats::fct_inorder(scen))
 
-out |>
+out_depl |>
+  filter(!grepl("^\\(B", scen)) |>
   ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = scen, value = scen, fill = scen)) +
   geom_ribbon(alpha = 0.4, colour = NA) +
   geom_line() +
   geom_hline(yintercept = 0.4, lty = 3) +
   geom_hline(yintercept = 0.2, lty = 2) +
-  ylab("S/S[0]") + xlab("Year") + coord_cartesian(xlim = c(1936, 2024), ylim = c(0, 1), expand = FALSE) + labs(colour = "Scenario", fill = "Scenario")
+  ylab(expression(S/S[0])) + xlab("") + coord_cartesian(xlim = c(1936, 2024), ylim = c(0, 1), expand = FALSE) + labs(colour = "Scenario", fill = "Scenario") +
+  scale_colour_brewer(palette = "Paired") +
+  scale_fill_brewer(palette = "Paired")
+
   # ggrepel::geom_text_repel(data = filter(out, year == 2023), mapping = aes(x = year, y = est, label = scen), segment.size = 0.4, direction='x', nudge_x = 0.1, force=1)
 
 
@@ -127,10 +132,10 @@ out |>
 #   mutate(scen = scenario, y = SpawnBio/SB0) %>%
 #   filter(Area == "Coastwide")
 
-x <- r4ss::SS_output("~/src/dogfish-assess/ss3/A0")
+# x <- r4ss::SS_output("~/src/dogfish-assess/ss3/A0")
 
-derived_quants <- x$derived_quants
-derived_quants[substring(derived_quants[["Label"]], 1, 2) == "F_", ]
+# derived_quants <- x$derived_quants
+# derived_quants[substring(derived_quants[["Label"]], 1, 2) == "F_", ]
 
 get_F_ts_target <- function(replist) {
   derived_quants <- replist$derived_quants
@@ -157,20 +162,73 @@ get_F_ts_target <- function(replist) {
   dd
 }
 
-out <- seq_along(multi_rep) |>
+out_Ftarg <- seq_along(multi_rep) |>
   purrr::map_dfr(\(i)
     get_F_ts_target(multi_rep[[i]]) |>
       mutate(scen = model_name[i])) |>
   mutate(scen = forcats::fct_inorder(scen))
 
-out |>
+# library(ggsidekick)
+library(ggtext)
+out_Ftarg |>
+  filter(!grepl("^\\(B", scen)) |>
   ggplot(aes(year, est_ratio, ymin = lwr_ratio, ymax = upr_ratio, colour = scen, fill = scen)) +
   geom_ribbon(alpha = 0.4, colour = NA) +
   geom_line() +
   geom_hline(yintercept = 1, lty = 2) +
-  ylab("F/F at B40") + xlab("Year") +
+  # ylab(expression(F/F[0.4S0])) +
+  ylab("F/F<sub>0.4S0</sub>") +
+  xlab("") +
   coord_cartesian(xlim = c(1936, 2024), ylim = c(0, 20), expand = FALSE) + labs(colour = "Scenario", fill = "Scenario") +
-  scale_y_continuous(trans = "sqrt")
+  # scale_y_continuous(trans = "fourth_root_power", breaks = c(0, 0.1, 0.2, 0.5, 1, 5, 10, 15, 20)) +
+  scale_y_continuous(trans = "sqrt", breaks = c(0, 0.2, 0.5, 1, 2, 5, 10, 15, 20)) +
+  scale_colour_brewer(palette = "Paired") +
+  scale_fill_brewer(palette = "Paired") +
+  theme(
+    # axis.title.x = element_markdown(),
+    axis.title.y = element_markdown()
+  )
+
+##########
+
+
+d1 <- out_Ftarg |>
+  select(year, f = est_ratio, flwr = lwr_ratio, fupr = upr_ratio, scen)
+d2 <- out_depl |>
+  select(year, b = est, blwr = lwr, bupr = upr, scen)
+d <- left_join(d1, d2)
+
+d <- group_by(d, year, scen) |>
+  mutate(bend = c(NA, b[-n()])) |>
+  mutate(fend = c(NA, f[-n()]))
+
+d |>
+  filter(!grepl("^\\(B", scen)) |>
+  ggplot(aes(b, f, colour = year)) +
+  # geom_segment(aes(x = blwr, xend = bupr), alpha = 0.7) +
+  # geom_segment(aes(y = flwr, yend = fupr), alpha = 0.7) +
+  # geom_path(arrow = arrow(length = unit(0.2, "cm")), mapping = aes(group = as.factor(year))) +
+  geom_segment(aes(xend = bend, yend = fend)) +
+  geom_point(size = 0.5) +
+  facet_wrap(~scen) +
+  coord_cartesian(ylim = c(0, 15), expand = FALSE, xlim = c(0, 1)) +
+  # scale_y_continuous(trans = "sqrt") +
+  scale_y_continuous(trans = "sqrt", breaks = c(0, 0.2, 1, 5, 10)) +
+  scale_x_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8)) +
+  scale_colour_viridis_c(option = "C", direction = -1) +
+  # scale_colour_distiller(palette = "Blues", direction = 1) +
+  xlab(expression(S/S[0])) +
+  ylab("F/F<sub>0.4S0</sub>") +
+  theme(
+    axis.title.y = element_markdown(),
+    legend.position = "bottom"
+  ) +
+  labs(colour = "Year") +
+  geom_hline(yintercept = 1, lty = 2) +
+  geom_vline(xintercept = 0.2, lty = 2) +
+  geom_vline(xintercept = 0.4, lty = 3)
+
+ggsave("figs/refpts/kobe.png", width = 8, height = 8)
 
 ########
 
@@ -184,7 +242,6 @@ get_F_ts_spr <- function(replist) {
     select(year, est, lwr, upr)
   row.names(dd) <- NULL
   dd
-
 
   ref <- derived_quants |>
     filter(Label %in% c("annF_SPR")) |>
