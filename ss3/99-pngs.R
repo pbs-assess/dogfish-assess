@@ -5,4 +5,13 @@ system(paste0(
   "find -X . -name '*.png' -print0 | xargs -0 -n ",
   files_per_core, " -P ", cores, " /opt/homebrew/bin/optipng -strip all"
 ))
-setwd("..")
+setwd(here::here())
+
+if (FALSE) {
+  setwd("../dogfish-assess-resdoc/figs/")
+  system(paste0(
+    "find -X . -name '*.png' -print0 | xargs -0 -n ",
+    files_per_core, " -P ", cores, " /opt/homebrew/bin/optipng -strip all"
+  ))
+  setwd(here::here())
+}

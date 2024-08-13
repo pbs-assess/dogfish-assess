@@ -84,7 +84,9 @@ make_depl_plot <- function(dat, .col) {
     ylab("S / S<sub>0</sub>") +
     xlab("") +
     theme(axis.title = element_markdown()) +
-    coord_cartesian(xlim = c(1936, 2024), ylim = c(0, 1), expand = FALSE) +
+    coord_cartesian(xlim = c(1936, 2028), ylim = c(0, 1), expand = FALSE) +
+    annotate("rect", xmin = 2023, xmax = 2028, ymin = 0, ymax = 1e6,
+      alpha = 0.1,fill = "grey30") +
     labs(colour = "Scenario", fill = "Scenario") +
     scale_colour_manual(values = .col, guide = guide_legend(reverse = TRUE)) +
     scale_fill_manual(values = .col, guide = guide_legend(reverse = TRUE))
@@ -93,7 +95,7 @@ out_depl |> filter(!grepl("^\\(B", scen)) |> make_depl_plot(.col = cols);
 ggsave("figs/ss3/refpts/depl-ref-ts.png", width = 7, height = 4)
 out_depl |> filter(grepl("^\\(B", scen) | grepl("A0", scen)) |>
   make_depl_plot(.col = cols_B) +
-  ggtitle("**With M set at its historical value**") +
+  ggtitle("**With M set at its historical value when calculating reference points**") +
   theme(title = element_markdown())
 ggsave("figs/ss3/refpts/depl-ref-ts-B.png", width = 7, height = 4)
 
@@ -133,7 +135,7 @@ ftarg_plot <- function(dat) {
     geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
     ylab("F/F<sub>0.4S0</sub>") +
     xlab("") +
-    coord_cartesian(xlim = c(1936, 2024), ylim = c(0, 20), expand = FALSE) +
+    coord_cartesian(xlim = c(1936, 2023), ylim = c(0, 20), expand = FALSE) +
     labs(colour = "Scenario", fill = "Scenario") +
     scale_y_continuous(trans = "sqrt", breaks = c(0, 0.2, 0.5, 1, 2, 5, 10, 15, 20)) +
     scale_colour_manual(values = cols, guide = guide_legend(reverse = TRUE)) +
@@ -147,7 +149,7 @@ out_Ftarg |> filter(!grepl("^\\(B", scen)) |> ftarg_plot()
 ggsave("figs/ss3/refpts/f-ref-ts.png", width = 7, height = 4)
 
 out_Ftarg |> filter(grepl("A0", scen) | grepl("^\\(B", scen)) |> ftarg_plot() +
-  ggtitle("**With M set at its historical value**") +
+  ggtitle("**With M set at its historical value when calculating reference points**") +
   theme(
     title = element_markdown()
   ) +
@@ -167,6 +169,7 @@ d <- group_by(d, scen) |>
   mutate(bend = lead(b), fend = lead(f))
 d |>
   filter(!grepl("^\\(B", scen)) |>
+  filter(year <= 2023) |>
   ggplot(aes(b, f, colour = year)) +
   # geom_segment(aes(x = blwr, xend = bupr), alpha = 0.7) +
   # geom_segment(aes(y = flwr, yend = fupr), alpha = 0.7) +
@@ -272,7 +275,7 @@ out_catch <- seq_along(multi_rep) |>
     mutate(scen = model_name[i])) |>
   mutate(scen = forcats::fct_inorder(scen))
 out_catch |>
-  # filter(!grepl("^\\(B", scen)) |>
+  filter(!grepl("^\\(B", scen)) |>
   mutate(scen = forcats::fct_rev(scen)) |>
   ggplot(aes(scen, est, ymin = lwr, ymax = upr)) +
   geom_linerange() +
@@ -286,3 +289,12 @@ out_catch |>
     plot.margin = unit(c(0.1, 0.5, 0.1, 0.1), "cm")
   )
 ggsave("figs/ss3/refpts/ref-catch.png", width = 4.5, height = 3.8)
+
+if (FALSE) {
+  setwd("figs/ss3/refpts/")
+  system(paste0(
+    "find -X . -name '*.png' -print0 | xargs -0 -n ",
+    1, " -P ", 6, " /opt/homebrew/bin/optipng -strip all"
+  ))
+  setwd(here::here())
+}
