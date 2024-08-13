@@ -1,37 +1,39 @@
 library(dplyr)
 library(ggplot2)
+library(future)
+library(purrr)
 
 ss_home <- here::here("ss3")
 #ss_home <- "C:/users/quang/Desktop/dogfish"
 
 source("ss3/ss3_functions.R")
 
-zdir <- "A1_zfracprof" # See also "A10_extraSD_zfracprof"
+scale_colour_discrete <- function(...) {
+  scale_colour_viridis_d()
+}
 
-# if (!dir.exists(file.path(ss_home)))
-# dir.create(file.path(ss_home, zdir), showWarnings = FALSE)
-# file.copy(
-#   from = list.files(file.path(ss_home, "A1"), full.names = TRUE),
-#   to = file.path(ss_home, zdir))
+theme_set(gfplot::theme_pbs())
+
+zdir <- "A0_zfracprof" # See also "A10_extraSD_zfracprof"
+system("cp -r ss3/A0 ss3/A0_zfracprof")
+s <- r4ss::SS_readstarter("ss3/A0_zfracprof/starter.ss")
+s$ctlfile <- "control_modified.ss"
+r4ss::SS_writestarter(s, file = "ss3/A0_zfracprof/starter.ss", overwrite = TRUE)
 
 # Profile zfrac
 zfrac <- c(1e-3, seq(0.1, 1, 0.1))
 
-# run and fix:
-# Error in r4ss::profile(file.path(ss_home, zdir), string = "SR_surv_zfrac",  :
-    # starter file should be changed to change
-  # 'control.ss' to 'control_modified.ss'
-
+plan(multisession)
 x <- r4ss::profile(
   file.path(ss_home, zdir),
   string = "SR_surv_zfrac",
   profilevec = zfrac,
-  #overwrite = TRUE,
   exe = "ss",
   verbose = FALSE,
   prior_check = FALSE,
   extras = "-nox -nohess modelname ss"
 )
+plan(sequential)
 
 zfrac_prof <- r4ss::SSgetoutput(
   keyvec = 1:length(zfrac),
@@ -95,17 +97,19 @@ ggsave("figs/ss3/prof/prof_zfrac_index.png", g, height = 4.5, width = 6)
 # Plot likelihood profile
 g1 <- SS3_prof_like(zfrac_prof, zfrac, by_fleet = FALSE) +
   labs(x = expression(z[frac])) +
-  coord_cartesian(xlim = c(0, 1))
+  coord_cartesian(xlim = c(0, 1)) +
+  scale_color_brewer(palette = "Set2")
 g2 <- SS3_prof_like(zfrac_prof, zfrac, xval = "steep", by_fleet = FALSE) +
   labs(x = "Steepness") +
-  coord_cartesian(xlim = c(0.2, 0.45))
-
+  coord_cartesian(xlim = c(0.2, 0.45)) +
+  scale_color_brewer(palette = "Set2")
 g <- ggpubr::ggarrange(g1, g2, common.legend = TRUE, legend = "bottom")
 ggsave("figs/ss3/prof/like_zfrac.png", g, height = 3, width = 5)
 
 g <- SS3_prof_like(zfrac_prof, zfrac, by_fleet = TRUE, component = c("Length_like", "Surv_like")) +
   labs(x = expression(z[frac])) +
-  coord_cartesian(xlim = c(0, 1))
+  coord_cartesian(xlim = c(0, 1)) +
+  scale_colour_brewer(palette = "Set2")
 ggsave("figs/ss3/prof/like_zfrac_fleet.png", g, height = 3, width = 6)
 
 # Plot yield curve
@@ -160,57 +164,66 @@ g <- ggplot(RR, aes(zfrac, Value)) +
   labs(x = expression(z[frac]))
 ggsave("figs/ss3/prof/zfrac_rr.png", height = 2, width = 6)
 
+if (FALSE) { # issues!?
+  # Profile R0
+  logR0 <- seq(8.5, 12.5, 0.25)
 
-# Profile R0
-logR0 <- seq(8.5, 12.5, 0.25)
+  system("cp -r ss3/A0 ss3/A0_R0prof")
+  s <- r4ss::SS_readstarter("ss3/A0_R0prof/starter.ss")
+  s$ctlfile <- "control_modified.ss"
+  r4ss::SS_writestarter(s, file = "ss3/A0_R0prof/starter.ss", overwrite = TRUE)
+  plan(multisession)
+  x <- r4ss::profile(
+    file.path(ss_home, "A0_R0prof"),
+    string = "SR_LN(R0)",
+    profilevec = logR0,
+    #overwrite = FALSE,
+    exe = "ss",
+    verbose = FALSE,
+    prior_check = FALSE,
+    extras = "-nox -nohess modelname ss"
+  )
+  plan(sequential)
+  R0_prof <- r4ss::SSgetoutput(
+    keyvec = 1:length(logR0),
+    dirvec = file.path(ss_home, "A0_R0prof"),
+    getcomp = FALSE,
+    getcovar = FALSE
+  )
+  saveRDS(R0_prof, file = file.path(ss_home, "R0_prof.rds"))
 
-x <- r4ss::profile(
-  file.path(ss_home, "A1_R0prof"),
-  string = "SR_LN(R0)",
-  profilevec = logR0,
-  #overwrite = FALSE,
-  exe = "ss",
-  verbose = FALSE,
-  prior_check = FALSE,
-  extras = "-nox -nohess modelname ss"
-)
+  g1 <- SS3_prof(R0_prof, logR0, SpawnBio) +
+    labs(x = "Year", y = "Spawning output", colour = expression(log(R[0])))
+  g2 <- SS3_prof(R0_prof, logR0, pred_recr) +
+    labs(x = "Year", y = "Recruitment", colour = expression(log(R[0])))
+  g3 <- SS3_prof(R0_prof, logR0, dep) +
+    labs(x = "Year", y = "Spawning depletion", colour = expression(log(R[0])))
+  g <- ggpubr::ggarrange(g1, g2, g3, ncol = 1, common.legend = TRUE)
+  ggsave("figs/ss3/prof/prof_R0_SB.png", g, height = 6, width = 5)
 
+  g <- SS3_SR(R0_prof, paste("log(R0) = ", logR0))
+  ggsave("figs/ss3/prof/prof_R0_SR.png", g, height = 6, width = 6)
 
-R0_prof <- r4ss::SSgetoutput(
-  keyvec = 1:length(logR0),
-  dirvec = file.path(ss_home, "A1_R0prof"),
-  getcomp = FALSE,
-  getcovar = FALSE
-)
-saveRDS(R0_prof, file = file.path(ss_home, "R0_prof.rds"))
+  g <- SS3_prof_like(R0_prof[-1], logR0[-1], by_fleet = FALSE) +
+    labs(x = expression(log(R[0])))
+  ggsave("figs/ss3/prof/like_R0.png", g, height = 3, width = 5)
 
-g1 <- SS3_prof(R0_prof, logR0, SpawnBio) +
-  labs(x = "Year", y = "Spawning output", colour = expression(log(R[0])))
-g2 <- SS3_prof(R0_prof, logR0, pred_recr) +
-  labs(x = "Year", y = "Recruitment", colour = expression(log(R[0])))
-g3 <- SS3_prof(R0_prof, logR0, dep) +
-  labs(x = "Year", y = "Spawning depletion", colour = expression(log(R[0])))
-g <- ggpubr::ggarrange(g1, g2, g3, ncol = 1, common.legend = TRUE)
-ggsave("figs/ss3/prof/prof_R0_SB.png", g, height = 6, width = 5)
-
-g <- SS3_SR(R0_prof, paste("log(R0) = ", logR0))
-ggsave("figs/ss3/prof/prof_R0_SR.png", g, height = 6, width = 6)
-
-
-g <- SS3_prof_like(R0_prof[-1], logR0[-1], by_fleet = FALSE) +
-  labs(x = expression(log(R[0])))
-ggsave("figs/ss3/prof/like_R0.png", g, height = 3, width = 5)
-
-g <- SS3_prof_like(R0_prof[-1], logR0[-1], by_fleet = TRUE, component = c("Length_like", "Surv_like")) +
-  labs(x = expression(log(R[0])))
-ggsave("figs/ss3/prof/like_R0_fleet.png", g, height = 3, width = 6)
-
+  g <- SS3_prof_like(R0_prof[-1], logR0[-1], by_fleet = TRUE, component = c("Length_like", "Surv_like")) +
+    labs(x = expression(log(R[0])))
+  ggsave("figs/ss3/prof/like_R0_fleet.png", g, height = 3, width = 6)
+}
 
 # Profile M
+
 M <- seq(0.03, 0.09, 0.01)
 
+system("cp -r ss3/A0 ss3/A0_Mprof")
+s <- r4ss::SS_readstarter("ss3/A0_Mprof/starter.ss")
+s$ctlfile <- "control_modified.ss"
+r4ss::SS_writestarter(s, file = "ss3/A0_Mprof/starter.ss", overwrite = TRUE)
+plan(multisession)
 x <- r4ss::profile(
-  file.path(ss_home, "A1_Mprof"),
+  file.path(ss_home, "A0_Mprof"),
   string = "NatM_uniform_Fem_GP_1",
   profilevec = M,
   #overwrite = FALSE,
@@ -219,11 +232,10 @@ x <- r4ss::profile(
   prior_check = FALSE,
   extras = "-nox -nohess modelname ss"
 )
-
-
+plan(sequential)
 M_prof <- r4ss::SSgetoutput(
   keyvec = 1:length(M),
-  dirvec = file.path(ss_home, "A1_Mprof"),
+  dirvec = file.path(ss_home, "A0_Mprof"),
   getcomp = FALSE,
   getcovar = FALSE
 )
@@ -243,7 +255,7 @@ g <- SS3_SR(M_prof, paste("M = ", M))
 ggsave("figs/ss3/prof/prof_M_SR.png", g, height = 6, width = 6)
 
 g <- SS3_prof_like(M_prof, M, by_fleet = FALSE) +
-  labs(x = "M")
+  labs(x = "M") + scale_colour_brewer(palette = "Set2")
 ggsave("figs/ss3/prof/like_M.png", g, height = 3, width = 5)
 
 g <- SS3_prof_like(M_prof, M, by_fleet = TRUE, component = c("Length_like", "Surv_like")) +
@@ -269,20 +281,12 @@ ggsave("figs/ss3/prof/prof_M_index.png", g, height = 4.5, width = 6)
 
 Beta_dir <- "A0_Beta_prof"
 system("cp -r ss3/A0 ss3/A0_Beta_prof")
-
-# Profile zfrac
 Beta <- seq(0.5, 2, 0.25)
 Beta
-
-# run and fix:
-# Error in r4ss::profile(file.path(ss_home, zdir), string = "SR_surv_zfrac",  :
-# starter file should be changed to change
-# 'control.ss' to 'control_modified.ss'
 s <- r4ss::SS_readstarter("ss3/A0_Beta_prof/starter.ss")
 s$ctlfile <- "control_modified.ss"
 r4ss::SS_writestarter(s, file = "ss3/A0_Beta_prof/starter.ss", overwrite = TRUE)
 
-library(future)
 plan(multisession)
 x <- r4ss::profile(
   file.path(ss_home, Beta_dir),
@@ -303,7 +307,6 @@ Beta_prof <- r4ss::SSgetoutput(
 saveRDS(Beta_prof, file = file.path(ss_home, "Beta_prof.rds"))
 
 # Plot yield curve
-library(purrr)
 g <- SS3_yieldcurve(Beta_prof, paste0("Beta = ", Beta), xvar = "SB0") +
   theme(legend.position = "bottom") + gfplot::theme_pbs()
 g$facet$params$ncol <- 3
