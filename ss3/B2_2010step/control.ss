@@ -141,8 +141,7 @@
  30 100 90.87 0 0 0 -50 0 0 0 0 0 0 0 # L_at_Amax_Fem_GP_1
  0.01 0.2 0.058 0 0 0 -50 0 0 0 0 0 0 0 # VonBert_K_Fem_GP_1
  0.01 0.3 0.25 0 0 0 -50 0 0 0 0 0 0 0 # CV_young_Fem_GP_1
- -3 0.3 -1.203 0 0 0 -50 0 0 0 0 0 0 0 # CV_old_Fem_GP_1
-# 0.01 0.3 0.075 0 0 0 -50 0 0 0 0 0 0 0 # CV_old_Fem_GP_1
+ 0.01 0.3 0.075 0 0 0 -50 0 0 0 0 0 0 0 # CV_old_Fem_GP_1
 # Sex: 1  BioPattern: 1  WtLen
  0 0.1 1.89e-06 0 0 0 -50 0 0 0 0 0 0 0 # Wtlen_1_Fem_GP_1
  2 4 3.19 0 0 0 -50 0 0 0 0 0 0 0 # Wtlen_2_Fem_GP_1
@@ -158,8 +157,7 @@
  -1 1 -0.093 0 0 0 -50 0 0 0 0 0 0 0 # L_at_Amax_Mal_GP_1
  -2 2 0.428 0 0 0 -50 0 0 0 0 0 0 0 # VonBert_K_Mal_GP_1
  -1 1 0 0 0 0 -50 0 0 0 0 0 0 0 # CV_young_Mal_GP_1
- -1 1 -0.916 0 0 0 -50 0 0 0 0 0 0 0 # CV_old_Mal_GP_1
-# -1 1 0.287 0 0 0 -50 0 0 0 0 0 0 0 # CV_old_Mal_GP_1
+ -1 1 0.287 0 0 0 -50 0 0 0 0 0 0 0 # CV_old_Mal_GP_1
 # Sex: 2  BioPattern: 1  WtLen
  0 0.1 3.54e-06 0 0 0 -50 0 0 0 0 0 0 0 # Wtlen_1_Mal_GP_1
  2 4 3.03 0 0 0 -50 0 0 0 0 0 0 0 # Wtlen_2_Mal_GP_1
@@ -408,7 +406,7 @@
             35           110       66.5916            65          19.5             6          3          0          0          0          0          0          0          0  #  Size_DblN_peak_SYN(8)
            -10            50           -10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_SYN(8)
            -10            10        5.5921           4.6           0.3             6          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_SYN(8)
-           -10            50            15             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_descend_se_SYN(8)
+           -10            50            15           5.7           0.3             6          3          0          0          0          0          0          0          0  #  Size_DblN_descend_se_SYN(8)
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_start_logit_SYN(8)
           -999           999          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_SYN(8)
           -100           100       4.91395             0          19.5             6          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_SYN(8)

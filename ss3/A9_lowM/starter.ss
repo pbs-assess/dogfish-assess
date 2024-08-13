@@ -23,7 +23,7 @@ control.ss
 5 # MCeval thin interval
 0 # jitter initial parm value by this fraction
 1937 # min yr for sdreport outputs (-1 for styr); #_1952
-2023 # max yr for sdreport outputs (-1 for endyr+1; -2 for endyr+Nforecastyrs); #_2023
+-2 # max yr for sdreport outputs (-1 for endyr+1; -2 for endyr+Nforecastyrs); #_2023
 0 # N individual STD years
 #vector of year values
 
