@@ -447,7 +447,9 @@ SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"),
     bind_rows() %>%
     mutate(Sex = ifelse(Sex == 1, "Female", "Male")) %>%
     left_join(fleet_names, by = c("FleetName" = "Fleet_name")) %>%
-    mutate(FName = factor(FName, levels = fleet_names$FName))
+    mutate(FName = factor(FName, levels = fleet_names$FName)) |>
+    ungroup() |>
+    mutate(value = value/max(value), .by = c(FName, scen))
 
   #g <- ggplot(out, aes(variable, value, colour = scen)) +
   #  geom_line() +
@@ -708,6 +710,9 @@ SS3_SR <- function(x, scenario) {
               Recruit_0 = sum(Recruit_0)) %>%
     mutate(scen = scenario)
 
+  ts <- ts |>
+    mutate(scen = forcats::fct_inorder(scen))
+
   extrap <- x$SPAWN_RECR_CURVE %>%
     filter(`SSB/SSB_virgin` < 1) %>%
     mutate(scen = scenario)
@@ -728,7 +733,8 @@ SS3_lencomp <- function(replist, scenario = "OM 1", fleet = 7, mean_length = TRU
     filter(Fleet %in% fleet) %>%
     mutate(FleetName = replist$FleetNames[Fleet]) %>%
     select(Yr, Sex, Fleet, FleetName, Bin, Obs, Exp, Nsamp_in, Pearson) %>%
-    mutate(scen = scenario)
+    mutate(scen = scenario) |>
+    mutate(scen = forcats::fct_inorder(scen))
 
   if (ghost) {
     ghost_comp <- replist$ghostlendbase %>%
@@ -883,7 +889,8 @@ SS3_compresid <- function(x, scenario, fleet, type = c("length", "age"),
       select(Yr, Sex, as.character(age)) %>%
       reshape2::melt(id.vars = c("Yr", "Sex")) %>%
       mutate(Sex = ifelse(Sex == 1, "Female", "Male"),
-             scen = scenario)
+             scen = scenario) |>
+      mutate(scen = forcats::fct_inorder(scen))
   } else {
 
     dat <- replist$natlen %>%
@@ -891,7 +898,8 @@ SS3_compresid <- function(x, scenario, fleet, type = c("length", "age"),
       select(Yr, Sex, as.character(len)) %>%
       reshape2::melt(id.vars = c("Yr", "Sex")) %>%
       mutate(Sex = ifelse(Sex == 1, "Female", "Male"),
-             scen = scenario)
+             scen = scenario) |>
+      mutate(scen = forcats::fct_inorder(scen))
   }
   dat
 }
@@ -900,7 +908,8 @@ SS3_N <- function(x, scenario, type = c("age", "length"), age = c(0, 15, 30, 45,
   type <- match.arg(type)
 
   dat <- Map(.SS3_N, replist = x, scenario = scenario, MoreArgs = list(age = age, len = len, type = type)) %>%
-    bind_rows()
+    bind_rows() |>
+    mutate(scen = forcats::fct_inorder(scen))
 
   if (sex_ratio) {
     ratio <- dat %>%
@@ -983,7 +992,8 @@ SS3_steep <- function(replist) {
               p_mature = sum(value_mature)/sum(value), .by = Yr) %>%
     left_join(pups, by = c("Yr")) %>%
     mutate(PPP = SpawnBio/N_mature) %>%
-    mutate(scen = scen)
+    mutate(scen = scen) |>
+    mutate(scen = forcats::fct_inorder(scen))
 
   return(dat)
 }
@@ -992,7 +1002,8 @@ SS3_fecundity <- function(x, scenario, type = c("PP", "mat")) { # PP = pup produ
   type <- match.arg(type)
 
   dat <- Map(.SS3_fecundity, replist = x, scen = scenario) %>%
-    bind_rows()
+    bind_rows() |>
+    mutate(scen = forcats::fct_inorder(scen))
 
   if (type == "PP") {
     g <- ggplot(dat, aes(Yr, PPP)) +

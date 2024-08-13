@@ -193,7 +193,7 @@
 0  #  future feature:  0/1 to make realized sigmaR a function of SR curvature
 #_          LO            HI          INIT         PRIOR         PR_SD       PR_type      PHASE    env-var    use_dev   dev_mnyr   dev_mxyr     dev_PH      Block    Blk_Fxn #  parm_name
              5            15       9.34396             0             0             0          1          0          0          0          0          0          0          0 # SR_LN(R0)
-             0             1           0.4           0.5      0.287717             2          1          0          0          0          0          0          0          0 # SR_surv_zfrac
+             0             1           0.4           0.5      0.287717             2         -1          0          0          0          0          0          0          0 # SR_surv_zfrac
            0.2             5             1             0             0             0        -50          0          0          0          0          0          0          0 # SR_surv_Beta
            0.2             1           0.4             0             0             0        -50          0          0          0          0          0          0          0 # SR_sigmaR
             -1             1             0             0             0             0        -50          0          0          0          0          0          0          0 # SR_regime

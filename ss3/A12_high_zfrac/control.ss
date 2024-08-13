@@ -21,9 +21,9 @@
 #_Cond 1.0 # first age that moves (real age at begin of season, not integer) also cond on do_migration>0
 #_Cond 1 1 1 2 4 10 # example move definition for seas=1, morph=1, source=1 dest=2, age1=4, age2=10
 #
-1 #_Nblock_Patterns
-1 #_blocks_per_pattern 
-2010 2125
+0 #_Nblock_Patterns
+#_Cond 0 #_blocks_per_pattern 
+# begin and end years of blocks
 #
 # controls for all timevary parameters 
 1 #_time-vary parm bound check (1=warn relative to base parm bounds; 3=no bound check); Also see env (3) and dev (5) options to constrain with base bounds
@@ -130,19 +130,18 @@
 18 #_First_Mature_Age
 4 #_fecundity option:(1)eggs=Wt*(a+b*Wt);(2)eggs=a*L^b;(3)eggs=a*Wt^b; (4)eggs=a+b*L; (5)eggs=a+b*W
 0 #_hermaphroditism option:  0=none; 1=female-to-male age-specific fxn; -1=male-to-female age-specific fxn
-3 #_parameter_offset_approach for M, G, CV_G:  1- direct, no offset; 2- male=fem_parm*exp(male_parm); 3: male=female*exp(parm) then old=young*exp(parm)
+2 #_parameter_offset_approach for M, G, CV_G:  1- direct, no offset; 2- male=fem_parm*exp(male_parm); 3: male=female*exp(parm) then old=young*exp(parm)
 #
 #_growth_parms
 #_ LO HI INIT PRIOR PR_SD PR_type PHASE env_var&link dev_link dev_minyr dev_maxyr dev_PH Block Block_Fxn
 # Sex: 1  BioPattern: 1  NatMort
- 0.01 0.114 0.074 0 0 0 -50 0 0 0 0 0 1 0 # NatM_p_1_Fem_GP_1
+ 0.01 0.114 0.074 0 0 0 -50 0 0 0 0 0 0 0 # NatM_p_1_Fem_GP_1
 # Sex: 1  BioPattern: 1  Growth
  1 55 28.4 0 0 0 -50 0 0 0 0 0 0 0 # L_at_Amin_Fem_GP_1
  30 100 90.87 0 0 0 -50 0 0 0 0 0 0 0 # L_at_Amax_Fem_GP_1
  0.01 0.2 0.058 0 0 0 -50 0 0 0 0 0 0 0 # VonBert_K_Fem_GP_1
  0.01 0.3 0.25 0 0 0 -50 0 0 0 0 0 0 0 # CV_young_Fem_GP_1
- -3 0.3 -1.203 0 0 0 -50 0 0 0 0 0 0 0 # CV_old_Fem_GP_1
-# 0.01 0.3 0.075 0 0 0 -50 0 0 0 0 0 0 0 # CV_old_Fem_GP_1
+ 0.01 0.3 0.075 0 0 0 -50 0 0 0 0 0 0 0 # CV_old_Fem_GP_1
 # Sex: 1  BioPattern: 1  WtLen
  0 0.1 1.89e-06 0 0 0 -50 0 0 0 0 0 0 0 # Wtlen_1_Fem_GP_1
  2 4 3.19 0 0 0 -50 0 0 0 0 0 0 0 # Wtlen_2_Fem_GP_1
@@ -152,14 +151,13 @@
  -14.7 3 -9.96 0 0 0 -50 0 0 0 0 0 0 0 # Eggs_intercept_Fem_GP_1
  -3 3 0.176 0 0 0 -50 0 0 0 0 0 0 0 # Eggs_slope_len_Fem_GP_1
 # Sex: 2  BioPattern: 1  NatMort
- 0 0 0 0 0 0 -50 0 0 0 0 0 1 0 # NatM_p_1_Mal_GP_1
+ 0 0 0 0 0 0 -50 0 0 0 0 0 0 0 # NatM_p_1_Mal_GP_1
 # Sex: 2  BioPattern: 1  Growth
  -2 2 -0.039 0 0 0 -50 0 0 0 0 0 0 0 # L_at_Amin_Mal_GP_1
  -1 1 -0.093 0 0 0 -50 0 0 0 0 0 0 0 # L_at_Amax_Mal_GP_1
  -2 2 0.428 0 0 0 -50 0 0 0 0 0 0 0 # VonBert_K_Mal_GP_1
  -1 1 0 0 0 0 -50 0 0 0 0 0 0 0 # CV_young_Mal_GP_1
- -1 1 -0.916 0 0 0 -50 0 0 0 0 0 0 0 # CV_old_Mal_GP_1
-# -1 1 0.287 0 0 0 -50 0 0 0 0 0 0 0 # CV_old_Mal_GP_1
+ -1 1 0.287 0 0 0 -50 0 0 0 0 0 0 0 # CV_old_Mal_GP_1
 # Sex: 2  BioPattern: 1  WtLen
  0 0.1 3.54e-06 0 0 0 -50 0 0 0 0 0 0 0 # Wtlen_1_Mal_GP_1
  2 4 3.03 0 0 0 -50 0 0 0 0 0 0 0 # Wtlen_2_Mal_GP_1
@@ -183,9 +181,8 @@
 #  fraction female, by GP
  0 1 0.5 0 0 0 -50 0 0 0 0 0 0 0 # FracFemale_GP_1
 #
-#_timevary MG parameters
- 0 1 0.01 0 0 0 1 # NatM_p_1_Fem_GP_1_BLK1add_2005
- 0 0.2 0 0 0 0 -1 # NatM_p_1_Mal_GP_1_BLK1add_2005
+#_no timevary MG parameters
+#
 #_seasonal_effects_on_biology_parms
  0 0 0 0 0 0 0 0 0 0 #_femwtlen1,femwtlen2,mat1,mat2,fec1,fec2,Malewtlen1,malewtlen2,L1,K
 #_ LO HI INIT PRIOR PR_SD PR_type PHASE
@@ -196,8 +193,8 @@
 0  #  future feature:  0/1 to make realized sigmaR a function of SR curvature
 #_          LO            HI          INIT         PRIOR         PR_SD       PR_type      PHASE    env-var    use_dev   dev_mnyr   dev_mxyr     dev_PH      Block    Blk_Fxn #  parm_name
              5            15       9.34396             0             0             0          1          0          0          0          0          0          0          0 # SR_LN(R0)
-             0             1           0.4           0.5      0.287717             2         -1          0          0          0          0          0          0          0 # SR_surv_zfrac
-           0.2             5             1             0             0             0        -50          0          0          0          0          0          0          0 # SR_surv_Beta
+             0             1           0.6           0.5      0.287717             2         -1          0          0          0          0          0          0          0 # SR_surv_zfrac
+           0.2             5           2.0             0             0             0        -50          0          0          0          0          0          0          0 # SR_surv_Beta
            0.2             1           0.4             0             0             0        -50          0          0          0          0          0          0          0 # SR_sigmaR
             -1             1             0             0             0             0        -50          0          0          0          0          0          0          0 # SR_regime
             -1             1             0             0             0             0        -50          0          0          0          0          0          0          0 # SR_autocorr
@@ -408,7 +405,7 @@
             35           110       66.5916            65          19.5             6          3          0          0          0          0          0          0          0  #  Size_DblN_peak_SYN(8)
            -10            50           -10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_SYN(8)
            -10            10        5.5921           4.6           0.3             6          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_SYN(8)
-           -10            50            15             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_descend_se_SYN(8)
+           -10            50            15           5.7           0.3             6          3          0          0          0          0          0          0          0  #  Size_DblN_descend_se_SYN(8)
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_start_logit_SYN(8)
           -999           999          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_SYN(8)
           -100           100       4.91395             0          19.5             6          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_SYN(8)
