@@ -56,3 +56,6 @@ init.pin
 ss.psv
 *.csv
 *.tmp
+
+*retrospectives*
+ss3/*prof*
