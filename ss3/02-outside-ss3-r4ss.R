@@ -1,4 +1,4 @@
-
+library(dplyr)
 
 ss_home <- here::here("ss3")
 
@@ -41,21 +41,19 @@ mods <- c("A1", "A0",
 tocopy <- seq_along(mods)[-2] # copying 2
 for (i in tocopy) {
   to <- file.path(ss_home, mods[i], "starter.ss")
-  message("Copying starter.ss to:", to)
+  cat("Copying starter.ss to:", to, "\n")
   file.copy(file.path(ss_home, "A0/starter.ss"), to, overwrite = TRUE)
   to <- file.path(ss_home, mods[i], "forecast.ss")
-  message("Copying forecast.ss to:", to)
+  cat("Copying forecast.ss to:", to, "\n")
   file.copy(file.path(ss_home, "A0/forecast.ss"), to, overwrite = TRUE)
+  cat("\n")
 }
 
 # Fit a single model
-fit_ss3(mods[2], hessian = TRUE, ss_home = ss_home)
 if (FALSE) {
+  fit_ss3(mods[2], hessian = TRUE, ss_home = ss_home)
   r4ss::SS_output("ss3/A0") |> r4ss::SS_plots()
 }
-
-# Sequential:
-# lapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 
 # Fit all of many models in parallel
 snowfall::sfInit(parallel = TRUE, cpus = floor(parallel::detectCores() / 2))
@@ -73,7 +71,6 @@ replist <- r4ss::SS_output(
 )
 replist$Length_Comp_Fit_Summary
 
-
 # Save report list
 #saveRDS(replist, file = file.path(ss_home, paste0("r4ss_", mods[1], ".rds")))
 
@@ -84,8 +81,6 @@ if (covar) {
   # Yield curve doesn't work with dogfish SRR when Hessian is not calculated?
   r4ss::SS_plots(replist, verbose = FALSE, plot = c(1:21, 23:26))
 }
-
-library(dplyr)
 
 # Report and plot various output in R
 replist$estimated_non_dev_parameters |>
@@ -100,5 +95,3 @@ r4ss::SSplotCatch(replist)
 r4ss::SSplotIndices(replist)
 r4ss::SSplotComps(replist)
 replist$likelihoods_used
-
-
