@@ -80,7 +80,7 @@ for (i in 1:length(SS_dir)) {
           stop("Double check Beta prior calculation")
         }
       } else if (par_info$Pr_type == "Normal") {
-        x <- seq(-2, 2, length.out = 20) * par_info$Pr_SD + par_info$Prior
+        x <- seq(-3, 3, length.out = 20) * par_info$Pr_SD + par_info$Prior
         pr <- dnorm(x, par_info$Prior, par_info$Pr_SD)
       }
     }
@@ -96,6 +96,7 @@ for (i in 1:length(SS_dir)) {
   g <- prior_dens %>%
     left_join(par_key, by = "ss_par") %>%
     mutate(ss_name = factor(ss_name, levels = par_key$ss_name)) %>%
+    mutate(value = value/max(value), .by = ss_name) %>%
     #filter(ss_name %in% par_plot) %>%
     ggplot(aes(x, value)) +
     geom_histogram(data = samps_est %>% filter(ss_name != "Log-posterior", !grepl("Recr", ss_name)),
@@ -105,13 +106,14 @@ for (i in 1:length(SS_dir)) {
     geom_line() +
     gfplot::theme_pbs() +
     facet_wrap(vars(ss_name), scales = "free_x", ncol =  5) +
-    labs(x = "Value", y = "Density") +
-    coord_cartesian(expand = FALSE) +
+    labs(x = "Value", y = "Relative density") +
+    coord_cartesian(expand = FALSE, ylim = c(0, 1.05)) +
     theme(panel.spacing = unit(0, "in"),
           strip.text = element_text(size = 6),
-          #axis.text.x = element_text(angle = 45, hjust = 1),
+          axis.text.x = element_text(angle = 45, hjust = 1),
           legend.position = "bottom")
   .ggsave(paste0("figs/mcmc/prior_dens_", SS_dir[i], ".png"), g, height = 10, width = 7)
+}
 
   # Trace plots
   g_worm <- samps_est %>%
