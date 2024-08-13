@@ -1,20 +1,19 @@
-
+library(snowfall)
 
 ss_home <- here::here("ss3")
-model_dir <- c("A1", "A9_lowM", "B2_2010step")
+model_dir <- c("A0", "A9_lowM", "B2_2010step")
 
 # Do retro
 ypeel <- seq(0, -7, -1)
-for(i in model_dir) {
-  r4ss::retro(
-    file.path(ss_home, i),
-    years = ypeel,
-    exe = "ss",
-    extras = c("-nohess modelname ss")
-  )
-}
+# for(i in model_dir) {
+#   r4ss::retro(
+#     file.path(ss_home, i),
+#     years = ypeel,
+#     exe = "ss",
+#     extras = c("-nohess modelname ss")
+#   )
+# }
 
-library(snowfall)
 sfInit(parallel = TRUE, cpus = length(model_dir))
 sfExport(list = c("ss_home", "ypeel"))
 sfLapply(model_dir, function(i) {
@@ -27,9 +26,14 @@ sfLapply(model_dir, function(i) {
 })
 sfStop()
 
-
 # Make figures
 source("ss3/ss3_functions.R")
+
+scale_colour_discrete <- function(...) {
+  scale_colour_viridis_d(option = "D")
+}
+
+dir.create("figs/ss3/retro/", showWarnings = F)
 
 for (i in 1:length(model_dir)) {
   ret <- r4ss::SSgetoutput(
@@ -37,5 +41,14 @@ for (i in 1:length(model_dir)) {
   )
   g <- SS3_retro(ret)
   code <- substr(model_dir[i], 1, 2)
-  ggsave(paste0("figs/ss3/ret_", code, ".png"), g, height = 8, width = 5)
+  ggsave(paste0("figs/ss3/retro/ret_", code, ".png"), height = 8, width = 5)
+}
+
+if (FALSE) {
+  setwd("figs/ss3/retro/")
+  system(paste0(
+    "find -X . -name '*.png' -print0 | xargs -0 -n ",
+    1, " -P ", 6, " /opt/homebrew/bin/optipng -strip all"
+  ))
+  setwd(here::here())
 }
