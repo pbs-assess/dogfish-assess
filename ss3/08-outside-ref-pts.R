@@ -1,5 +1,6 @@
 library(tidyverse)
 library(r4ss)
+library(ggtext)
 
 dir.create("figs/refpts/", showWarnings = F)
 library(ggplot2)
@@ -14,45 +15,7 @@ theme_set(gfplot::theme_pbs())
 
 ss_home <- here::here("ss3")
 
-mods <- c(
-  "A1", "A0",
-  "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_highdiscard",
-  "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM", "A10_highM", "A11_low_zfrac", "A12_high_zfrac", "A13_extraSD",
-  "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM"
-)
-
-model_name <- c(
-  "(A1) Base with estimated zfrac",
-  "(A0) Base",
-  "(A2) US growth",
-  "(A3) BC growth, high maturity",
-  "(A4) US growth, high maturity",
-  "(A5) 100% discard m.",
-  "(A6) IPHC + CPUE",
-  "(A7) SYN only",
-  "(A8) HBLL only",
-  # "(A9) M = 0.05",
-  "(A9) Low M",
-  # "(A10) M = 0.082",
-  "(A10) High M",
-  # "(A11) zfrac = 0.2, Beta = 0.6",
-  "(A11) Low productivity",
-  # "(A12) zfrac = 0.6, Beta = 2",
-  "(A12) High productivity",
-  "(A13) Extra SD on IPHC",
-  "(B1) M = 0.074, inc. 1990",
-  "(B2) M = 0.074, step 2010",
-  "(B3) M = 0.074, step 2005",
-  "(B4) M = 0.05, inc. 1990",
-  "(B5) M = 0.05, inc. 2010"
-)
-
-# model_name <- c("(A0) M = 0.074", "(A9) M = 0.05", "(A10) M = 0.082",
-#   "(B1) M = 0.074, inc. 1990", "(B2) M = 0.074, step 2010",
-#   "(B3) M = 0.074, step 2005", "(B4) M = 0.05, inc. 1990", "(B5) M = 0.05, inc. 2010")
-# model_name <- c("(A0) All indices", "(A6) IPHC + CPUE", "(A6) SYN", "(A7) HBLL")
-# model_name <- c("(A0) BCgrowth", "(A2) USgrowth", "(A3) BCgrowth, high mat", "(A4) USgrowth, high mat", "(A5) 100% discard m.")
-# zfrac = 0.2, Beta = 0.6", "(A3) zfrac = 0.6, Beta = 2")
+source("ss3/99-model-names.R")
 
 reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A5_highdiscard", "A8_HBLLonly")
 
@@ -69,7 +32,7 @@ multi_rep <- lapply(mods, function(x) {
 })
 saveRDS(multi_rep, file = "data/generated/replist-ref-pts.rds")
 
-out <- seq_along(multi_rep) |>
+out_F <- seq_along(multi_rep) |>
   purrr::map_dfr(\(i) {
     multi_rep[[i]]$derived_quants %>%
       # filter(Label %in% c("annF_Btgt", "annF_SPR", "annF_MSY")) %>%
@@ -77,11 +40,8 @@ out <- seq_along(multi_rep) |>
       select(label = Label, est = Value, se = StdDev) |>
       mutate(scen = model_name[i])
   })
-row.names(out) <- NULL
-out <- out |>
-  mutate(scen = forcats::fct_inorder(scen))
-
-out |>
+out_F |>
+  mutate(scen = forcats::fct_inorder(scen)) |>
   filter(!grepl("^\\(B", scen)) |>
   mutate(scen = forcats::fct_rev(scen)) |>
   ggplot(aes(scen, est, ymin = est - 2 * se, ymax = est + 2 * se)) +
@@ -100,26 +60,42 @@ get_b_ratio <- function(replist) {
   row.names(dd) <- NULL
   dd
 }
+
+cols <- c("grey10", RColorBrewer::brewer.pal(11L, "Paired")[-1])
+names(cols) <- model_name[!grepl("^\\(B", model_name)]
+
+cols_B <- c("grey60", RColorBrewer::brewer.pal(3, "Dark2")[1:2])
+names(cols_B) <- c(model_name[1], model_name[grepl("^\\(B", model_name)])
+
 out_depl <- seq_along(multi_rep) |>
   purrr::map_dfr(\(i)
   get_b_ratio(multi_rep[[i]]) |>
     mutate(scen = model_name[i])) |>
   mutate(scen = forcats::fct_inorder(scen))
 
-out_depl |>
-  filter(!grepl("^\\(B", scen)) |>
-  ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = scen, value = scen, fill = scen)) +
-  geom_ribbon(alpha = 0.4, colour = NA) +
-  geom_line() +
-  geom_hline(yintercept = 0.4, lty = 3) +
-  geom_hline(yintercept = 0.2, lty = 2) +
-  ylab(expression(S / S[0])) +
-  xlab("") +
-  coord_cartesian(xlim = c(1936, 2024), ylim = c(0, 1), expand = FALSE) +
-  labs(colour = "Scenario", fill = "Scenario") +
-  scale_colour_brewer(palette = "Paired") +
-  scale_fill_brewer(palette = "Paired")
-ggsave("figs/refpts/depl-ref-ts.png", width = 7, height = 4)
+make_depl_plot <- function(dat, .col) {
+  dat |>
+    mutate(scen = forcats::fct_rev(scen)) |>
+    ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = scen, value = scen, fill = scen)) +
+    geom_ribbon(alpha = 0.3, colour = NA) +
+    geom_line() +
+    geom_hline(yintercept = 0.4, lty = 3, colour = "grey40") +
+    geom_hline(yintercept = 0.2, lty = 2, colour = "grey40") +
+    ylab("S / S<sub>0</sub>") +
+    xlab("") +
+    theme(axis.title = element_markdown()) +
+    coord_cartesian(xlim = c(1936, 2024), ylim = c(0, 1), expand = FALSE) +
+    labs(colour = "Scenario", fill = "Scenario") +
+    scale_colour_manual(values = .col, guide = guide_legend(reverse = TRUE)) +
+    scale_fill_manual(values = .col, guide = guide_legend(reverse = TRUE))
+}
+out_depl |> filter(!grepl("^\\(B", scen)) |> make_depl_plot(.col = cols);
+ggsave("figs/ss3/refpts/depl-ref-ts.png", width = 7, height = 4)
+out_depl |> filter(grepl("^\\(B", scen) | grepl("A0", scen)) |>
+  make_depl_plot(.col = cols_B) +
+  ggtitle("**With M set at its historical value**") +
+  theme(title = element_markdown())
+ggsave("figs/ss3/refpts/depl-ref-ts-B.png", width = 7, height = 4)
 
 # ggrepel::geom_text_repel(data = filter(out, year == 2023), mapping = aes(x = year, y = est, label = scen), segment.size = 0.4, direction='x', nudge_x = 0.1, force=1)
 
@@ -136,39 +112,49 @@ get_F_ts_target <- function(replist) {
     filter(Label %in% c("annF_Btgt")) |>
     mutate(est = Value, se = StdDev) |>
     mutate(lwr = est - 2 * se, upr = est + 2 * se)
-
   dd$est_ref <- ref$est
   dd$lwr_ref <- ref$lwr
   dd$upr_ref <- ref$upr
   dd <- mutate(dd, est_ratio = est / est_ref, lwr_ratio = lwr / est_ref, upr_ratio = upr / est_ref)
   dd
 }
-
 out_Ftarg <- seq_along(multi_rep) |>
   purrr::map_dfr(\(i)
   get_F_ts_target(multi_rep[[i]]) |>
     mutate(scen = model_name[i])) |>
   mutate(scen = forcats::fct_inorder(scen))
 
-library(ggtext)
-out_Ftarg |>
-  filter(!grepl("^\\(B", scen)) |>
-  ggplot(aes(year, est_ratio, ymin = lwr_ratio, ymax = upr_ratio, colour = scen, fill = scen)) +
-  geom_ribbon(alpha = 0.4, colour = NA) +
-  geom_line() +
-  geom_hline(yintercept = 1, lty = 2) +
-  ylab("F/F<sub>0.4S0</sub>") +
-  xlab("") +
-  coord_cartesian(xlim = c(1936, 2024), ylim = c(0, 20), expand = FALSE) +
-  labs(colour = "Scenario", fill = "Scenario") +
-  scale_y_continuous(trans = "sqrt", breaks = c(0, 0.2, 0.5, 1, 2, 5, 10, 15, 20)) +
-  scale_colour_brewer(palette = "Paired") +
-  scale_fill_brewer(palette = "Paired") +
-  theme(
-    axis.title.y = element_markdown()
-  )
+ftarg_plot <- function(dat) {
+  dat |>
+    mutate(scen = forcats::fct_rev(scen)) |>
+    ggplot(aes(year, est_ratio, ymin = lwr_ratio, ymax = upr_ratio, colour = scen, fill = scen)) +
+    geom_ribbon(alpha = 0.4, colour = NA) +
+    geom_line() +
+    geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
+    ylab("F/F<sub>0.4S0</sub>") +
+    xlab("") +
+    coord_cartesian(xlim = c(1936, 2024), ylim = c(0, 20), expand = FALSE) +
+    labs(colour = "Scenario", fill = "Scenario") +
+    scale_y_continuous(trans = "sqrt", breaks = c(0, 0.2, 0.5, 1, 2, 5, 10, 15, 20)) +
+    scale_colour_manual(values = cols, guide = guide_legend(reverse = TRUE)) +
+    scale_fill_manual(values = cols, guide = guide_legend(reverse = TRUE)) +
+    theme(
+      axis.title.y = element_markdown()
+    )
+}
 
+out_Ftarg |> filter(!grepl("^\\(B", scen)) |> ftarg_plot()
 ggsave("figs/ss3/refpts/f-ref-ts.png", width = 7, height = 4)
+
+out_Ftarg |> filter(grepl("A0", scen) | grepl("^\\(B", scen)) |> ftarg_plot() +
+  ggtitle("**With M set at its historical value**") +
+  theme(
+    title = element_markdown()
+  ) +
+  scale_colour_manual(values = cols_B, guide = guide_legend(reverse = TRUE)) +
+  scale_fill_manual(values = cols_B, guide = guide_legend(reverse = TRUE))
+ggsave("figs/ss3/refpts/f-ref-ts-B.png", width = 7, height = 4)
+
 
 # Kobe plot -----------------------------------------------------------------
 
@@ -198,9 +184,9 @@ d |>
     legend.position = "right"
   ) +
   labs(colour = "Year") +
-  geom_hline(yintercept = 1, lty = 2) +
-  geom_vline(xintercept = 0.2, lty = 2) +
-  geom_vline(xintercept = 0.4, lty = 3)
+  geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
+  geom_vline(xintercept = 0.2, lty = 2, colour = "grey40") +
+  geom_vline(xintercept = 0.4, lty = 3, colour = "grey40")
 
 ggsave("figs/ss3/refpts/kobe.png", width = 9.5, height = 7)
 
@@ -237,7 +223,7 @@ out_f40 |>
   ggplot(aes(year, est_ratio, ymin = lwr_ratio, ymax = upr_ratio, colour = scen, fill = scen)) +
   geom_ribbon(alpha = 0.4, colour = NA) +
   geom_line() +
-  geom_hline(yintercept = 1, lty = 2) +
+  geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
   ylab("F at SPR 40") +
   xlab("Year") +
   coord_cartesian(xlim = c(1936, 2024), ylim = c(0, 4.5), expand = FALSE) +
@@ -286,7 +272,7 @@ out_catch <- seq_along(multi_rep) |>
     mutate(scen = model_name[i])) |>
   mutate(scen = forcats::fct_inorder(scen))
 out_catch |>
-  filter(!grepl("^\\(B", scen)) |>
+  # filter(!grepl("^\\(B", scen)) |>
   mutate(scen = forcats::fct_rev(scen)) |>
   ggplot(aes(scen, est, ymin = lwr, ymax = upr)) +
   geom_linerange() +
