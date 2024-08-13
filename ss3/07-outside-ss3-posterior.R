@@ -46,11 +46,11 @@ for (i in 1:length(SS_dir)) {
 
   par_key <- data.frame(
     Par = rownames(samps$monitor),
-    ss_name = replist$parameters %>%
+    ss_par = replist$parameters %>%
       filter(Phase > 0) %>%
       pull(Label) %>% c("Log-posterior")
   ) %>%
-    mutate(ss_name = rename_fn(ss_name))
+    mutate(ss_name = rename_fn(ss_par))
 
   samps_est <- samps$samples %>% reshape2::melt() %>%
     rename(It = Var1, Chain = Var2, Par = Var3) %>%
@@ -60,6 +60,60 @@ for (i in 1:length(SS_dir)) {
 
   # Important population parameters + posterior
   par_plot <- c("NatM_uniform_Fem_GP_\n1_BLK1mult_2010", "SR_LN(R0)", "SR_surv_zfrac", "Log-posterior")
+
+  # Plot prior
+  prior_dens <- lapply(1:nrow(par_key), function(i) {
+    par_info <- replist$parameters %>%
+      filter(Label == par_key$ss_par[i])
+
+    if (nrow(par_info) && !is.na(par_info$Phase) && par_info$Phase > 0) {
+      if (par_info$Pr_type == "No_prior") { # Uniform
+        x <- seq(par_info$Min, par_info$Max, length.out = 2)
+        pr <- rep(1/(par_info$Max - par_info$Min), length(x))
+      } else if (par_info$Pr_type == "Full_Beta") {
+
+        # Bespoke code!
+        if (par_info$Prior == 0.5 && par_info$Pr_SD == 0.287717 && par_info$Min == 0 && par_info$Max == 1) {
+          x <- seq(0, 1, 0.01)
+          pr <- dbeta(x, 1.01, 1.01)
+        } else {
+          stop("Double check Beta prior calculation")
+        }
+      } else if (par_info$Pr_type == "Normal") {
+        x <- seq(-2, 2, length.out = 20) * par_info$Pr_SD + par_info$Prior
+        pr <- dnorm(x, par_info$Prior, par_info$Pr_SD)
+      }
+    }
+
+    if (exists("x", inherits = FALSE)) {
+      data.frame(ss_par = par_key$ss_par[i], x = x, value = pr)
+    } else {
+      data.frame()
+    }
+  }) %>%
+    bind_rows()
+
+  g <- prior_dens %>%
+    left_join(par_key, by = "ss_par") %>%
+    mutate(ss_name = factor(ss_name, levels = par_key$ss_name)) %>%
+    #filter(ss_name %in% par_plot) %>%
+    ggplot(aes(x, value)) +
+    geom_histogram(data = samps_est %>% filter(ss_name != "Log-posterior", !grepl("Recr", ss_name)),
+                   aes(value, after_stat(ndensity)),
+                   inherit.aes = FALSE,
+                   colour = "black", fill = "grey80", linewidth = 0.1) +
+    geom_line() +
+    gfplot::theme_pbs() +
+    facet_wrap(vars(ss_name), scales = "free_x", ncol =  5) +
+    labs(x = "Value", y = "Density") +
+    coord_cartesian(expand = FALSE) +
+    theme(panel.spacing = unit(0, "in"),
+          strip.text = element_text(size = 6),
+          #axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.position = "bottom")
+  .ggsave(paste0("figs/mcmc/prior_dens_", SS_dir[i], ".png"), g, height = 10, width = 7)
+
+  # Trace plots
   g_worm <- samps_est %>%
     filter(ss_name %in% par_plot) %>%
     filter(It > 10) %>%
