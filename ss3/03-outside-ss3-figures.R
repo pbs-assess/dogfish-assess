@@ -223,13 +223,13 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
 
     g <- bind_rows(Minc) %>%
       filter(Sex == 1) %>%
-      filter(year <= 2023) |>
+      filter(Yr <= 2023) |>
       ggplot(aes(Yr, M, colour = scen)) +
       geom_line() +
       #facet_wrap(vars(Sex)) +
       # gfplot::theme_pbs() +
       expand_limits(y = 0) +
-      coord_cartesian(expand = FALSE) |>
+      coord_cartesian(expand = FALSE) +
       labs(x = "Year", y = "Natural mortality", colour = "Model")
     .ggsave("M_year.png", g, height = 3, width = 6)
 
