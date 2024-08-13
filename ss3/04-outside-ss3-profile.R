@@ -8,11 +8,11 @@ source("ss3/ss3_functions.R")
 
 zdir <- "A1_zfracprof" # See also "A10_extraSD_zfracprof"
 
-if (!dir.exists(file.path(ss_home)))
-dir.create(file.path(ss_home, zdir), showWarnings = FALSE)
-file.copy(
-  from = list.files(file.path(ss_home, "A1"), full.names = TRUE),
-  to = file.path(ss_home, zdir))
+# if (!dir.exists(file.path(ss_home)))
+# dir.create(file.path(ss_home, zdir), showWarnings = FALSE)
+# file.copy(
+#   from = list.files(file.path(ss_home, "A1"), full.names = TRUE),
+#   to = file.path(ss_home, zdir))
 
 # Profile zfrac
 zfrac <- c(1e-3, seq(0.1, 1, 0.1))
@@ -264,3 +264,54 @@ g <- Map(SS3_index, M_prof, M, figure = FALSE) %>%
   guides(colour = guide_legend(ncol = 6)) +
   theme(panel.spacing = unit(0, "in"), legend.position = "bottom")
 ggsave("figs/ss3/prof/prof_M_index.png", g, height = 4.5, width = 6)
+
+# Profile over SR Beta param:
+
+Beta_dir <- "A0_Beta_prof"
+system("cp -r ss3/A0 ss3/A0_Beta_prof")
+
+# Profile zfrac
+Beta <- seq(0.5, 2, 0.25)
+Beta
+
+# run and fix:
+# Error in r4ss::profile(file.path(ss_home, zdir), string = "SR_surv_zfrac",  :
+# starter file should be changed to change
+# 'control.ss' to 'control_modified.ss'
+s <- r4ss::SS_readstarter("ss3/A0_Beta_prof/starter.ss")
+s$ctlfile <- "control_modified.ss"
+r4ss::SS_writestarter(s, file = "ss3/A0_Beta_prof/starter.ss", overwrite = TRUE)
+
+library(future)
+plan(multisession)
+x <- r4ss::profile(
+  file.path(ss_home, Beta_dir),
+  string = "SR_surv_Beta",
+  profilevec = Beta,
+  exe = "ss",
+  verbose = TRUE,
+  prior_check = FALSE,
+  skipfinished = FALSE,
+  extras = "-nox -nohess modelname ss"
+)
+plan(sequential)
+
+Beta_prof <- r4ss::SSgetoutput(
+  keyvec = 1:length(Beta),
+  dirvec = file.path(ss_home, Beta_dir)
+)
+saveRDS(Beta_prof, file = file.path(ss_home, "Beta_prof.rds"))
+
+# Plot yield curve
+library(purrr)
+g <- SS3_yieldcurve(Beta_prof, paste0("Beta = ", Beta), xvar = "SB0") +
+  theme(legend.position = "bottom") + gfplot::theme_pbs()
+g$facet$params$ncol <- 3
+ggsave("figs/ss3/prof/Beta_yield_curve.png", g, height = 6, width = 6)
+
+g <- SS3_yieldcurve(Beta_prof, paste0("Beta = ", Beta), xvar = "F") +
+  theme(legend.position = "bottom") +
+  labs(x = "Fishing mortality") + gfplot::theme_pbs()
+g$facet$params$ncol <- 3
+ggsave("figs/ss3/prof/Beta_yield_curve_F.png", g, height = 6, width = 6)
+
