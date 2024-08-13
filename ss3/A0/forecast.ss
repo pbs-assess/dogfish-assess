@@ -8,7 +8,7 @@
 0.5 # SPR target (e.g. 0.40)
 0.4 # Biomass target (e.g. 0.40)
 #_Bmark_years: beg_bio, end_bio, beg_selex, end_selex, beg_relF, end_relF, beg_recr_dist, end_recr_dist, beg_SRparm, end_SRparm (enter actual year, or values of 0 or -integer to be rel. endyr)
-0 0 0 0 0 0 0 0 0 0
+1937 1937 0 0 0 0 0 0 0 0 # note we're using the first year's M
 #  2022 2022 2022 2022 2022 2022 2022 2022 2022 2022
 1 #Bmark_relF_Basis: 1 = use year range; 2 = set relF same as forecast below
 #
