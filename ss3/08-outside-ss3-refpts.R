@@ -4,6 +4,10 @@ library(ggtext)
 
 dir.create("figs/refpts/", showWarnings = F)
 library(ggplot2)
+
+source("ss3/99-utils.R")
+file.remove("values/ref-pts.tex")
+
 # options(ggplot2.continuous.colour = "viridis")
 # scale_colour_discrete <- function(...) {
 #   scale_colour_brewer(..., palette = "Set2")
@@ -85,7 +89,7 @@ make_depl_plot <- function(dat, .col) {
     xlab("") +
     theme(axis.title = element_markdown()) +
     coord_cartesian(xlim = c(1936, 2028), ylim = c(0, 1), expand = FALSE) +
-    annotate("rect", xmin = 2023, xmax = 2028, ymin = 0, ymax = 1e6,
+    annotate("rect", xmin = 2024, xmax = 2028, ymin = 0, ymax = 1e6,
       alpha = 0.1,fill = "grey30") +
     labs(colour = "Scenario", fill = "Scenario") +
     scale_colour_manual(values = .col, guide = guide_legend(reverse = TRUE)) +
@@ -98,6 +102,20 @@ out_depl |> filter(grepl("^\\(B", scen) | grepl("A0", scen)) |>
   ggtitle("**With M set at its historical value when calculating reference points**") +
   theme(title = element_markdown())
 ggsave("figs/ss3/refpts/depl-ref-ts-B.png", width = 7, height = 4)
+
+
+x <- out_depl |> filter(year == 2023) |>
+  filter(!grepl("^\\(B", scen))
+xbase <- filter(x, grepl("A0", scen))
+
+write_tex(xbase$est |> mround(2), "BaseDepl", "ref-pts.tex")
+ci <- paste0(mround(xbase$lwr, 2), "--", mround(xbase$upr, 2))
+write_tex(ci, "BaseDeplCI", "ref-pts.tex")
+
+mround(mean(x$est), 2) |>
+  write_tex("EnsDeplMean", "ref-pts.tex")
+paste0(mround(min(x$lwr), 2), "--", mround(max(x$upr), 2)) |>
+  write_tex("EnsDeplCI", "ref-pts.tex")
 
 # ggrepel::geom_text_repel(data = filter(out, year == 2023), mapping = aes(x = year, y = est, label = scen), segment.size = 0.4, direction='x', nudge_x = 0.1, force=1)
 
@@ -157,6 +175,24 @@ out_Ftarg |> filter(grepl("A0", scen) | grepl("^\\(B", scen)) |> ftarg_plot() +
   scale_fill_manual(values = cols_B, guide = guide_legend(reverse = TRUE))
 ggsave("figs/ss3/refpts/f-ref-ts-B.png", width = 7, height = 4)
 
+x <- out_Ftarg |> filter(year == 2023) |>
+  filter(!grepl("^\\(B", scen))
+xbase <- filter(x, grepl("A0", scen))
+
+write_tex(xbase$est_ratio |> mround(2), "BaseFratio", "ref-pts.tex")
+ci <- paste0(mround(xbase$lwr_ratio, 2), "--", mround(xbase$upr_ratio, 2))
+write_tex(ci, "BaseFratioCI", "ref-pts.tex")
+
+mround(mean(x$est_ratio), 2) |>
+  write_tex("EnsFratioMean", "ref-pts.tex")
+paste0(mround(min(x$lwr_ratio), 2), "--", mround(max(x$upr_ratio), 2)) |>
+  write_tex("EnsFratioCI", "ref-pts.tex")
+
+x <- filter(x, !grepl("Low prod", scen))
+mround(mean(x$est_ratio), 2) |>
+  write_tex("EnsFratioMeanNoLow", "ref-pts.tex")
+paste0(mround(min(x$lwr_ratio), 2), "--", mround(max(x$upr_ratio), 2)) |>
+  write_tex("EnsFratioCINoLow", "ref-pts.tex")
 
 # Kobe plot -----------------------------------------------------------------
 
@@ -282,13 +318,60 @@ out_catch |>
   geom_point(pch = 21, fill = "white", size = 2) +
   coord_flip() +
   xlab("") +
-  ylab("Catch (t) at F<sub>0.4S0</sub>") +
+  ylab("Catch (t) at 0.4 S/S<sub>0</sub>") +
   theme(
     axis.title.x = element_markdown(),
     axis.title.y = element_markdown(),
     plot.margin = unit(c(0.1, 0.5, 0.1, 0.1), "cm")
   )
 ggsave("figs/ss3/refpts/ref-catch.png", width = 4.5, height = 3.8)
+
+# Get Catch at RR in 2024 ---------------------------------------------------
+
+get_catch_RR2024 <- function(replist) {
+  dq <- replist$derived_quants
+  dd <- dplyr::filter(dq, Label == "ForeCatch_2024") |>
+    mutate(est = Value, se = StdDev) |>
+    mutate(lwr = est - 1.96 * se, upr = est + 1.96 * se) |>
+    select(est, lwr, upr)
+  row.names(dd) <- NULL
+  dd
+}
+out_catch <- seq_along(multi_rep) |>
+  purrr::map_dfr(\(i)
+    get_catch_RR2024(multi_rep[[i]]) |>
+      mutate(scen = model_name[i])) |>
+  mutate(scen = forcats::fct_inorder(scen))
+out_catch |>
+  filter(!grepl("^\\(B", scen)) |>
+  mutate(scen = forcats::fct_rev(scen)) |>
+  ggplot(aes(scen, est, ymin = lwr, ymax = upr)) +
+  geom_linerange() +
+  geom_point(pch = 21, fill = "white", size = 2) +
+  coord_flip() +
+  xlab("") +
+  ylab("Yield (dead catch) (t) in 2024 at F<sub>0.4S0</sub>") +
+  theme(
+    axis.title.x = element_markdown(),
+    axis.title.y = element_markdown(),
+    plot.margin = unit(c(0.1, 0.5, 0.1, 0.1), "cm")
+  )
+ggsave("figs/ss3/refpts/2024-yield-catch.png", width = 4.5, height = 3.8)
+
+
+write_tex(filter(out_catch, grepl("A0", scen)) |> pull(est) |> mround(0), "A02024Yield", "ref-pts.tex")
+
+
+x <- filter(out_catch, grepl("A0", scen))
+write_tex(x |> pull(est) |> mround(0), "BaseNextYrYield", "ref-pts.tex")
+ci <- paste0(mround(x$lwr, 0), "--", mround(x$upr, 0))
+write_tex(ci, "BaseNextYrYieldCI", "ref-pts.tex")
+
+xx <- filter(out_catch, !grepl("^\\(B", scen))
+mround(mean(xx$est), 0) |>
+  write_tex("EnsNextYrYield", "ref-pts.tex")
+paste0(mround(min(xx$lwr), 0), "--", mround(max(xx$upr), 0))|>
+  write_tex("EnsNextYrYieldCI", "ref-pts.tex")
 
 if (FALSE) {
   setwd("figs/ss3/refpts/")

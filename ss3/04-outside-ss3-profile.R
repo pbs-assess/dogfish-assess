@@ -318,3 +318,14 @@ g <- SS3_yieldcurve(Beta_prof, paste0("Beta = ", Beta), xvar = "F") +
 g$facet$params$ncol <- 3
 ggsave("figs/ss3/prof/Beta_yield_curve_F.png", g, height = 6, width = 6)
 
+Sy <- function(zfrac, Beta, R0 = 2000, B0 = 1000, By = 1000) {
+  S0 <- R0 / B0
+  z0 <- -log(S0)
+  zmin <- z0 * (1 - zfrac)
+  Sy <- exp(-z0 + (z0 - zmin) * (1 - (By / B0)^Beta))
+  Sy
+}
+
+R0 <- 5000
+By <- seq(0, R0, length.out = 200)
+plot(By, Sy(0.4, 1, By = By, R0 = R0))

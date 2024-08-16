@@ -12,6 +12,9 @@ library(tidyverse)
 library(r4ss)
 source("ss3/ss3_functions.R")
 
+source("ss3/99-utils.R")
+file.remove("values/models.tex")
+
 # Compare SS models
 ss_home <- here::here("ss3")
 # ss_home <- "C:/users/quang/Desktop/dogfish"
@@ -220,6 +223,25 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
         mutate(scen = model_name[x]) |>
         mutate(scen = forcats::fct_inorder(scen))
     })
+
+    rr <- Minc |>
+      bind_rows() |>
+      filter(!grepl("^\\(A", scen)) |>
+      group_by(scen) |>
+      summarise(maxM = max(M)) |> pull(maxM) |> range()
+
+    write_tex(mround(min(rr), 2), "EnsBMlwr", file = "models.tex")
+    write_tex(mround(max(rr), 2), "EnsBMupr", file = "models.tex")
+
+    xx <- Minc[grep("2010", model_name)] |>
+      bind_rows() |>
+      group_by(scen) |>
+      summarise(maxM = max(M))
+
+    xx |>
+      filter(grepl("^\\(B2", scen)) |>
+      pull(maxM) |> mround(2) |>
+      write_tex("BtwoMmax", file = "models.tex")
 
     g <- bind_rows(Minc) %>%
       filter(Sex == 1) %>%

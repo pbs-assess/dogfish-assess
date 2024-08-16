@@ -50,8 +50,6 @@ bind_rows(
 
 ggsave("figs/outside-indexes2.png", width = 5.5, height = 8.0)
 
-
-
 # Survey timing
 s <- readRDS("data/raw/survey-sets_2023.rds")
 
@@ -117,3 +115,38 @@ g <- ind %>%
 g
 ggsave("figs/indices-all.png", width = 6, height = 6, dpi = 200)
 
+# COSEWIC ---------------------
+
+
+ind$decade <- ind$year / 10
+
+
+dd <- ind |> filter(!grepl("MSA", fleet))
+fits <- dd |> split(dd$fleet) |>
+  purrr::map_dfr(\(x) {
+    x$decade <- x$year / 10
+    m <- glm(est ~ decade, data = x, family = Gamma(link = "log"))
+    est <- coef(m)[2]
+    cc <- confint(m)
+    lwr <- cc[2, 1]
+    upr <- cc[2, 2]
+    data.frame(lwr, est, upr, survey = unique(x$fleet))
+  })
+row.names(fits) <- NULL
+fits
+
+g1 <- ggplot(fits, aes(survey, y = 1-exp(est), ymin =1- exp(lwr), ymax = 1-exp(upr))) + geom_pointrange() +
+  coord_flip() + xlab("") + ylab("Proportion decline per decade") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1))
+
+g2 <- ggplot(fits, aes(survey, y = 1-exp(est*4.7), ymin =1- exp(lwr*4.7), ymax = 1-exp(upr*4.7))) + geom_pointrange() +
+  coord_flip() + xlab("") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1)) +
+  ylab("Proportion decline extrapolated\nto 47 years (generation time)") +
+  geom_hline(yintercept = 0.7, lty = 2)
+cowplot::plot_grid(g1, g2, align = "h")
+ggsave("figs/cosewic-decline-indexes.png", width = 7, height = 3)
+
+if (FALSE) {
+  system("/opt/homebrew/bin/optipng -strip all figs/cosewic-decline-indexes.png")
+}
