@@ -134,71 +134,78 @@ temp <- x |>
   mutate(catch = factor(catch)) |>
   mutate(catch = forcats::fct_rev(catch))
 
-temp |>
-  filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
-  ggplot(aes(year, est,
-    ymin = est - 2 * se, ymax = est + 2 * se,
-    colour = catch, group = paste(model_name, catch), fill = catch
-  )) +
-  geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
-  geom_line() +
-  geom_line(data = filter(temp, catch == 0)) + # dark on top
-  scale_x_continuous(breaks = seq(1960, 2090, 20)) +
-  scale_colour_viridis_d(direction = -1, option = "D") +
-  scale_fill_viridis_d(direction = -1, option = "D") +
-  annotate(
-    "rect",
-    xmin = 2024, xmax = max(x$year, na.rm = TRUE),
-    ymin = 0, ymax = 1e6,
-    alpha = 0.1, fill = "grey55"
-  ) +
-  coord_cartesian(expand = FALSE, ylim = c(0, 0.42)) +
-  geom_hline(yintercept = 0.4, lty = 3, colour = "grey40") +
-  geom_hline(yintercept = 0.2, lty = 2, colour = "grey40") +
-  facet_wrap(~model_name) +
-  ylab(expression(S / S[0])) +
-  xlab("") +
-  labs(colour = "Catch (t)\nassuming 30%\ndiscard mortality") +
-  gfplot::theme_pbs()
+make_proj_by_model <- function(dat) {
+  dat |>
+    filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
+    ggplot(aes(year, est,
+      ymin = est - 2 * se, ymax = est + 2 * se,
+      colour = catch, group = paste(model_name, catch), fill = catch
+    )) +
+    geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
+    geom_line() +
+    geom_line(data = filter(dat, catch == 0)) + # dark on top
+    scale_x_continuous(breaks = seq(1960, 2090, 20)) +
+    scale_colour_viridis_d(direction = -1, option = "D") +
+    scale_fill_viridis_d(direction = -1, option = "D") +
+    annotate(
+      "rect",
+      xmin = 2024, xmax = max(x$year, na.rm = TRUE),
+      ymin = 0, ymax = 1e6,
+      alpha = 0.1, fill = "grey55"
+    ) +
+    coord_cartesian(expand = FALSE, ylim = c(0, 0.42)) +
+    geom_hline(yintercept = 0.4, lty = 3, colour = "grey40") +
+    geom_hline(yintercept = 0.2, lty = 2, colour = "grey40") +
+    facet_wrap(~model_name) +
+    ylab(expression(S / S[0])) +
+    xlab("") +
+    labs(colour = "Catch (t)\nassuming 30%\ndiscard mortality") +
+    gfplot::theme_pbs()
+}
+
+temp |> make_proj_by_model()
 ggsave("figs/ss3/refpts/proj-facet-model.png", width = 8.5, height = 6.5)
 
-temp |>
-  filter(!grepl("B", model)) |>
+make_proj_by_catch_level <- function(dat, ylab = "S / S<sub>0</sub>") {
+  dat |>
   filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
-  mutate(catch = forcats::fct_rev(catch)) |>
-  ggplot(aes(year, est,
-    ymin = est - 2 * se, ymax = est + 2 * se,
-    # colour = catch, group = paste(model_name, catch), fill = catch)) +
-    colour = model_name, group = paste(model_name, catch), fill = catch
-  )) +
-  geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
-  geom_line() +
-  scale_x_continuous(breaks = seq(1960, 2090, 20)) +
-  scale_colour_brewer(palette = "Paired") +
-  # scale_colour_viridis_d(direction = -1, option = "C") +
-  scale_colour_brewer(palette = "Paired") +
-  annotate(
-    "rect",
-    xmin = 2024, xmax = max(x$year, na.rm = TRUE),
-    ymin = 0, ymax = 1e6,
-    alpha = 0.1, fill = "grey55"
-  ) +
-  coord_cartesian(expand = FALSE, ylim = c(0, 0.42)) +
-  geom_hline(yintercept = 0.4, lty = 3, colour = "grey40") +
-  geom_hline(yintercept = 0.2, lty = 2, colour = "grey40") +
-  # facet_wrap(~model_name) +
-  facet_wrap(~catch) +
-  ylab(expression(S / S[0])) +
-  xlab("") +
-  labs(colour = "Model") +
-  gfplot::theme_pbs()
+    mutate(catch = forcats::fct_rev(catch)) |>
+    ggplot(aes(year, est,
+      ymin = est - 2 * se, ymax = est + 2 * se,
+      # colour = catch, group = paste(model_name, catch), fill = catch)) +
+      colour = model_name, group = paste(model_name, catch), fill = catch
+    )) +
+    geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
+    geom_line() +
+    scale_x_continuous(breaks = seq(1960, 2090, 20)) +
+    scale_colour_brewer(palette = "Paired") +
+    scale_colour_brewer(palette = "Paired") +
+    annotate(
+      "rect",
+      xmin = 2024, xmax = max(x$year, na.rm = TRUE),
+      ymin = 0, ymax = 1e6,
+      alpha = 0.1, fill = "grey55"
+    ) +
+    coord_cartesian(expand = FALSE, ylim = c(0, 0.42)) +
+    geom_hline(yintercept = 0.4, lty = 3, colour = "grey40") +
+    geom_hline(yintercept = 0.2, lty = 2, colour = "grey40") +
+    # facet_wrap(~model_name) +
+    facet_wrap(~catch) +
+    ylab(ylab) +
+    xlab("") +
+    labs(colour = "Model") +
+    gfplot::theme_pbs() +
+    theme(axis.title = ggtext::element_markdown())
+}
+
+temp |> filter(!grepl("B", model)) |> make_proj_by_catch_level()
 ggsave("figs/ss3/refpts/proj-facet-catch.png", width = 9, height = 4.5)
 
 # F ? --------------------------
 
 multi_rep <- readRDS("data/generated/replist-ref-pts.rds")
 
-temp <- x |>
+tempF <- x |>
   filter(year > 1900, label %in% "F", !is.na(year), se < 2, est < 1e6, est >= 0) |>
   # filter(!grepl("B", model)) |>
   left_join(lu) |>
@@ -219,20 +226,21 @@ out_F <- seq_along(multi_rep) |>
   select(F_Btgt = est, F_Btgt_se = se, model_name = scen)
 row.names(out_F) <- NULL
 
-temp <- left_join(temp, out_F) |>
+tempF <- left_join(tempF, out_F) |>
   mutate(model_name = forcats::fct_inorder(model_name))
 
-temp |>
+tempF |>
   filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
-  ggplot(aes(year, est/F_Btgt,
-    ymin = (est - 2 * se)/F_Btgt, ymax = (est + 2 * se)/F_Btgt,
-    colour = catch, group = paste(model_name, catch), fill = catch))+
+  ggplot(aes(year, est / F_Btgt,
+    ymin = (est - 2 * se) / F_Btgt, ymax = (est + 2 * se) / F_Btgt,
+    colour = catch, group = paste(model_name, catch), fill = catch
+  )) +
   geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
   geom_line() +
-  geom_line(data = filter(temp, catch == 0)) + # dark on top
+  geom_line(data = filter(tempF, catch == 0)) + # dark on top
   scale_x_continuous(breaks = seq(1960, 2090, 20)) +
-  scale_colour_viridis_d(direction = -1, option = "D", guide = guide_legend(reverse = F) ) +
-  scale_fill_viridis_d(direction = -1, option = "D", guide = guide_legend(reverse = F) ) +
+  scale_colour_viridis_d(direction = -1, option = "D", guide = guide_legend(reverse = F)) +
+  scale_fill_viridis_d(direction = -1, option = "D", guide = guide_legend(reverse = F)) +
   # annotate(
   #   "rect",
   #   xmin = 2024, xmax = max(x$year, na.rm = TRUE),
@@ -251,12 +259,12 @@ temp |>
   labs(colour = "Catch (t)\nassuming 30%\ndiscard mortality")
 ggsave("figs/ss3/refpts/proj-F-facet-model.png", width = 8.5, height = 6.5)
 
-temp |>
+tempF |>
   filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
   filter(!grepl("B", model)) |>
   mutate(catch = forcats::fct_rev(catch)) |>
-  ggplot(aes(year, est/F_Btgt,
-    ymin = (est - 2 * se)/F_Btgt, ymax = (est + 2 * se)/F_Btgt,
+  ggplot(aes(year, est / F_Btgt,
+    ymin = (est - 2 * se) / F_Btgt, ymax = (est + 2 * se) / F_Btgt,
     # colour = catch, group = paste(model_name, catch), fill = catch)) +
     colour = model_name, group = paste(model_name, catch), fill = catch
   )) +
@@ -284,38 +292,77 @@ temp |>
   theme(axis.title = ggtext::element_markdown())
 ggsave("figs/ss3/refpts/proj-F-facet-catch.png", width = 9, height = 4.5)
 
-pal <- RColorBrewer::brewer.pal(8, "Greys")[7:2]
+make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", xlab = "Catch (t) assuming 30% discard mortality", type = c("F", "LRP", "USR")) {
+  pal <- RColorBrewer::brewer.pal(8, "Greys")[7:2]
+  type <- match.arg(type)
+  dat <- dat |>
+    filter(year %in% c(2024, 2025, 2026)) |>
+    group_by(year, catch, model_name)
+
+  if (type == "F") {
+    dat <- dat |>
+      summarise(
+        frac_975 = (est - qnorm(0.95) * se) < F_Btgt,
+        frac_75 = (est - qnorm(0.75) * se) < F_Btgt,
+        frac_50 = (est < F_Btgt),
+        frac_25 = (est + qnorm(0.75) * se) < F_Btgt,
+        frac_025 = (est + qnorm(0.95) * se) < F_Btgt,
+        .groups = "drop"
+      ) |>
+      group_by(year, catch, model_name) |>
+      mutate(frac = sum(frac_975, frac_75, frac_50, frac_25, frac_025))
+  }
+  if (type %in% c("LRP", "USR")) {
+    thresh <- if (type == "LRP") 0.2 else 0.4
+    dat <- dat |>
+      summarise(
+        frac_975 = (est - qnorm(0.95) * se) < thresh,
+        frac_75 = (est - qnorm(0.75) * se) < thresh,
+        frac_50 = (est < thresh),
+        frac_25 = (est + qnorm(0.75) * se) < thresh,
+        frac_025 = (est + qnorm(0.95) * se) < thresh,
+        .groups = "drop"
+      ) |>
+      group_by(year, catch, model_name) |>
+      mutate(frac = sum(frac_975, frac_75, frac_50, frac_25, frac_025))
+  }
+
+  dat |>
+    ungroup() |>
+    mutate(frac = as.factor(frac)) |>
+    mutate(catch = as.numeric(as.character(catch))) |>
+    mutate(model_name = forcats::fct_rev(model_name)) |>
+    ggplot(aes(catch, model_name, fill = frac)) +
+    geom_tile(colour = "grey50") +
+    scale_fill_manual(
+      values = pal, breaks = c(0:5),
+      labels = rev(c("P \u2265 0.95", "0.75 \u2264 P < 0.95", "0.50 \u2264 P < 0.75", "0.25 \u2264 P < 0.50", "0.05 \u2264 P < 0.25", "P < 0.05")), guide = guide_legend(reverse = TRUE)
+    ) +
+    coord_cartesian(expand = FALSE) +
+    scale_x_continuous(breaks = tacs[seq(1, 1e2, 2)]) +
+    labs(fill = fill_label) +
+    gfplot::theme_pbs() +
+    theme(legend.title = ggtext::element_markdown(), legend.position = "bottom") +
+    ylab("") +
+    xlab(xlab) +
+    theme(axis.ticks = element_blank(), legend.text = ggtext::element_markdown()) +
+    facet_wrap(~year)
+}
+
+tempF |>
+  filter(!grepl("B", model)) |>
+  make_tigure_decision()
+ggsave("figs/ss3/refpts/f-ref-pt-tigure.png", width = 10, height = 4)
+
 temp |>
   filter(!grepl("B", model)) |>
-  filter(year %in% c(2024, 2025, 2026)) |>
-  group_by(year, catch, model_name) |>
-  summarise(
-    frac_975 = (est - qnorm(0.95) * se) < F_Btgt,
-    frac_75 = (est - qnorm(0.75) * se) < F_Btgt,
-    frac_50 = (est < F_Btgt),
-    frac_25 = (est + qnorm(0.75) * se) < F_Btgt,
-    frac_025 = (est + qnorm(0.95) * se) < F_Btgt,
-    ) |>
-  group_by(year, catch, model_name) |>
-  mutate(frac = sum(frac_975, frac_75, frac_50, frac_25, frac_025)) |>
-  ungroup() |>
-  mutate(frac = as.factor(frac)) |>
-  mutate(catch = as.numeric(as.character(catch))) |>
-  mutate(model_name = forcats::fct_rev(model_name)) |>
-  ggplot(aes(catch, model_name, fill = frac)) + geom_tile(colour = "grey50") +
-  scale_fill_manual(values = pal, breaks = c(0:5),
-    labels = rev(c("P \u2265 0.95", "0.75 \u2264 P < 0.95", "0.50 \u2264 P < 0.75", "0.25 \u2264 P < 0.50", "0.05 \u2264 P < 0.25", "P < 0.05")), guide = guide_legend(reverse = TRUE)) +
-    # labels = rev(c("Pr >= 0.95", "0.95 > Pr >= 0.75", "0.75 > Pr >= 0.50", "0.50 > Pr >= 0.25", "0.25 > Pr >= 0.05", "0.05 > Pr"))) +
-  coord_cartesian(expand = FALSE) +
-  scale_x_continuous(breaks = tacs[seq(1, 1e2, 2)]) +
-  labs(fill = "P(F < F<sub>0.4S0</sub>)") +
-  gfplot::theme_pbs() +
-  theme(legend.title = ggtext::element_markdown(), legend.position = "bottom") +
-  ylab("") + xlab("Catch (t) assuming 30% discard mortality") +
-  theme(axis.ticks = element_blank(), legend.text = ggtext::element_markdown()) +
-  facet_wrap(~year)
-# ggsave("figs/ss3/refpts/f-ref-pt-tigure.png", width = 7, height = 3.25)
-ggsave("figs/ss3/refpts/f-ref-pt-tigure.png", width = 10, height = 4)
+  make_tigure_decision(type = "LRP", fill_label = "P(B < 0.2B<sub>0</sub>)")
+ggsave("figs/ss3/refpts/lrp-ref-pt-tigure.png", width = 10, height = 4)
+
+temp |>
+  filter(!grepl("B", model)) |>
+  make_tigure_decision(type = "USR", fill_label = "P(B < 0.2B<sub>0</sub>)")
+ggsave("figs/ss3/refpts/usr-ref-pt-tigure.png", width = 10, height = 4)
 
 # temp |>
 #   filter(!grepl("B", model)) |>
