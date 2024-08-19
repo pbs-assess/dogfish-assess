@@ -137,16 +137,18 @@ fits
 
 g1 <- ggplot(fits, aes(survey, y = 1-exp(est), ymin =1- exp(lwr), ymax = 1-exp(upr))) + geom_pointrange() +
   coord_flip() + xlab("") + ylab("Proportion decline per decade") +
-  scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1))
+  scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1), breaks = seq(0.1, 1, 0.2))
 
 g2 <- ggplot(fits, aes(survey, y = 1-exp(est*4.7), ymin =1- exp(lwr*4.7), ymax = 1-exp(upr*4.7))) + geom_pointrange() +
   coord_flip() + xlab("") +
-  scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1), breaks = seq(0.1, 1, 0.2)) +
   ylab("Proportion decline extrapolated\nto 47 years (generation time)") +
-  geom_hline(yintercept = 0.7, lty = 2)
+  geom_hline(yintercept = c(0.3, 0.5, 0.7), lty = 2)
 cowplot::plot_grid(g1, g2, align = "h")
 ggsave("figs/cosewic-decline-indexes.png", width = 7, height = 3)
 
 if (FALSE) {
   system("/opt/homebrew/bin/optipng -strip all figs/cosewic-decline-indexes.png")
 }
+
+fits |> mutate(est = 1 - exp(est), lwr = 1 - exp(lwr), upr = 1 - exp(upr))
