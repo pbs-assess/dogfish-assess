@@ -56,7 +56,11 @@ make_f_catch <- function(total, years = 20) {
 # so 2/3 bottom trawl discards
 # midwater trawl
 
-run_projections <- function(model = "A0", catches = seq(0, 1200, by = 300), hessian = FALSE) {
+(tacs <- seq(0, 1500, by = 300))
+tacs * 0.3
+tac_lu <- data.frame(catch = tacs * 0.3, tac = tacs)
+
+run_projections <- function(model = "A0", catches = tacs * 0.3, hessian = FALSE) {
   cat(model, "\n")
   # plan(multisession)
   # out <- furrr::future_map_dfr(catches, \(x) {
@@ -107,6 +111,7 @@ model_name <- model_name[keep]
 
 length(mods)
 plan(multisession, workers = 7)
+# out2 <- furrr::future_map(mods, run_projections, hessian = F)
 out2 <- furrr::future_map(mods, run_projections, hessian = TRUE)
 plan(sequential)
 
@@ -122,6 +127,9 @@ temp <- x |>
   # filter(!grepl("B", model)) |>
   left_join(lu) |>
   mutate(model_name = forcats::fct_inorder(model_name)) |>
+  left_join(tac_lu) |>
+  select(-catch) |>
+  rename(catch = tac) |>
   mutate(catch = factor(catch)) |>
   mutate(catch = forcats::fct_rev(catch))
 
@@ -148,7 +156,8 @@ temp |>
   facet_wrap(~model_name) +
   ylab(expression(S / S[0])) +
   xlab("") +
-  labs(colour = "Catch")
+  labs(colour = "Catch") +
+  gfplot::theme_pbs()
 ggsave("figs/ss3/refpts/proj-facet-model.png", width = 8, height = 6.5)
 
 temp |>
@@ -178,9 +187,110 @@ temp |>
   facet_wrap(~catch) +
   ylab(expression(S / S[0])) +
   xlab("") +
-  labs(colour = "Model")
+  labs(colour = "Model") +
+  gfplot::theme_pbs()
 ggsave("figs/ss3/refpts/proj-facet-catch.png", width = 9, height = 4.5)
 
+# F ? --------------------------
+
+multi_rep <- readRDS("data/generated/replist-ref-pts.rds")
+
+temp <- x |>
+  filter(year > 1900, label %in% "F", !is.na(year), se < 2, est < 1e6, est >= 0) |>
+  # filter(!grepl("B", model)) |>
+  left_join(lu) |>
+  mutate(model_name = forcats::fct_inorder(model_name)) |>
+  left_join(tac_lu) |>
+  select(-catch) |>
+  rename(catch = tac) |>
+  mutate(catch = factor(catch)) |>
+  mutate(catch = forcats::fct_rev(catch))
+
+out_F <- seq_along(multi_rep) |>
+  purrr::map_dfr(\(i) {
+    multi_rep[[i]]$derived_quants %>%
+      filter(Label %in% c("annF_Btgt")) %>%
+      select(label = Label, est = Value, se = StdDev) |>
+      mutate(scen = model_name[i])
+  }) |>
+  select(F_Btgt = est, F_Btgt_se = se, model_name = scen)
+row.names(out_F) <- NULL
+
+temp <- left_join(temp, out_F) |>
+  mutate(model_name = forcats::fct_inorder(model_name))
+
+temp |>
+  ggplot(aes(year, est/F_Btgt,
+    ymin = (est - 2 * se)/F_Btgt, ymax = (est + 2 * se)/F_Btgt,
+    colour = catch, group = paste(model_name, catch), fill = catch))+
+  geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
+  geom_line() +
+  geom_line(data = filter(temp, catch == 0)) + # dark on top
+  scale_x_continuous(breaks = seq(1960, 2090, 20)) +
+  scale_colour_viridis_d(direction = -1, option = "D") +
+  scale_fill_viridis_d(direction = -1, option = "D") +
+  # annotate(
+  #   "rect",
+  #   xmin = 2024, xmax = max(x$year, na.rm = TRUE),
+  #   ymin = 0, ymax = 1e6,
+  #   alpha = 0.1, fill = "grey55"
+  # ) +
+  coord_cartesian(expand = FALSE, ylim = c(0, 20)) +
+  geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
+  # geom_hline(yintercept = 0.2, lty = 2, colour = "grey40") +
+  facet_wrap(~model_name) +
+  # ylab(expression(F / F[0.4S0])) +
+  xlab("") +
+  ylab("F / F<sub>0.4S0</sub>") +
+  theme(axis.title = ggtext::element_markdown()) +
+  labs(colour = "Catch") +
+  gfplot::theme_pbs()
+
+temp |>
+  filter(!grepl("B", model)) |>
+  mutate(catch = forcats::fct_rev(catch)) |>
+  ggplot(aes(year, est/F_Btgt,
+    ymin = (est - 2 * se)/F_Btgt, ymax = (est + 2 * se)/F_Btgt,
+    # colour = catch, group = paste(model_name, catch), fill = catch)) +
+    colour = model_name, group = paste(model_name, catch), fill = catch
+  )) +
+  geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(1960, 2090, 20)) +
+  scale_colour_brewer(palette = "Paired") +
+  # scale_colour_viridis_d(direction = -1, option = "C") +
+  scale_colour_brewer(palette = "Paired") +
+  annotate(
+    "rect",
+    xmin = 2024, xmax = max(x$year, na.rm = TRUE),
+    ymin = 0, ymax = 1e6,
+    alpha = 0.1, fill = "grey55"
+  ) +
+  scale_y_continuous(trans = "sqrt") +
+  coord_cartesian(expand = FALSE, ylim = c(0, 20)) +
+  geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
+  # facet_wrap(~model_name) +
+  facet_wrap(~catch) +
+  ylab("F / F<sub>0.4S0</sub>") +
+  xlab("") +
+  labs(colour = "Model") +
+  gfplot::theme_pbs() +
+  theme(axis.title = ggtext::element_markdown())
+
+temp |>
+  filter(!grepl("B", model)) |>
+  filter(year == 2024) |>
+  group_by(year, catch, model) |>
+  summarise(frac = est < F_Btgt) |>
+  mutate(catch = as.numeric(as.character(catch))) |>
+  ggplot(aes(catch, model, fill = frac)) + geom_tile(colour = "grey50") +
+  scale_fill_manual(values = c("grey30", "grey90")) +
+  coord_cartesian(expand = FALSE) +
+  scale_x_continuous(breaks = tacs) +
+  labs(fill = "F < F<sub>0.4S0</sub>") +
+  theme(legend.title = ggtext::element_markdown()) +
+  ylab("") + xlab("Catch (t) assuming 30% discard mortality") +
+  theme(axis.ticks = element_blank())
 
 if (FALSE) {
   setwd("figs/ss3/refpts/")

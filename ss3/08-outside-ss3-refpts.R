@@ -179,19 +179,19 @@ x <- out_Ftarg |> filter(year == 2023) |>
   filter(!grepl("^\\(B", scen))
 xbase <- filter(x, grepl("A0", scen))
 
-write_tex(xbase$est_ratio |> mround(2), "BaseFratio", "ref-pts.tex")
-ci <- paste0(mround(xbase$lwr_ratio, 2), "--", mround(xbase$upr_ratio, 2))
+write_tex(xbase$est_ratio |> mround(1), "BaseFratio", "ref-pts.tex")
+ci <- paste0(mround(xbase$lwr_ratio, 1), "--", mround(xbase$upr_ratio, 1))
 write_tex(ci, "BaseFratioCI", "ref-pts.tex")
 
-mround(mean(x$est_ratio), 2) |>
+mround(mean(x$est_ratio), 1) |>
   write_tex("EnsFratioMean", "ref-pts.tex")
-paste0(mround(min(x$lwr_ratio), 2), "--", mround(max(x$upr_ratio), 2)) |>
+paste0(mround(min(x$lwr_ratio), 1), "--", mround(max(x$upr_ratio), 1)) |>
   write_tex("EnsFratioCI", "ref-pts.tex")
 
 x <- filter(x, !grepl("Low prod", scen))
-mround(mean(x$est_ratio), 2) |>
+mround(mean(x$est_ratio), 1) |>
   write_tex("EnsFratioMeanNoLow", "ref-pts.tex")
-paste0(mround(min(x$lwr_ratio), 2), "--", mround(max(x$upr_ratio), 2)) |>
+paste0(mround(min(x$lwr_ratio), 1), "--", mround(max(x$upr_ratio), 1)) |>
   write_tex("EnsFratioCINoLow", "ref-pts.tex")
 
 # Kobe plot -----------------------------------------------------------------
