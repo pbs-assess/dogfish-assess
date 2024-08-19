@@ -179,8 +179,8 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
   } else if (set_to_plot == "index") {
 
     # Set A models jackknifing indices
-    mods <- c("A0", "A6_IPHC+CPUE", "A7_SYNonly") #, "A8_HBLLonly")
-    model_name <- c("(A0) All indices (base)", "(A6) IPHC + CPUE", "(A7) SYN") # "(A8) HBLL")
+    mods <- c("A0", "A6_IPHC+CPUE", "A7_SYNonly", "A13_extraSD") #, "A8_HBLLonly")
+    model_name <- c("(A0) All indices (base)", "(A6) IPHC + CPUE", "(A7) SYN", "(A13) Extra SD on IPHC") # "(A8) HBLL")
 
     fig_dir <- "figs/ss3/set_a_ind"
 
