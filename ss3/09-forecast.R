@@ -134,8 +134,10 @@ temp <- x |>
   mutate(catch = factor(catch)) |>
   mutate(catch = forcats::fct_rev(catch))
 
-make_proj_by_model <- function(dat) {
-  dat |>
+make_proj_by_model <- function(dat, type = c("B", "F"), ylab = "S / S<sub>0</sub>") {
+  type <- match.arg(type)
+
+  g <- dat |>
     filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
     ggplot(aes(year, est,
       ymin = est - 2 * se, ymax = est + 2 * se,
@@ -153,14 +155,23 @@ make_proj_by_model <- function(dat) {
       ymin = 0, ymax = 1e6,
       alpha = 0.1, fill = "grey55"
     ) +
-    coord_cartesian(expand = FALSE, ylim = c(0, 0.42)) +
-    geom_hline(yintercept = 0.4, lty = 3, colour = "grey40") +
-    geom_hline(yintercept = 0.2, lty = 2, colour = "grey40") +
     facet_wrap(~model_name) +
-    ylab(expression(S / S[0])) +
+    ylab(ylab) +
     xlab("") +
     labs(colour = "Catch (t)\nassuming 30%\ndiscard mortality") +
-    gfplot::theme_pbs()
+    gfplot::theme_pbs() +
+    theme(axis.title = ggtext::element_markdown())
+
+  if (type == "B") {
+    g <- g + coord_cartesian(expand = FALSE, ylim = c(0, 0.42)) +
+      geom_hline(yintercept = 0.4, lty = 3, colour = "grey40") +
+      geom_hline(yintercept = 0.2, lty = 2, colour = "grey40")
+  }
+  if (type == "F") {
+    g <- g + coord_cartesian(expand = FALSE, ylim = c(0, 8)) +
+      geom_hline(yintercept = 1, lty = 2, colour = "grey40")
+  }
+  g
 }
 
 temp |> make_proj_by_model()
@@ -247,7 +258,7 @@ tempF |>
   #   ymin = 0, ymax = 1e6,
   #   alpha = 0.1, fill = "grey55"
   # ) +
-  coord_cartesian(expand = FALSE, ylim = c(0, 20)) +
+  coord_cartesian(expand = FALSE, ylim = c(0, 10)) +
   geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
   # geom_hline(yintercept = 0.2, lty = 2, colour = "grey40") +
   facet_wrap(~model_name) +
@@ -280,8 +291,8 @@ tempF |>
     ymin = 0, ymax = 1e6,
     alpha = 0.1, fill = "grey55"
   ) +
-  scale_y_continuous(trans = "sqrt") +
-  coord_cartesian(expand = FALSE, ylim = c(0, 20)) +
+  # scale_y_continuous(trans = "sqrt") +
+  coord_cartesian(expand = FALSE, ylim = c(0, 10)) +
   geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
   # facet_wrap(~model_name) +
   facet_wrap(~catch) +
@@ -361,7 +372,7 @@ ggsave("figs/ss3/refpts/lrp-ref-pt-tigure.png", width = 10, height = 4)
 
 temp |>
   filter(!grepl("B", model)) |>
-  make_tigure_decision(type = "USR", fill_label = "P(B < 0.2B<sub>0</sub>)")
+  make_tigure_decision(type = "USR", fill_label = "P(B < 0.4B<sub>0</sub>)")
 ggsave("figs/ss3/refpts/usr-ref-pt-tigure.png", width = 10, height = 4)
 
 # temp |>
@@ -391,6 +402,11 @@ if (FALSE) {
   ))
   setwd(here::here())
 }
+
+# clean up
+
+f <- list.files("ss3", pattern = "-forecast-", full.names = T)
+x <- sapply(f, unlink, recursive = T, force = T)
 
 # theme(legend.position = "top", legend)
 
