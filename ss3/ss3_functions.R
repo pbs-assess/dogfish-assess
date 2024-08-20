@@ -150,7 +150,9 @@ SS3_B <- function(x, scenario, type = c("SSB", "SSBMSY", "SSB0", "B"), posterior
       gfplot::theme_pbs()
   } else {
     out <- Map(.SS3_B, replist = x, scenario = scenario, type = type) %>%
-      bind_rows()
+      bind_rows() |>
+      mutate(scen = factor(scen, levels = scenario)) # put in order of scenario arg
+
     g <- ggplot(out, aes(Yr, y, linetype = Area, colour = scen)) +
       geom_line() +
       expand_limits(y = 0) +
@@ -173,7 +175,8 @@ SS3_index <- function(replist, scenario = "OM 1", hist = FALSE, figure = TRUE) {
     filter(Use == 1) %>%
     mutate(Area = area_to_PFMA(Area), scen = scenario,
            Obs = ifelse(Use == 1, Obs, NA_real_)) %>%
-    select(Yr, Area, Fleet_name, Obs, Exp, SE, scen)
+    select(Yr, Area, Fleet_name, Obs, Exp, SE, scen) |>
+    mutate(scen = factor(scen, levels = scenario)) # put in order of scenario arg
 
   if(hist) {
     sel <- .SS3_sel(replist, scenario, fleet = unique(replist$cpue$Fleet))
@@ -274,7 +277,8 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
                   upr = quantile(Recruit_0, probs = probs[3]),
                   .groups = "drop")
     }, y = x, sc = scenario) %>%
-      bind_rows()
+      bind_rows() |>
+      mutate(scen = factor(scen, levels = scenario)) # put in order of scenario arg
 
     if (prop) {
 
@@ -305,7 +309,8 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
 
   } else {
     out <- Map(.SS3_recruitment, replist = x, scenario = scenario, dev = dev, prop = prop) %>%
-      bind_rows()
+      bind_rows() |>
+      mutate(scen = factor(scen, levels = scenario)) # put in order of scenario arg
   }
   if (prop) {
     ggplot(out, aes(Yr, p, linetype = Area)) +
@@ -449,7 +454,8 @@ SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"),
     left_join(fleet_names, by = c("FleetName" = "Fleet_name")) %>%
     mutate(FName = factor(FName, levels = fleet_names$FName)) |>
     ungroup() |>
-    mutate(value = value/max(value), .by = c(FName, scen))
+    mutate(value = value/max(value), .by = c(FName, scen)) |>
+    mutate(scen = factor(scen, levels = sc)) # put in order of sc arg
 
   #g <- ggplot(out, aes(variable, value, colour = scen)) +
   #  geom_line() +
@@ -573,7 +579,8 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
                   upr = quantile(value, probs = probs[3]),
                   .groups = "drop")
     }, y = replist, sc = scenario) %>%
-      bind_rows()
+      bind_rows() |>
+      mutate(scen = factor(scen, levels = scenario)) # put in order of scenario arg
 
     if (figure) {
 
@@ -596,7 +603,8 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
 
   } else {
     out <- Map(.SS3_F, replist = replist, scenario = scenario, instantaneous = instantaneous) %>%
-      bind_rows()
+      bind_rows() |>
+      mutate(scen = factor(scen, levels = scenario)) # put in order of scenario arg
 
     if (figure) {
 
@@ -676,7 +684,8 @@ SS3_SR <- function(x, scenario) {
 
   extrap <- lapply(srr_pars, getElement, "extrap") %>%
     bind_rows() %>%
-    rename(SpawnBio = SSB, Recruit_0 = Recruitment)
+    rename(SpawnBio = SSB, Recruit_0 = Recruitment) |>
+    mutate(scen = factor(scen, levels = scenario)) # put in order of scenario arg
 
   extrap2 <- extrap %>%
     left_join(ts %>% group_by(scen) %>%
