@@ -36,7 +36,9 @@ fit_ss3 <- function(model_dir = "model1",
 
 mods <- c("A1", "A0",
           "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_highdiscard",
-          "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM", "A10_highM", "A11_low_zfrac", "A12_high_zfrac", "A13_extraSD", "A14_lowdiscard",
+          "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM", "A10_highM",
+          "A11_low_zfrac", "A12_high_zfrac", "A13_extraSD", "A14_lowdiscard",
+          "A15-100discard",
           "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
 
 # # Make sure starter matches...
@@ -58,7 +60,7 @@ if (FALSE) {
 }
 
 # Fit all of many models in parallel
-snowfall::sfInit(parallel = TRUE, cpus = floor(parallel::detectCores() / 2))
+snowfall::sfInit(parallel = TRUE, cpus = floor(parallel::detectCores()))
 snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 snowfall::sfStop()
 

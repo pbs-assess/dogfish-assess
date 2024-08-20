@@ -48,9 +48,9 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
   if (set_to_plot == "growth") {
 
     # Set A models with growth and maturity scenarios
-    mods <- c("A0", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A14_lowdiscard", "A5_highdiscard")
+    mods <- c("A0", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A14_lowdiscard", "A5_highdiscard", "A15-100discard")
 
-    model_name <- c("(A0) BC growth\n(base)", "(A2) US growth", "(A3) BC growth,\nhigh maturity", "(A4) USgrowth,\nhigh maturity", "(A14) Low discard\nmortality", "(A5) High discard\nmortality")
+    model_name <- c("(A0) BC growth\n(base)", "(A2) US growth", "(A3) BC growth,\nhigh maturity", "(A4) USgrowth,\nhigh maturity", "(A14) Low discard\nmortality", "(A5) High discard\nmortality", "(A15) 100% discard mortality")
 
     fig_dir <- "figs/ss3/set_a_mat"
 
