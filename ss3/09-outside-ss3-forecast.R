@@ -145,7 +145,7 @@ if (FALSE) {
 length(mods)
 (tacs <- seq(0, 1500, by = 100))
 
-plan(multicore, workers = 15)
+plan(multisession, workers = length(mods))
 # out2 <- furrr::future_map(mods, run_projections, hessian = F)
 out2 <- furrr::future_map(mods, run_projections, hessian = TRUE, catches = tacs)
 plan(sequential)
