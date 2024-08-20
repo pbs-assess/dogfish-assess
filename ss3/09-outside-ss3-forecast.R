@@ -55,17 +55,30 @@ make_f_catch <- function(dir, total, years = 10) {
   total_constant_catch <- sum(temp1$m)
   total_remaining_quota <- total - total_constant_catch
 
-  temp2 <- filter(temp, fleet %in% c(1, 2, 3, 4, 5)) # quota fishing fleets
-  temp2 <- mutate(temp2, fraction = m / sum(m))
-  temp2 <- mutate(temp2, catch_or_F_before_mortality = total_remaining_quota * fraction)
-
-  temp <- bind_rows(temp1, temp2)
-    # mutate(catch_or_F_before_mortality = total * fraction)
-  stopifnot(round(sum(temp$catch_or_F_before_mortality), 0) == round(total, 0))
+  if (total_remaining_quota > 0) {
+    temp2 <- filter(temp, fleet %in% c(1, 2, 3, 4, 5)) # quota fishing fleets
+    temp2 <- mutate(temp2, fraction = m / sum(m))
+    temp2 <- mutate(temp2, catch_or_F_before_mortality = total_remaining_quota * fraction)
+    temp <- bind_rows(temp1, temp2)
+    stopifnot(round(sum(temp$catch_or_F_before_mortality), 0) == round(total, 0))
+  } else {
+    temp <- temp1
+  }
 
   temp <- left_join(temp, mult, by = join_by(fleet))
-  temp <- mutate(temp, catch_or_F = catch_or_F_before_mortality / catch_multiplier) |>
+
+  # midwater is dead catch in data.ss; do separately
+  temp_non_midwater <- filter(temp, fleet != 3)
+  temp_non_midwater <- mutate(temp_non_midwater, catch_or_F = catch_or_F_before_mortality / catch_multiplier) |>
     select(-catch_or_F_before_mortality, -catch_multiplier)
+
+  # midwater is dead catch in data.ss; do separately
+  catch_multiplier_trawl <- filter(mult, fleet == 2) |> pull(catch_multiplier)
+  temp_midwater <- filter(temp, fleet == 3)
+  temp_midwater <- mutate(temp_midwater, catch_or_F = catch_or_F_before_mortality / catch_multiplier_trawl) |>
+    select(-catch_or_F_before_mortality, -catch_multiplier)
+
+  temp <- bind_rows(temp_non_midwater, temp_midwater)
   temp <- purrr::map_dfr(2024:(2024 + years - 1), \(y) data.frame(temp, year = y))
 
   missing_fleets <- unique(c(dat$catch$fleet))[!unique(dat$catch$fleet) %in% unique(temp$fleet)]
