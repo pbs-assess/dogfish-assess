@@ -42,7 +42,10 @@ ss3_catch <- function(csv = TRUE) {
   # Due to initial fleet set-up, discards + landings were combined for midwater trawl
   # Incorporate alternative discard mortality values into the total catch series
   # For all other fleets, incorporate the discard mortality in the SS3 control file
-  disc_mort <- 0.3
+
+  # disc_mort <- 0.19 # low estimate Dean	Courtney review
+  disc_mort <- 0.3 # base (actually 0.27 in review table)
+  # disc_mort <- 0.36 # high estimate Dean Courtney review
   f3 <- catch %>%
     filter(gear == "Midwater trawl") %>%
     summarise(value = sum(landing + disc_mort * discard), .by = year) %>%
