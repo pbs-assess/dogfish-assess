@@ -14,8 +14,10 @@ fit_ss3 <- function(
   setwd(dir_run)
   on.exit(setwd(dir_cur))
 
+  fn_exe <- if (Sys.info()[["user"]] == "seananderson") "ss" else "ss3"
+
   if (.Platform$OS.type == "unix") {
-    cmd <- "ss modelname ss"
+    cmd <- paste0(fn_exe, " modelname ss")
   } else {
     cmd <- "ss.exe modelname ss"
   }
@@ -33,48 +35,58 @@ fit_ss3 <- function(
   system(cmd)
 }
 
-make_f_catch <- function(total, years = 20) {
-  d <- SS_readdat("ss3/A0/data.ss", verbose = FALSE)
-  temp <- filter(d$catch, year >= 2018) |> # last 5
-    filter(fleet %in% c(1, 2, 3, 4, 5, 8)) |>
-    # filter(fleet %in% c(2, 3)) |> # HACK!
+make_f_catch <- function(dir, total, years = 10) {
+  ctl <- SS_readctl(paste0("ss3/", dir, "/control.ss"))
+  file.copy(paste0("ss3/", dir, "/data_echo.ss_new"), paste0("ss3/", dir, "/data.ss_new"))
+  i <- grepl("_Mult:", row.names(ctl$MG_parms))
+  mult <- ctl$MG_parms[i,] |> select(catch_multiplier = INIT)
+  mult$fleet <- as.integer(gsub("^Catch_Mult:_", "", row.names(mult)))
+  suppressWarnings(
+    dat <- SS_readdat(paste0("ss3/", dir, "/data.ss"), verbose = FALSE)
+  )
+  temp <- filter(dat$catch, year >= 2018) |> # last 5
+    filter(fleet %in% c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) |> # active fleets catching dogfish
     group_by(fleet) |>
-    summarise(m = mean(catch)) |>
-    mutate(fraction = m / sum(m)) |>
-    # mutate(fraction = 0.5) |> # TODO HACK!!!!
-    mutate(catch_or_F = total * fraction)
+    summarise(m = mean(catch))
+
+  # keep surveys and iRec and salmon bycatch constant at average levels:
+  temp1 <- filter(temp, fleet %in% c(6, 7, 8, 9, 10)) # surveys + salmon
+  temp1$catch_or_F_before_mortality <- temp1$m
+  total_constant_catch <- sum(temp1$m)
+  total_remaining_quota <- total - total_constant_catch
+
+  temp2 <- filter(temp, fleet %in% c(1, 2, 3, 4, 5)) # quota fishing fleets
+  temp2 <- mutate(temp2, fraction = m / sum(m))
+  temp2 <- mutate(temp2, catch_or_F_before_mortality = total_remaining_quota * fraction)
+
+  temp <- bind_rows(temp1, temp2)
+    # mutate(catch_or_F_before_mortality = total * fraction)
+  stopifnot(round(sum(temp$catch_or_F_before_mortality), 0) == round(total, 0))
+
+  temp <- left_join(temp, mult, by = join_by(fleet))
+  temp <- mutate(temp, catch_or_F = catch_or_F_before_mortality / catch_multiplier) |>
+    select(-catch_or_F_before_mortality, -catch_multiplier)
   temp <- purrr::map_dfr(2024:(2024 + years - 1), \(y) data.frame(temp, year = y))
 
-  missing_fleets <- unique(c(d$catch$fleet))[!unique(d$catch$fleet) %in% unique(temp$fleet)]
+  missing_fleets <- unique(c(dat$catch$fleet))[!unique(dat$catch$fleet) %in% unique(temp$fleet)]
   df <- expand.grid(fleet = missing_fleets, catch_or_F = 0, year = unique(temp$year))
   temp <- bind_rows(df, temp)
 
   transmute(temp, year = year, seas = 1, fleet = fleet, catch_or_F = catch_or_F) |>
-    arrange(fleet, year)
+    arrange(fleet, year) |>
+    mutate(catch_or_F = round(catch_or_F, 4L))
 }
 
-# so 2/3 bottom trawl discards
-# midwater trawl
-
-# (tacs <- seq(0, 1500, by = 300))
-(tacs <- seq(0, 1500, by = 100))
-# (tacs <- seq(0, 1500, by = 300))
-tacs * 0.3
-dead_catch <- tacs * 0.3
-tac_lu <- data.frame(catch = dead_catch, tac = tacs)
-
-dead_catch_100perc <- tacs
-
-run_projections <- function(model = "A0", catches = dead_catch, hessian = FALSE) {
+run_projections <- function(model = "A0", catches, hessian = FALSE) {
   cat(model, "\n")
   # plan(multisession)
   # out <- furrr::future_map_dfr(catches, \(x) {
   out <- purrr::map_dfr(catches, \(x) {
-    cat(x, "\n")
+    cat("Catches:", x, "t\n")
     fo <- paste0(model, "-forecast-", x)
-    system(paste0("cp -r ss3/", model, "/ ss3/", fo))
+    system(paste0("cp -r ss3/", model, "/ ss3/", fo, "/"))
     f <- SS_readforecast(paste0("ss3/", fo, "/forecast.ss"))
-    f$ForeCatch <- make_f_catch(x)
+    f$ForeCatch <- make_f_catch(total = x, dir = fo)
     f$Nforecastyrs <- max(f$ForeCatch$year) - min(f$ForeCatch$year) + 1
     SS_writeforecast(f, paste0("ss3/", fo), overwrite = TRUE)
     fit_ss3(fo, hessian = hessian)
@@ -107,19 +119,22 @@ run_projections <- function(model = "A0", catches = dead_catch, hessian = FALSE)
 }
 
 source("ss3/99-model-names.R")
-reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A5_highdiscard", "A8_HBLLonly")
+reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly")
 # reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly")
 keep <- which(!mods %in% reject)
 mods <- mods[keep]
 model_name <- model_name[keep]
 
-# out2 <- purrr::map(mods, run_projections, hessian = TRUE)
+if (FALSE) {
+  out2 <- purrr::map(mods, run_projections, hessian = F, catches = 0)
+}
 
 length(mods)
-plan(multisession, workers = 7)
+(tacs <- seq(0, 1500, by = 100))
+
+plan(multicore, workers = 15)
 # out2 <- furrr::future_map(mods, run_projections, hessian = F)
-out2 <- furrr::future_map(mods[!grepl("highdiscard", mods)],
-  run_projections, hessian = TRUE)
+out2 <- furrr::future_map(mods, run_projections, hessian = TRUE, catches = tacs)
 plan(sequential)
 
 # out3 <- purrr::map(mods[grepl("highdiscard", mods)],
