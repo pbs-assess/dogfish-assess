@@ -56,12 +56,16 @@ make_f_catch <- function(total, years = 20) {
 # so 2/3 bottom trawl discards
 # midwater trawl
 
-(tacs <- seq(0, 1500, by = 300))
+# (tacs <- seq(0, 1500, by = 300))
 (tacs <- seq(0, 1500, by = 100))
+# (tacs <- seq(0, 1500, by = 300))
 tacs * 0.3
-tac_lu <- data.frame(catch = tacs * 0.3, tac = tacs)
+dead_catch <- tacs * 0.3
+tac_lu <- data.frame(catch = dead_catch, tac = tacs)
 
-run_projections <- function(model = "A0", catches = tacs * 0.3, hessian = FALSE) {
+dead_catch_100perc <- tacs
+
+run_projections <- function(model = "A0", catches = dead_catch, hessian = FALSE) {
   cat(model, "\n")
   # plan(multisession)
   # out <- furrr::future_map_dfr(catches, \(x) {
@@ -104,6 +108,7 @@ run_projections <- function(model = "A0", catches = tacs * 0.3, hessian = FALSE)
 
 source("ss3/99-model-names.R")
 reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A5_highdiscard", "A8_HBLLonly")
+# reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly")
 keep <- which(!mods %in% reject)
 mods <- mods[keep]
 model_name <- model_name[keep]
@@ -113,21 +118,28 @@ model_name <- model_name[keep]
 length(mods)
 plan(multisession, workers = 7)
 # out2 <- furrr::future_map(mods, run_projections, hessian = F)
-out2 <- furrr::future_map(mods, run_projections, hessian = TRUE)
+out2 <- furrr::future_map(mods[!grepl("highdiscard", mods)],
+  run_projections, hessian = TRUE)
 plan(sequential)
+
+# out3 <- purrr::map(mods[grepl("highdiscard", mods)],
+#   run_projections, hessian = TRUE, catches = dead_catch_100perc)
 
 saveRDS(out2, "data/generated/projections.rds")
 out2 <- readRDS("data/generated/projections.rds")
 
 x <- bind_rows(out2)
+# x <- bind_rows(x, out3)
 
 lu <- data.frame(model = mods, model_name = model_name)
 
+mn <- model_name
 temp <- x |>
   filter(year > 1900, label %in% "Bratio", !is.na(year), se < 2, est < 0.999) |>
   # filter(!grepl("B", model)) |>
   left_join(lu) |>
-  mutate(model_name = forcats::fct_inorder(model_name)) |>
+  # mutate(model_name = forcats::fct_reorder(model_name)) |>
+  mutate(model_name = factor(model_name, levels = mn)) |>
   left_join(tac_lu) |>
   select(-catch) |>
   rename(catch = tac) |>
@@ -406,62 +418,5 @@ if (FALSE) {
 # clean up
 
 f <- list.files("ss3", pattern = "-forecast-", full.names = T)
+f
 x <- sapply(f, unlink, recursive = T, force = T)
-
-# theme(legend.position = "top", legend)
-
-# x <- SS_output("ss3/A0-forecast-300/")
-# SS_ForeCatch(x)
-# SS_plots(x, forecastplot = T)
-# SSplotTimeseries(x, subplot = 9)
-#
-# fit_ss3("A0-forecast-300", hessian = F)
-#
-# x <- SS_output("ss3/A0-forecast-300/")
-# x$derived_quants
-# dplyr::filter(x$derived_quants, Label == "Dead_Catch_Btgt")
-# SSplotTimeseries(x, subplot = 3)
-# SSplotTimeseries(x, subplot = 1)
-# SSplotTimeseries(x, subplot = 9)
-#
-# filter(x$derived_quants, grepl("ForeCatch", Label))
-#
-# fo <- "A0-forecast-300"
-# f <- SS_readforecast(paste0("ss3/", fo, "/forecast.ss"))
-# f$ForeCatch <- make_f_catch(400, years = 100)
-# make_f_catch(400, years = 100) |> readr::write_tsv("ss3/A0-forecast-300/forca.txt")
-# f$Nforecastyrs <- max(f$ForeCatch$year) - min(f$ForeCatch$year) + 1
-# SS_writeforecast(f, paste0("ss3/", fo), overwrite = TRUE)
-#
-# replist <- r4ss::SS_output("ss3/A0-forecast-300/")
-# # Yield curve
-# r4ss::SSplotYield(replist, subplots = 2)
-#
-# replist$derived_quants %>%
-#   filter(grepl("ForeCatch", Label))
-#
-# replist$derived_quants %>%
-#   filter(grepl("Btgt", Label))
-#
-# # Forecast catch by fleet
-# replist$timeseries %>%
-#   filter(Yr > 2023) %>%
-#   select(Yr, starts_with("dead(B)"))
-#
-# # Useless
-# replist$fatage %>%
-#   filter(Era == "FORE")
-#
-# # Z at age vector
-# Z_fore <- replist$Z_at_age %>% filter(Yr > 2023)
-# plot(0:69, Z_fore[30, 3 + 1:70])
-#
-# N_fore <- replist$natage %>% filter(Yr > 2023) %>%
-#   filter(`Beg/Mid` == "B") %>%
-#   select(Yr, Sex, as.character(seq(0, 40, 10))) %>%
-#   reshape2::melt(id.vars = c("Yr", "Sex")) %>%
-#   ggplot(aes(Yr, value)) +
-#   geom_line() +
-#   facet_grid(vars(variable), vars(Sex), scales = "free_y")
-#
-# N_fore
