@@ -48,9 +48,9 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
   if (set_to_plot == "growth") {
 
     # Set A models with growth and maturity scenarios
-    mods <- c("A0", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_highdiscard")
+    mods <- c("A0", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A14_lowdiscard", "A5_highdiscard")
 
-    model_name <- c("(A0) BC growth\n(base)", "(A2) US growth", "(A3) BC growth,\nhigh maturity", "(A4) USgrowth,\nhigh maturity", "(A5) 100% discard\nmortality")
+    model_name <- c("(A0) BC growth\n(base)", "(A2) US growth", "(A3) BC growth,\nhigh maturity", "(A4) USgrowth,\nhigh maturity", "(A14) Low discard\nmortality", "(A5) High discard\nmortality")
 
     fig_dir <- "figs/ss3/set_a_mat"
 
@@ -221,7 +221,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
         select(Sex, Yr, `0`) %>%
         rename(M = `0`) %>%
         mutate(scen = model_name[x]) |>
-        mutate(scen = forcats::fct_inorder(scen))
+        mutate(scen = factor(scen, levels = model_name))
     })
 
     rr <- Minc |>
@@ -304,6 +304,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
   g <- Map(SS3_index, multi_rep, model_name, figure = FALSE) %>%
     bind_rows() %>%
     mutate(scen = forcats::fct_inorder(scen)) |>
+    mutate(scen = factor(scen, levels = model_name)) |>
     left_join(fleet_names, by = "Fleet_name") %>%
     ggplot(aes(Yr, Obs, ymin = exp(log(Obs) - 1.96 * SE), ymax = exp(log(Obs) + 1.96 * SE))) +
     geom_linerange() +
