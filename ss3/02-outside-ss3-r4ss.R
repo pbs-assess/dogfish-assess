@@ -13,8 +13,10 @@ fit_ss3 <- function(model_dir = "model1",
   setwd(dir_run)
   on.exit(setwd(dir_cur))
 
+  fn_exe <- if (Sys.info()[["user"]] == "seananderson") "ss" else "ss3"
+
   if (.Platform$OS.type == "unix") {
-    cmd <- "ss modelname ss"
+    cmd <- paste0(fn_exe, " modelname ss")
   } else {
     cmd <- "ss.exe modelname ss"
   }
