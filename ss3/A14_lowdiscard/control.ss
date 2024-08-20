@@ -173,11 +173,11 @@
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_3_MidwaterTrawl
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_4_HookLine_Landings
  0 2 12.5 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_5_HookLine_Discards
- 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_6_IPHC
- 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_7_HBLL
- 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_8_SYN
+ 0 2 12.5 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_6_IPHC
+ 0 2 12.5 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_7_HBLL
+ 0 2 5.263158 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_8_SYN
  0 2 20 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_9_iRec
- 0 2 3.703704 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_10_Salmon_Bycatch
+ 0 2 3.703 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_10_Salmon_Bycatch
 #  fraction female, by GP
  0 1 0.5 0 0 0 -50 0 0 0 0 0 0 0 # FracFemale_GP_1
 #

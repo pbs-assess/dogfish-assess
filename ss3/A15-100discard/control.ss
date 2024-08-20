@@ -74,60 +74,60 @@
 0
 0
 0
-0
-0
-0
-0
-0
-0
-0.018
-0.025
-0.035
-0.047
-0.062
-0.081
-0.103
-0.128
-0.155
-0.186
-0.217
-0.25
-0.283
-0.314
-0.345
-0.372
-0.397
-0.419
-0.438
-0.453
-0.465
-0.475
-0.482
+0.082
+0.09
+0.099
+0.109
+0.12
+0.132
+0.144
+0.156
+0.17
+0.183
+0.198
+0.212
+0.227
+0.242
+0.258
+0.273
+0.288
+0.302
+0.317
+0.33
+0.344
+0.356
+0.368
+0.38
+0.391
+0.401
+0.41
+0.418
+0.426
+0.434
+0.44
+0.446
+0.452
+0.457
+0.462
+0.466
+0.469
+0.473
+0.476
+0.478
+0.481
+0.483
+0.485
+0.486
 0.488
+0.489
+0.49
 0.492
+0.492
+0.493
+0.494
 0.495
-0.497
-0.498
-0.499
-0.499
-0.5
-0.5
-0.5
-0.5
-0.5
-0.5
-0.5
-0.5
-0.5
-0.5
-0.5
-0.5
-0.5
-0.5
-0.5
-0.5
-0.5
-24 #_First_Mature_Age
+0.495
+18 #_First_Mature_Age
 4 #_fecundity option:(1)eggs=Wt*(a+b*Wt);(2)eggs=a*L^b;(3)eggs=a*Wt^b; (4)eggs=a+b*L; (5)eggs=a+b*W
 0 #_hermaphroditism option:  0=none; 1=female-to-male age-specific fxn; -1=male-to-female age-specific fxn
 2 #_parameter_offset_approach for M, G, CV_G:  1- direct, no offset; 2- male=fem_parm*exp(male_parm); 3: male=female*exp(parm) then old=young*exp(parm)
@@ -169,15 +169,15 @@
 #  Age Error from parameters
 #  catch multiplier
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_1_Bottom_Trawl_Landings
- 0 2 2.702703 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_2_Bottom_Trawl_Discards
+ 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_2_Bottom_Trawl_Discards
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_3_MidwaterTrawl
  0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_4_HookLine_Landings
- 0 2 3.703704 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_5_HookLine_Discards
- 0 2 3.703704 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_6_IPHC
- 0 2 3.703704 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_7_HBLL
- 0 2 2.702703 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_8_SYN
- 0 2 10 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_9_iRec
- 0 2 1.234568 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_10_Salmon_Bycatch
+ 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_5_HookLine_Discards
+ 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_6_IPHC
+ 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_7_HBLL
+ 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_8_SYN
+ 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_9_iRec
+ 0 2 1 0 0 0 -50 0 0 0 0 0 0 0 # Catch_Mult:_10_Salmon_Bycatch
 #  fraction female, by GP
  0 1 0.5 0 0 0 -50 0 0 0 0 0 0 0 # FracFemale_GP_1
 #
@@ -340,7 +340,6 @@
 #
 #_          LO            HI          INIT         PRIOR         PR_SD       PR_type      PHASE    env-var    use_dev   dev_mnyr   dev_mxyr     dev_PH      Block    Blk_Fxn  #  parm_name
 # 1   Bottom_Trawl_Landings LenSelex
-# 1   Bottom_Trawl_Landings LenSelex
             35           150       106.698           100            30             6          3          0          0          0          0          0          0          0  #  Size_DblN_peak_Bottom_Trawl_Landings(1)
            -10            50           -10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_Bottom_Trawl_Landings(1)
            -10            10        5.4429          5.05           0.3             6          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_Bottom_Trawl_Landings(1)
@@ -406,7 +405,7 @@
             35           110       66.5916            65          19.5             6          3          0          0          0          0          0          0          0  #  Size_DblN_peak_SYN(8)
            -10            50           -10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_SYN(8)
            -10            10        5.5921           4.6           0.3             6          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_SYN(8)
-           -10            50            15             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_descend_se_SYN(8)
+           -10            50            15           5.7           0.3             6          3          0          0          0          0          0          0          0  #  Size_DblN_descend_se_SYN(8)
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_start_logit_SYN(8)
           -999           999          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_SYN(8)
           -100           100       4.91395             0          19.5             6          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_SYN(8)

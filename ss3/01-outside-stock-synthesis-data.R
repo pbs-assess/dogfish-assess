@@ -19,7 +19,7 @@ fleet_index <- c(
 fleet_factor <- paste(fleet_index, "-", names(fleet_index))
 
 
-ss3_catch <- function(csv = TRUE) {
+ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
 
   catch <- readRDS("data/generated/catch.rds") %>%
     filter(area != "4B", year <= 2023) %>%
@@ -44,8 +44,11 @@ ss3_catch <- function(csv = TRUE) {
   # For all other fleets, incorporate the discard mortality in the SS3 control file
 
   # disc_mort <- 0.19 # low estimate Dean	Courtney review
-  disc_mort <- 0.3 # base (actually 0.27 in review table)
-  # disc_mort <- 0.36 # high estimate Dean Courtney review
+  # disc_mort <- 0.37 # base (actually 0.27 in review table)
+  # disc_mort <- 0.56 # high estimate Dean Courtney review
+  # disc_100 <- 1
+  disc_mort <- midwater_discard_rate
+
   f3 <- catch %>%
     filter(gear == "Midwater trawl") %>%
     summarise(value = sum(landing + disc_mort * discard), .by = year) %>%
@@ -102,31 +105,35 @@ ss3_catch <- function(csv = TRUE) {
     select(year, season, fleet, value, se) %>%
     arrange(fleet, year)
 
-  # Same y-axis for all fleets
-  g <- out %>%
-    mutate(fleet2 = paste(fleet, "-", names(fleet_index)[fleet]) %>% factor(fleet_factor)) %>%
-    ggplot(aes(year, value, fill = fleet2)) +
-    facet_wrap(vars(fleet2)) +
-    geom_col(width = 1) +
-    gfplot::theme_pbs() +
-    guides(fill = "none") +
-    coord_cartesian(expand = FALSE) +
-    labs(x = "Year", y = "Catch (t)")
-  ggsave("figs/ss3/catch_fleet.png", g, height = 4, width = 8)
+  if (midwater_discard_rate == 0.37) {
+    # Same y-axis for all fleets
+    g <- out %>%
+      mutate(fleet2 = paste(fleet, "-", names(fleet_index)[fleet]) %>% factor(fleet_factor)) %>%
+      ggplot(aes(year, value, fill = fleet2)) +
+      facet_wrap(vars(fleet2)) +
+      geom_col(width = 1) +
+      gfplot::theme_pbs() +
+      guides(fill = "none") +
+      coord_cartesian(expand = FALSE) +
+      labs(x = "Year", y = "Catch (t)")
+    ggsave("figs/ss3/catch_fleet.png", g, height = 4, width = 8)
 
-  # Unique y-axis
-  g <- out %>%
-    mutate(fleet2 = paste(fleet, "-", names(fleet_index)[fleet]) %>% factor(fleet_factor)) %>%
-    ggplot(aes(year, value, fill = fleet2)) +
-    facet_wrap(vars(fleet2), scales = "free_y") +
-    geom_col(width = 1) +
-    gfplot::theme_pbs() +
-    guides(fill = "none") +
-    coord_cartesian(expand = FALSE) +
-    labs(x = "Year", y = "Catch (t)")
-  ggsave("figs/ss3/catch_fleet2.png", g, height = 4, width = 8)
+    # Unique y-axis
+    g <- out %>%
+      mutate(fleet2 = paste(fleet, "-", names(fleet_index)[fleet]) %>% factor(fleet_factor)) %>%
+      ggplot(aes(year, value, fill = fleet2)) +
+      facet_wrap(vars(fleet2), scales = "free_y") +
+      geom_col(width = 1) +
+      gfplot::theme_pbs() +
+      guides(fill = "none") +
+      coord_cartesian(expand = FALSE) +
+      labs(x = "Year", y = "Catch (t)")
+    ggsave("figs/ss3/catch_fleet2.png", g, height = 4, width = 8)
+  }
 
-  if (csv) write.csv(out, file = "data/ss3/ss3-catch.csv", row.names = FALSE)
+  if (csv) {
+    write.csv(out, file = paste0("data/ss3/ss3-catch-", midwater_discard_rate, ".csv"), row.names = FALSE)
+  }
   invisible(out)
 }
 ss3_catch()
