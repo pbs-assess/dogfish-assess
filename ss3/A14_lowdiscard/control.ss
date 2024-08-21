@@ -268,7 +268,6 @@
 #_Q_parms(if_any);Qunits_are_ln(q)
 #_          LO            HI          INIT         PRIOR         PR_SD       PR_type      PHASE    env-var    use_dev   dev_mnyr   dev_mxyr     dev_PH      Block    Blk_Fxn  #  parm_name
            -10            10      -3.95461             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_IPHC(6)
-           -10            10             0             0             0             0          4          0          0          0          0          0          0          0  #  Q_extraSD_IPHC(6)
             -5             5      -2.64842             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_HBLL(7)
             -5             5      -8.95677             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_SYN(8)
             -5             5      -8.95677             0             0             0        -50          0          0          0          0          0          0          0  #  LnQ_base_HS_MSA(11)
@@ -452,7 +451,7 @@
  -9999   1    0  # terminator
 #
 1 #_maxlambdaphase
-1 #_sd_offset; must be 1 if any growthCV, sigmaR, or survey extraSD is an estimated parameter
+0 #_sd_offset; must be 1 if any growthCV, sigmaR, or survey extraSD is an estimated parameter
 # read 0 changes to default Lambdas (default value is 1.0)
 # Like_comp codes:  1=surv; 2=disc; 3=mnwt; 4=length; 5=age; 6=SizeFreq; 7=sizeage; 8=catch; 9=init_equ_catch; 
 # 10=recrdev; 11=parm_prior; 12=parm_dev; 13=CrashPen; 14=Morphcomp; 15=Tag-comp; 16=Tag-negbin; 17=F_ballpark; 18=initEQregime
