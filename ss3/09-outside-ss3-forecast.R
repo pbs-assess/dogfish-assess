@@ -90,17 +90,17 @@ make_f_catch <- function(dir, total, years = 10) {
     mutate(catch_or_F = round(catch_or_F, 4L))
 }
 
-run_projections <- function(model = "A0", catches, hessian = FALSE, parallel_catches = FALSE) {
-  cat(model, "\n")
-  if (parallel_catches) {
-    plan(multisession)
-    f <- furrr::future_map_dfr
-  } else {
-    f <- purrr::map_dfr
-  }
-  out <- f(catches, \(x) {
+run_projection <- function(model = "A0", catch, hessian = FALSE) {
+  # cat(model, "\n")
+  # if (parallel_catches) {
+  #   plan(multisession)
+  #   f <- furrr::future_map_dfr
+  # } else {
+  #   f <- purrr::map_dfr
+  # }
+  # out <- f(catches, \(x) {
     cat("Catches:", x, "t\n")
-    fo <- paste0(model, "-forecast-", x)
+    fo <- paste0(model, "-forecast-", catch)
     system(paste0("cp -r ss3/", model, "/ ss3/", fo, "/"))
     f <- SS_readforecast(paste0("ss3/", fo, "/forecast.ss"))
     f$ForeCatch <- make_f_catch(total = x, dir = fo)
@@ -130,8 +130,8 @@ run_projections <- function(model = "A0", catches, hessian = FALSE, parallel_cat
     ret$catch <- x
     ret$model <- model
     as_tibble(ret)
-  })
-  out
+  # })
+  # out
 }
 
 source("ss3/99-model-names.R")
@@ -141,18 +141,22 @@ keep <- which(!mods %in% reject)
 mods <- mods[keep]
 model_name <- model_name[keep]
 
-if (FALSE) {
-  out2 <- purrr::map(mods, run_projections, hessian = F, catches = 0)
-  plan(multisession)
-  out2 <- furrr::future_map(mods, run_projections, hessian = F, catches = 0)
-}
+#
+# if (FALSE) {
+#   out2 <- purrr::map(mods, run_projections, hessian = F, catches = 0)
+#   plan(multisession)
+#   out2 <- furrr::future_map(mods, run_projections, hessian = F, catches = 0)
+# }
 
 length(mods)
-(tacs <- seq(0, 1500, by = 300))
+(tacs <- seq(0, 1500, by = 200))
 
-
+torun <- expand.grid(tacs, model = mods)
+nrow(torun)
+plan(multisession)
+furrr::future_map2(torun, \(.tac, .mod) run_projection(model = .mod, catch = .tac, hessian = TRUE))
 # out2 <- furrr::future_map(mods, run_projections, hessian = F)
-out2 <- furrr::future_map(mods, run_projections, hessian = TRUE, catches = tacs)
+# out2 <- furrr::future_map(mods, run_projections, hessian = TRUE, catches = tacs)
 plan(sequential)
 
 # snowfall::sfInit(parallel = TRUE, cpus = parallel::detectCores())
