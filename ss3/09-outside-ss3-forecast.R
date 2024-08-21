@@ -91,7 +91,6 @@ make_f_catch <- function(dir, total, years = 10) {
 }
 
 run_projection <- function(model = "A0", catch, hessian = FALSE) {
-  # cat(model, "\n")
   # if (parallel_catches) {
   #   plan(multisession)
   #   f <- furrr::future_map_dfr
@@ -99,11 +98,12 @@ run_projection <- function(model = "A0", catch, hessian = FALSE) {
   #   f <- purrr::map_dfr
   # }
   # out <- f(catches, \(x) {
-    cat("Catches:", x, "t\n")
+    cat("Catches:", catch, "t\n")
+    cat("Model:", model, "\n")
     fo <- paste0(model, "-forecast-", catch)
     system(paste0("cp -r ss3/", model, "/ ss3/", fo, "/"))
     f <- SS_readforecast(paste0("ss3/", fo, "/forecast.ss"))
-    f$ForeCatch <- make_f_catch(total = x, dir = fo)
+    f$ForeCatch <- make_f_catch(total = catch, dir = fo)
     f$Nforecastyrs <- max(f$ForeCatch$year) - min(f$ForeCatch$year) + 1
     SS_writeforecast(f, paste0("ss3/", fo), overwrite = TRUE)
     fit_ss3(fo, hessian = hessian)
@@ -127,7 +127,7 @@ run_projection <- function(model = "A0", catch, hessian = FALSE) {
     ret <- bind_rows(dat_F, ref_F, dat_B) |>
       select(-`(Val-1.0)/Stddev`, -`CumNorm`) |>
       select(year, label = Label, est = Value, se = StdDev)
-    ret$catch <- x
+    ret$catch <- catch
     ret$model <- model
     as_tibble(ret)
   # })
@@ -151,10 +151,12 @@ model_name <- model_name[keep]
 length(mods)
 (tacs <- seq(0, 1500, by = 200))
 
-torun <- expand.grid(tacs, model = mods)
+torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
-plan(multisession)
-furrr::future_map2(torun, \(.tac, .mod) run_projection(model = .mod, catch = .tac, hessian = TRUE))
+plan(multicore)
+purrr::pmap(torun, run_projection, hessian = TRUE)
+furrr::future_pmap(torun, run_projection, hessian = TRUE)
+
 # out2 <- furrr::future_map(mods, run_projections, hessian = F)
 # out2 <- furrr::future_map(mods, run_projections, hessian = TRUE, catches = tacs)
 plan(sequential)
