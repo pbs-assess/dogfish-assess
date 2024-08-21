@@ -136,7 +136,10 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
   }
   invisible(out)
 }
-ss3_catch()
+ss3_catch(midwater_discard_rate = 0.19)
+ss3_catch(midwater_discard_rate = 0.37)
+ss3_catch(midwater_discard_rate = 0.56)
+ss3_catch(midwater_discard_rate = 1)
 
 ss3_index <- function(csv = TRUE) {
   # IPHC - no hook competition
