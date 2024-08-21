@@ -4,10 +4,10 @@ ss_home <- here::here("ss3")
 
 #### Fit ss3 model version 3.30.22.1 with custom compilation that fixes lognormal prior density function
 fit_ss3 <- function(model_dir = "model1",
-                    hessian = FALSE,
-                    ss_home = here::here("ss3"),
-                    max_phase,
-                    extra_args = "") {
+  hessian = FALSE,
+  ss_home = here::here("ss3"),
+  max_phase,
+  extra_args = "") {
   dir_cur <- getwd()
   dir_run <- file.path(ss_home, model_dir)
   setwd(dir_run)
@@ -35,11 +35,11 @@ fit_ss3 <- function(model_dir = "model1",
 }
 
 mods <- c("A1", "A0",
-          "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_highdiscard",
-          "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM", "A10_highM",
-          "A11_low_zfrac", "A12_high_zfrac", "A13_extraSD", "A14_lowdiscard",
-          "A15-100discard",
-          "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
+  "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_highdiscard",
+  "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM", "A10_highM",
+  "A11_low_zfrac", "A12_high_zfrac", "A13_extraSD", "A14_lowdiscard",
+  "A15-100discard",
+  "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
 
 # # Make sure starter matches...
 tocopy <- seq_along(mods)[-2] # copying 2
@@ -64,38 +64,41 @@ snowfall::sfInit(parallel = TRUE, cpus = floor(parallel::detectCores()))
 snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 snowfall::sfStop()
 
-# Load r4ss list
-covar <- TRUE
-replist <- r4ss::SS_output(
-  file.path(ss_home, mods[2]),
-  verbose = FALSE,
-  printstats = FALSE,
-  covar = covar,
-  hidewarn = TRUE
-)
-replist$Length_Comp_Fit_Summary
+if (FALSE) {
 
-# Save report list
-#saveRDS(replist, file = file.path(ss_home, paste0("r4ss_", mods[1], ".rds")))
+  # Load r4ss list
+  covar <- TRUE
+  replist <- r4ss::SS_output(
+    file.path(ss_home, mods[2]),
+    verbose = FALSE,
+    printstats = FALSE,
+    covar = covar,
+    hidewarn = TRUE
+  )
+  replist$Length_Comp_Fit_Summary
 
-# Generate HTML report
-if (covar) {
-  r4ss::SS_plots(replist, verbose = FALSE)
-} else {
-  # Yield curve doesn't work with dogfish SRR when Hessian is not calculated?
-  r4ss::SS_plots(replist, verbose = FALSE, plot = c(1:21, 23:26))
+  # Save report list
+  #saveRDS(replist, file = file.path(ss_home, paste0("r4ss_", mods[1], ".rds")))
+
+  # Generate HTML report
+  if (covar) {
+    r4ss::SS_plots(replist, verbose = FALSE)
+  } else {
+    # Yield curve doesn't work with dogfish SRR when Hessian is not calculated?
+    r4ss::SS_plots(replist, verbose = FALSE, plot = c(1:21, 23:26))
+  }
+
+  # Report and plot various output in R
+  replist$estimated_non_dev_parameters |>
+    select(Value, Parm_StDev) |>
+    mutate(CV = abs(Parm_StDev/Value) |> round(2)) |>
+    View()
+
+  r4ss::SSplotSelex(replist, fleets = 1)
+  r4ss::SSplotTimeseries(replist, subplot = 12)
+  # r4ss::SSplotRecdevs(replist)
+  r4ss::SSplotCatch(replist)
+  r4ss::SSplotIndices(replist)
+  r4ss::SSplotComps(replist)
+  replist$likelihoods_used
 }
-
-# Report and plot various output in R
-replist$estimated_non_dev_parameters |>
-  select(Value, Parm_StDev) |>
-  mutate(CV = abs(Parm_StDev/Value) |> round(2)) |>
-  View()
-
-r4ss::SSplotSelex(replist, fleets = 1)
-r4ss::SSplotTimeseries(replist, subplot = 12)
-# r4ss::SSplotRecdevs(replist)
-r4ss::SSplotCatch(replist)
-r4ss::SSplotIndices(replist)
-r4ss::SSplotComps(replist)
-replist$likelihoods_used
