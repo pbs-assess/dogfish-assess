@@ -258,7 +258,7 @@
 #_5:  0/1 for biasadj or not
 #_6:  0/1 to float
 #_   fleet      link link_info  extra_se   biasadj     float  #  fleetname
-         6         1         0         1         0         1  #  IPHC
+         6         1         0         0         0         1  #  IPHC
          7         1         0         0         0         1  #  HBLL
          8         1         0         0         0         1  #  SYN
          11        1         0         0         0         1  #  HS_MSA
