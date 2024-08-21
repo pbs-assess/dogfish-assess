@@ -91,22 +91,15 @@ make_f_catch <- function(dir, total, years = 10) {
 }
 
 run_projection <- function(model = "A0", catch, hessian = FALSE) {
-  # if (parallel_catches) {
-  #   plan(multisession)
-  #   f <- furrr::future_map_dfr
-  # } else {
-  #   f <- purrr::map_dfr
-  # }
-  # out <- f(catches, \(x) {
-    cat("Catches:", catch, "t\n")
-    cat("Model:", model, "\n")
+    # cat("Catches:", catch, "t\n")
+    # cat("Model:", model, "\n")
     fo <- paste0(model, "-forecast-", catch)
-    system(paste0("cp -r ss3/", model, "/ ss3/", fo, "/"))
-    f <- SS_readforecast(paste0("ss3/", fo, "/forecast.ss"))
-    f$ForeCatch <- make_f_catch(total = catch, dir = fo)
-    f$Nforecastyrs <- max(f$ForeCatch$year) - min(f$ForeCatch$year) + 1
-    SS_writeforecast(f, paste0("ss3/", fo), overwrite = TRUE)
-    fit_ss3(fo, hessian = hessian)
+    # system(paste0("cp -r ss3/", model, "/ ss3/", fo, "/"))
+    # f <- SS_readforecast(paste0("ss3/", fo, "/forecast.ss"))
+    # f$ForeCatch <- make_f_catch(total = catch, dir = fo)
+    # f$Nforecastyrs <- max(f$ForeCatch$year) - min(f$ForeCatch$year) + 1
+    # SS_writeforecast(f, paste0("ss3/", fo), overwrite = TRUE)
+    # fit_ss3(fo, hessian = hessian)
     d <- SS_output(paste0("ss3/", fo))
     derived_quants <- d$derived_quants
     row.names(derived_quants) <- NULL
@@ -153,9 +146,9 @@ length(mods)
 
 torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
-plan(multicore)
-purrr::pmap(torun, run_projection, hessian = TRUE)
-furrr::future_pmap(torun, run_projection, hessian = TRUE)
+plan(multicore, workers =  60)
+# out2 <- purrr::pmap(torun, run_projection, hessian = TRUE)
+out2 <- furrr::future_pmap(torun, run_projection, hessian = TRUE)
 
 # out2 <- furrr::future_map(mods, run_projections, hessian = F)
 # out2 <- furrr::future_map(mods, run_projections, hessian = TRUE, catches = tacs)
@@ -183,9 +176,9 @@ temp <- x |>
   left_join(lu) |>
   # mutate(model_name = forcats::fct_reorder(model_name)) |>
   mutate(model_name = factor(model_name, levels = mn)) |>
-  left_join(tac_lu) |>
-  select(-catch) |>
-  rename(catch = tac) |>
+  # left_join(tac_lu) |>
+  # select(-catch) |>
+  # rename(catch = tac) |>
   mutate(catch = factor(catch)) |>
   mutate(catch = forcats::fct_rev(catch))
 
@@ -276,9 +269,9 @@ tempF <- x |>
   # filter(!grepl("B", model)) |>
   left_join(lu) |>
   mutate(model_name = forcats::fct_inorder(model_name)) |>
-  left_join(tac_lu) |>
-  select(-catch) |>
-  rename(catch = tac) |>
+  # left_join(tac_lu) |>
+  # select(-catch) |>
+  # rename(catch = tac) |>
   mutate(catch = factor(catch)) |>
   mutate(catch = forcats::fct_rev(catch))
 
@@ -462,4 +455,4 @@ if (FALSE) {
 
 f <- list.files("ss3", pattern = "-forecast-", full.names = T)
 f
-x <- sapply(f, unlink, recursive = T, force = T)
+# x <- sapply(f, unlink, recursive = T, force = T)
