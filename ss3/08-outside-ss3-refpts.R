@@ -21,12 +21,14 @@ ss_home <- here::here("ss3")
 
 source("ss3/99-model-names.R")
 
-reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A5_highdiscard", "A8_HBLLonly")
+reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly", "A15_100discard")
 
 keep <- which(!mods %in% reject)
 mods <- mods[keep]
 model_name <- model_name[keep]
-multi_rep <- lapply(mods, function(x) {
+library(future)
+plan(multisession)
+multi_rep <- furrr::future_map(mods, function(x) {
   cat(x, "\n")
   r4ss::SS_output(file.path(ss_home, x),
     verbose = FALSE,
@@ -65,7 +67,7 @@ get_b_ratio <- function(replist) {
   dd
 }
 
-cols <- c("grey10", RColorBrewer::brewer.pal(11L, "Paired")[-1])
+cols <- c("grey10", RColorBrewer::brewer.pal(12L, "Paired"))
 names(cols) <- model_name[!grepl("^\\(B", model_name)]
 
 cols_B <- c("grey60", RColorBrewer::brewer.pal(3, "Dark2")[1:2])
@@ -102,7 +104,6 @@ out_depl |> filter(grepl("^\\(B", scen) | grepl("A0", scen)) |>
   ggtitle("**With M set at its historical value when calculating reference points**") +
   theme(title = element_markdown())
 ggsave("figs/ss3/refpts/depl-ref-ts-B.png", width = 7, height = 4)
-
 
 x <- out_depl |> filter(year == 2023) |>
   filter(!grepl("^\\(B", scen))
@@ -174,6 +175,7 @@ out_Ftarg |> filter(grepl("A0", scen) | grepl("^\\(B", scen)) |> ftarg_plot() +
   scale_colour_manual(values = cols_B, guide = guide_legend(reverse = TRUE)) +
   scale_fill_manual(values = cols_B, guide = guide_legend(reverse = TRUE))
 ggsave("figs/ss3/refpts/f-ref-ts-B.png", width = 7, height = 4)
+
 
 x <- out_Ftarg |> filter(year == 2023) |>
   filter(!grepl("^\\(B", scen))
@@ -381,3 +383,5 @@ if (FALSE) {
   ))
   setwd(here::here())
 }
+
+plan(sequential)

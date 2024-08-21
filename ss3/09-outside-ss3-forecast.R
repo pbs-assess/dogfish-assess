@@ -130,15 +130,13 @@ run_projection <- function(model = "A0", catch, hessian = FALSE, do_fit = TRUE) 
 }
 
 source("ss3/99-model-names.R")
-reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly")
-# reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly")
+reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly", "A15_100discard")
 keep <- which(!mods %in% reject)
 mods <- mods[keep]
 model_name <- model_name[keep]
 
 length(mods)
 (tacs <- seq(0, 1500, by = 200))
-# (tacs <- seq(0, 600, by = 300))
 
 torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
@@ -160,8 +158,9 @@ saveRDS(out2, "data/generated/projections.rds")
 out2 <- readRDS("data/generated/projections.rds")
 
 x <- bind_rows(out2)
+x <- filter(x, model %in% mods)
 
-lu <- data.frame(model = mods, model_name = model_name)
+lu <- data.frame(model = mods, model_name = factor(model_name, levels = model_name))
 
 mn <- model_name
 temp <- x |>
@@ -176,7 +175,7 @@ make_proj_by_model <- function(dat, type = c("B", "F"), ylab = "S / S<sub>0</sub
   type <- match.arg(type)
 
   g <- dat |>
-    filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
+    # filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
     ggplot(aes(year, est,
       ymin = est - 2 * se, ymax = est + 2 * se,
       colour = catch, group = paste(model_name, catch), fill = catch
@@ -212,12 +211,13 @@ make_proj_by_model <- function(dat, type = c("B", "F"), ylab = "S / S<sub>0</sub
   g
 }
 
-temp |> make_proj_by_model()
+temp |> filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
+  make_proj_by_model()
 ggsave("figs/ss3/refpts/proj-facet-model.png", width = 8.5, height = 6.5)
 
 make_proj_by_catch_level <- function(dat, ylab = "S / S<sub>0</sub>") {
   dat |>
-  filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
+  # filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
     mutate(catch = forcats::fct_rev(catch)) |>
     ggplot(aes(year, est,
       ymin = est - 2 * se, ymax = est + 2 * se,
@@ -247,7 +247,8 @@ make_proj_by_catch_level <- function(dat, ylab = "S / S<sub>0</sub>") {
     theme(axis.title = ggtext::element_markdown())
 }
 
-temp |> filter(!grepl("B", model)) |> make_proj_by_catch_level()
+temp |> filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
+  filter(!grepl("B", model)) |> make_proj_by_catch_level()
 ggsave("figs/ss3/refpts/proj-facet-catch.png", width = 9, height = 4.5)
 
 # F ? --------------------------
@@ -258,7 +259,6 @@ tempF <- x |>
   filter(year > 1900, label %in% "F", !is.na(year), se < 2, est < 1e6, est >= 0) |>
   # filter(!grepl("B", model)) |>
   left_join(lu) |>
-  mutate(model_name = forcats::fct_inorder(model_name)) |>
   mutate(catch = factor(catch)) |>
   mutate(catch = forcats::fct_rev(catch))
 
@@ -273,7 +273,7 @@ out_F <- seq_along(multi_rep) |>
 row.names(out_F) <- NULL
 
 tempF <- left_join(tempF, out_F) |>
-  mutate(model_name = forcats::fct_inorder(model_name))
+  mutate(model_name = factor(model_name, levels = lu$model_name))
 
 tempF |>
   filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
@@ -306,7 +306,7 @@ tempF |>
 ggsave("figs/ss3/refpts/proj-F-facet-model.png", width = 8.5, height = 6.5)
 
 tempF |>
-  filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
+  filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
   filter(!grepl("B", model)) |>
   mutate(catch = forcats::fct_rev(catch)) |>
   ggplot(aes(year, est / F_Btgt,
@@ -327,7 +327,7 @@ tempF |>
     alpha = 0.1, fill = "grey55"
   ) +
   # scale_y_continuous(trans = "sqrt") +
-  coord_cartesian(expand = FALSE, ylim = c(0, 10)) +
+  coord_cartesian(expand = FALSE, ylim = c(0, 15)) +
   geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
   # facet_wrap(~model_name) +
   facet_wrap(~catch) +
