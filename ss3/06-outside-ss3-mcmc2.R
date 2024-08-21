@@ -9,22 +9,22 @@ ss_home <- here::here("ss3")
 SS_dir <- c(
   # "A1",
   "A0",
-  "A2_USgrowth",
-  "A3_highmat",
-  "A4_USgrowth_highmat",
-  "A5_highdiscard",
-  "A6_IPHC+CPUE",
-  "A7_SYNonly",
+  #"A2_USgrowth",
+  #"A3_highmat",
+  #"A4_USgrowth_highmat",
+  #"A5_highdiscard",
+  #"A6_IPHC+CPUE",
+  #"A7_SYNonly",
   # "A8_HBLLonly",
-  "A9_lowM", "A10_highM",
-  "A11_low_zfrac",
-  "A12_high_zfrac",
-  "A13_extraSD",
+  #"A9_lowM", "A10_highM",
+  #"A11_low_zfrac",
+  #"A12_high_zfrac",
+  #"A13_extraSD",
   # "B1_1990inc",
-  "B2_2010step",
+  "B2_2010step"
   # "B3_2005step",
   # "B4_1990inc_lowM",
-  "B5_2010step_lowM"
+  #"B5_2010step_lowM"
 )
 
 
@@ -42,7 +42,7 @@ fit_ss3 <- function(model_dir = "model1",
     if (Sys.info()[["user"]] == "seananderson")
       cmd <- "ss modelname ss"
     else
-      cmd <- "ss3 modelname ss"
+      cmd <- "/home/anderson/src/ss3_opt modelname ss"
   } else {
     cmd <- "ss.exe modelname ss"
   }
@@ -77,10 +77,10 @@ purrr::walk(TORUN, \(i) {
   if (Sys.info()[["user"]] == "seananderson") {
     system(paste0("cp /usr/local/bin/ss ss3/", SS_dir[i], "/"))
   } else {
-    system(paste0("cp /usr/bin/ss3/build/ss3 ss3/", SS_dir[i], "/"))
+    system(paste0("cp /home/anderson/src/ss3_opt ss3/", SS_dir[i], "/"))
   }
 
-  fn_exe <- if (Sys.info()[["user"]] == "seananderson") "ss" else "ss3"
+  fn_exe <- if (Sys.info()[["user"]] == "seananderson") "ss" else "ss3_opt"
   #
   # cmd <- paste0("cd ", paste0("ss3/", SS_dir[i]), " && ", fn_exe,
   #   " -hbf 1 -nox -iprint 200 -mcmc 15 -hess_step 5 ",
@@ -136,7 +136,7 @@ purrr::walk(TORUN, \(i) {
   #     adapt_delta = adapt_delta)
   # )
 
-  CHAINS <- 6
+  CHAINS <- 10
   set.seed((i + 12) * 100)
   init <- lapply(1:CHAINS, function(chains) {
     lapply(names(par_base$coeflist), function(x) {
@@ -153,7 +153,7 @@ purrr::walk(TORUN, \(i) {
   # metric <- "mle"
   x <- sample_nuts(model = fn_exe,
                    path = file.path(ss_home, SS_dir[i]),
-                   iter = 1000,
+                   iter = 800,
                    # iter = 100,
                    # init = init,
 
