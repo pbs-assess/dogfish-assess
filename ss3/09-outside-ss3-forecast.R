@@ -136,11 +136,11 @@ mods <- mods[keep]
 model_name <- model_name[keep]
 
 length(mods)
-(tacs <- seq(0, 1500, by = 200))
+(tacs <- seq(0, 1500, by = 100))
 
 torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
-plan(multicore, workers =  70)
+plan(multicore, workers =  60)
 
 # out3 <- filter(torun, catch %in% c(0, 200), model == "A5_highdiscard") |>
 #   purrr::pmap(run_projection, hessian = F)
@@ -215,6 +215,9 @@ temp |> filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
   make_proj_by_model()
 ggsave("figs/ss3/refpts/proj-facet-model.png", width = 8.5, height = 6.5)
 
+cols <- c("grey10", RColorBrewer::brewer.pal(12L, "Paired"))
+names(cols) <- model_name[!grepl("^\\(B", model_name)]
+
 make_proj_by_catch_level <- function(dat, ylab = "S / S<sub>0</sub>") {
   dat |>
   # filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
@@ -227,8 +230,8 @@ make_proj_by_catch_level <- function(dat, ylab = "S / S<sub>0</sub>") {
     geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
     geom_line() +
     scale_x_continuous(breaks = seq(1960, 2090, 20)) +
-    scale_colour_brewer(palette = "Paired") +
-    scale_colour_brewer(palette = "Paired") +
+    scale_colour_manual(values = cols) +
+    # scale_colour_brewer(palette = "Paired") +
     annotate(
       "rect",
       xmin = 2024, xmax = max(x$year, na.rm = TRUE),
@@ -247,7 +250,7 @@ make_proj_by_catch_level <- function(dat, ylab = "S / S<sub>0</sub>") {
     theme(axis.title = ggtext::element_markdown())
 }
 
-temp |> filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
+temp |> filter(catch %in% tacs[seq(1, 12, 2)]) |>
   filter(!grepl("B", model)) |> make_proj_by_catch_level()
 ggsave("figs/ss3/refpts/proj-facet-catch.png", width = 9, height = 4.5)
 
@@ -317,9 +320,9 @@ tempF |>
   geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
   geom_line() +
   scale_x_continuous(breaks = seq(1960, 2090, 20)) +
-  scale_colour_brewer(palette = "Paired") +
+  scale_colour_manual(values = cols) +
+  # scale_colour_brewer(palette = "Paired") +
   # scale_colour_viridis_d(direction = -1, option = "C") +
-  scale_colour_brewer(palette = "Paired") +
   annotate(
     "rect",
     xmin = 2024, xmax = max(x$year, na.rm = TRUE),
@@ -442,4 +445,4 @@ if (FALSE) {
 
 f <- list.files("ss3", pattern = "-forecast-", full.names = T)
 f
-# x <- sapply(f, unlink, recursive = T, force = T)
+x <- sapply(f, unlink, recursive = T, force = T)

@@ -27,8 +27,6 @@ dir.create("figs/ss3/set_a_ind", showWarnings = FALSE)
 # Specify which set of plots to generate here
 # set_to_plot <- c("growth", "index", "M")[3]
 
-base_model <- 2
-
 for (set_to_plot in c("growth", "index", "M", "zfrac")) {
 
   set_to_plot <- match.arg(set_to_plot, choices = c("growth", "index", "M", "zfrac"))
@@ -48,7 +46,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
   if (set_to_plot == "growth") {
 
     # Set A models with growth and maturity scenarios
-    mods <- c("A0", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A14_lowdiscard", "A5_highdiscard", "A15-100discard")
+    mods <- c("A0", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A14_lowdiscard", "A5_highdiscard", "A15_100discard")
 
     model_name <- c("(A0) BC growth\n(base)", "(A2) US growth", "(A3) BC growth,\nhigh maturity", "(A4) USgrowth,\nhigh maturity", "(A14) Low discard\nmortality", "(A5) High discard\nmortality", "(A15) 100% discard mortality")
 
@@ -63,7 +61,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_mat.rds"))
 
     # Save the model parameters in model 1 for Res. Doc.
-    multi_rep[[base_model]]$parameters %>%
+    multi_rep[[1]]$parameters %>%
       mutate(`Estimated?` = ifelse(Phase > 0, "Yes", "Fixed")) %>%
       select(Label, `Estimated?`, Value, Parm_StDev) %>%
       readr::write_csv(file = "tables/ss3_par.csv")
@@ -316,7 +314,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     labs(x = "Year", y = "Index", colour = "Model") +
     guides(colour = guide_legend(ncol = 2)) +
     theme(panel.spacing = unit(0, "in"), legend.position = "bottom")
-  .ggsave("index_fit.png", g, height = 4, width = 6)
+  .ggsave("index_fit.png", g, height = 5, width = 6)
 
   # Plot SR
   g <- SS3_SR(multi_rep, model_name) +
@@ -456,12 +454,12 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
 
     # Length comp residual - histogram
     g <- SS3_compresid(multi_rep[[1]], model_name[1], fleet = fleet_int, figure = "histogram") +
-      ggtitle(model_name[base_model]) +
+      ggtitle(model_name[1]) +
       theme(panel.spacing = unit(0, "in"))
     .ggsave("len_comp_hist_A1.png", g, height = 4, width = 6)
 
     # Numbers at age
-    g <- SS3_N(multi_rep[base_model], model_name[1], age = seq(0, 50, 10))
+    g <- SS3_N(multi_rep[1], model_name[1], age = seq(0, 50, 10))
     g2 <- g$data %>%
       mutate(variable = paste("Age", variable)) %>%
       #mutate(value = value/max(value), .by = c(variable, Sex, scen)) %>%
@@ -471,11 +469,11 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
       expand_limits(y = 0) +
       facet_grid(vars(variable), vars(Sex), scales = "free_y") +
       labs(x = "Year", y = "Estimated abundance") +
-      ggtitle(model_name[base_model])
+      ggtitle(model_name[1])
     .ggsave("N_age_A1.png", g2, height = 6, width = 5)
 
     # Compare with numbers at length
-    g <- SS3_N(multi_rep[base_model], model_name[base_model], type = "length", len = seq(50, 115, 15))
+    g <- SS3_N(multi_rep[1], model_name[1], type = "length", len = seq(50, 115, 15))
     g2 <- g$data %>%
       mutate(variable = paste(variable, "cm") %>% factor(levels = paste(seq(50, 115, 15), "cm"))) %>%
       ggplot(aes(Yr, value)) +
@@ -488,15 +486,15 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     .ggsave("N_len_A1.png", g2, height = 6, width = 5)
 
     # Exploitation and apical F
-    g <- SS3_apicalF(multi_rep[[base_model]])
+    g <- SS3_apicalF(multi_rep[[1]])
     g$facet$params$ncol <- 3
     .ggsave("apicalF_fleet_A1.png", g, height = 6, width = 8)
 
-    g <- SS3_apicalF(multi_rep[[base_model]], FALSE)
+    g <- SS3_apicalF(multi_rep[[1]], FALSE)
     .ggsave("apicalF_sex_A1.png", g, height = 2, width = 4)
 
     # Plot annual selectivity
-    g <- SS3_selannual(multi_rep[[base_model]])
+    g <- SS3_selannual(multi_rep[[1]])
     .ggsave("sel_annual_A1.png", g, height = 4, width = 6)
 
   }
