@@ -14,7 +14,7 @@ fit_ss3 <- function(
   setwd(dir_run)
   on.exit(setwd(dir_cur))
 
-  fn_exe <- if (Sys.info()[["user"]] == "seananderson") "ss" else "ss3"
+  fn_exe <- if (Sys.info()[["user"]] == "seananderson") "ss" else "/home/anderson/src/ss3_opt"
 
   if (.Platform$OS.type == "unix") {
     cmd <- paste0(fn_exe, " modelname ss")
@@ -90,16 +90,18 @@ make_f_catch <- function(dir, total, years = 10) {
     mutate(catch_or_F = round(catch_or_F, 4L))
 }
 
-run_projection <- function(model = "A0", catch, hessian = FALSE) {
+run_projection <- function(model = "A0", catch, hessian = FALSE, do_fit = TRUE) {
     # cat("Catches:", catch, "t\n")
     # cat("Model:", model, "\n")
     fo <- paste0(model, "-forecast-", catch)
-    # system(paste0("cp -r ss3/", model, "/ ss3/", fo, "/"))
-    # f <- SS_readforecast(paste0("ss3/", fo, "/forecast.ss"))
-    # f$ForeCatch <- make_f_catch(total = catch, dir = fo)
-    # f$Nforecastyrs <- max(f$ForeCatch$year) - min(f$ForeCatch$year) + 1
-    # SS_writeforecast(f, paste0("ss3/", fo), overwrite = TRUE)
-    # fit_ss3(fo, hessian = hessian)
+    if (do_fit) {
+      system(paste0("cp -r ss3/", model, "/ ss3/", fo, "/"))
+      f <- SS_readforecast(paste0("ss3/", fo, "/forecast.ss"))
+      f$ForeCatch <- make_f_catch(total = catch, dir = fo)
+      f$Nforecastyrs <- max(f$ForeCatch$year) - min(f$ForeCatch$year) + 1
+      SS_writeforecast(f, paste0("ss3/", fo), overwrite = TRUE)
+      fit_ss3(fo, hessian = hessian)
+    }
     d <- SS_output(paste0("ss3/", fo))
     derived_quants <- d$derived_quants
     row.names(derived_quants) <- NULL
@@ -134,38 +136,30 @@ keep <- which(!mods %in% reject)
 mods <- mods[keep]
 model_name <- model_name[keep]
 
-#
-# if (FALSE) {
-#   out2 <- purrr::map(mods, run_projections, hessian = F, catches = 0)
-#   plan(multisession)
-#   out2 <- furrr::future_map(mods, run_projections, hessian = F, catches = 0)
-# }
-
 length(mods)
 (tacs <- seq(0, 1500, by = 200))
+# (tacs <- seq(0, 600, by = 300))
 
 torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
-plan(multicore, workers =  60)
-# out2 <- purrr::pmap(torun, run_projection, hessian = TRUE)
+plan(multicore, workers =  70)
+
+# out3 <- filter(torun, catch %in% c(0, 200), model == "A5_highdiscard") |>
+#   purrr::pmap(run_projection, hessian = F)
+# out3 |>
+#   bind_rows() |>
+#   filter(label == "Bratio") |>
+#   ggplot(aes(year, est, colour = as.factor(catch))) + geom_line() +
+#   facet_wrap(~model)
+
 out2 <- furrr::future_pmap(torun, run_projection, hessian = TRUE)
 
-# out2 <- furrr::future_map(mods, run_projections, hessian = F)
-# out2 <- furrr::future_map(mods, run_projections, hessian = TRUE, catches = tacs)
 plan(sequential)
-
-# snowfall::sfInit(parallel = TRUE, cpus = parallel::detectCores())
-# snowfall::sfLapply(mods, run_projections, hessian = TRUE, ss_home = ss_home)
-# snowfall::sfStop()
-
-# out3 <- purrr::map(mods[grepl("highdiscard", mods)],
-#   run_projections, hessian = TRUE, catches = dead_catch_100perc)
 
 saveRDS(out2, "data/generated/projections.rds")
 out2 <- readRDS("data/generated/projections.rds")
 
 x <- bind_rows(out2)
-# x <- bind_rows(x, out3)
 
 lu <- data.frame(model = mods, model_name = model_name)
 
@@ -174,11 +168,7 @@ temp <- x |>
   filter(year > 1900, label %in% "Bratio", !is.na(year), se < 2, est < 0.999) |>
   # filter(!grepl("B", model)) |>
   left_join(lu) |>
-  # mutate(model_name = forcats::fct_reorder(model_name)) |>
   mutate(model_name = factor(model_name, levels = mn)) |>
-  # left_join(tac_lu) |>
-  # select(-catch) |>
-  # rename(catch = tac) |>
   mutate(catch = factor(catch)) |>
   mutate(catch = forcats::fct_rev(catch))
 
@@ -269,9 +259,6 @@ tempF <- x |>
   # filter(!grepl("B", model)) |>
   left_join(lu) |>
   mutate(model_name = forcats::fct_inorder(model_name)) |>
-  # left_join(tac_lu) |>
-  # select(-catch) |>
-  # rename(catch = tac) |>
   mutate(catch = factor(catch)) |>
   mutate(catch = forcats::fct_rev(catch))
 

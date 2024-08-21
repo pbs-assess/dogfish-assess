@@ -13,7 +13,7 @@ fit_ss3 <- function(model_dir = "model1",
   setwd(dir_run)
   on.exit(setwd(dir_cur))
 
-  fn_exe <- if (Sys.info()[["user"]] == "seananderson") "ss" else "ss3"
+  fn_exe <- if (Sys.info()[["user"]] == "seananderson") "ss" else "/home/anderson/src/ss3_opt"
 
   if (.Platform$OS.type == "unix") {
     cmd <- paste0(fn_exe, " modelname ss")
@@ -60,8 +60,8 @@ if (FALSE) {
 }
 
 # Fit all of many models in parallel
-snowfall::sfInit(parallel = TRUE, cpus = floor(parallel::detectCores()))
-snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
+snowfall::sfInit(parallel = TRUE, cpus = min(floor(parallel::detectCores() / 2)), length(mods))
+snowfall::sfLapply(mods, fit_ss3, hessian = F, ss_home = ss_home)
 snowfall::sfStop()
 
 if (FALSE) {
