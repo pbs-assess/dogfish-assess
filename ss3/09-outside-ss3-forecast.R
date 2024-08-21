@@ -36,7 +36,7 @@ fit_ss3 <- function(
 }
 
 make_f_catch <- function(dir, total, years = 10) {
-  ctl <- SS_readctl(paste0("ss3/", dir, "/control.ss"))
+  ctl <- SS_readctl(paste0("ss3/", dir, "/control.ss_new"))
   file.copy(paste0("ss3/", dir, "/data_echo.ss_new"), paste0("ss3/", dir, "/data.ss_new"))
   i <- grepl("_Mult:", row.names(ctl$MG_parms))
   mult <- ctl$MG_parms[i,] |> select(catch_multiplier = INIT)
@@ -90,11 +90,15 @@ make_f_catch <- function(dir, total, years = 10) {
     mutate(catch_or_F = round(catch_or_F, 4L))
 }
 
-run_projections <- function(model = "A0", catches, hessian = FALSE) {
+run_projections <- function(model = "A0", catches, hessian = FALSE, parallel_catches = FALSE) {
   cat(model, "\n")
-  # plan(multisession)
-  # out <- furrr::future_map_dfr(catches, \(x) {
-  out <- purrr::map_dfr(catches, \(x) {
+  if (parallel_catches) {
+    plan(multisession)
+    f <- furrr::future_map_dfr
+  } else {
+    f <- purrr::map_dfr
+  }
+  out <- f(catches, \(x) {
     cat("Catches:", x, "t\n")
     fo <- paste0(model, "-forecast-", x)
     system(paste0("cp -r ss3/", model, "/ ss3/", fo, "/"))
@@ -127,7 +131,6 @@ run_projections <- function(model = "A0", catches, hessian = FALSE) {
     ret$model <- model
     as_tibble(ret)
   })
-  # plan(sequential)
   out
 }
 
@@ -140,15 +143,21 @@ model_name <- model_name[keep]
 
 if (FALSE) {
   out2 <- purrr::map(mods, run_projections, hessian = F, catches = 0)
+  plan(multisession)
+  out2 <- furrr::future_map(mods, run_projections, hessian = F, catches = 0)
 }
 
 length(mods)
-(tacs <- seq(0, 1500, by = 100))
+(tacs <- seq(0, 1500, by = 300))
 
-plan(multisession, workers = length(mods))
+
 # out2 <- furrr::future_map(mods, run_projections, hessian = F)
 out2 <- furrr::future_map(mods, run_projections, hessian = TRUE, catches = tacs)
 plan(sequential)
+
+# snowfall::sfInit(parallel = TRUE, cpus = parallel::detectCores())
+# snowfall::sfLapply(mods, run_projections, hessian = TRUE, ss_home = ss_home)
+# snowfall::sfStop()
 
 # out3 <- purrr::map(mods[grepl("highdiscard", mods)],
 #   run_projections, hessian = TRUE, catches = dead_catch_100perc)
