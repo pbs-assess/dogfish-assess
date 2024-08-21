@@ -94,8 +94,10 @@ run_projection <- function(model = "A0", catch, hessian = FALSE, do_fit = TRUE) 
     # cat("Catches:", catch, "t\n")
     # cat("Model:", model, "\n")
     fo <- paste0(model, "-forecast-", catch)
+    to_folder <- paste0("ss3/", fo, "/")
+    if (file.exists(to_folder)) do_fit <- FALSE
     if (do_fit) {
-      system(paste0("cp -r ss3/", model, "/ ss3/", fo, "/"))
+      system(paste0("cp -r ss3/", model, "/ ", to_folder))
       f <- SS_readforecast(paste0("ss3/", fo, "/forecast.ss"))
       f$ForeCatch <- make_f_catch(total = catch, dir = fo)
       f$Nforecastyrs <- max(f$ForeCatch$year) - min(f$ForeCatch$year) + 1
@@ -399,17 +401,17 @@ make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", x
 }
 
 tempF |>
-  filter(!grepl("B", model)) |>
+  filter(!grepl("B", model), catch != "1500", catch != "1400") |>
   make_tigure_decision()
 ggsave("figs/ss3/refpts/f-ref-pt-tigure.png", width = 10, height = 4)
 
 temp |>
-  filter(!grepl("B", model)) |>
+  filter(!grepl("B", model), catch != "1500", catch != "1400") |>
   make_tigure_decision(type = "LRP", fill_label = "P(B < 0.2B<sub>0</sub>)")
 ggsave("figs/ss3/refpts/lrp-ref-pt-tigure.png", width = 10, height = 4)
 
 temp |>
-  filter(!grepl("B", model)) |>
+  filter(!grepl("B", model), catch != "1500", catch != "1400") |>
   make_tigure_decision(type = "USR", fill_label = "P(B < 0.4B<sub>0</sub>)")
 ggsave("figs/ss3/refpts/usr-ref-pt-tigure.png", width = 10, height = 4)
 
