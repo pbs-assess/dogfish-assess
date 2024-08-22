@@ -48,7 +48,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     # Set A models with growth and maturity scenarios
     mods <- c("A0", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A14_lowdiscard", "A5_highdiscard", "A15_100discard")
 
-    model_name <- c("(A0) BC growth\n(base)", "(A2) US growth", "(A3) BC growth,\nhigh maturity", "(A4) USgrowth,\nhigh maturity", "(A14) Low discard\nmortality", "(A5) High discard\nmortality", "(A15) 100% discard mortality")
+    model_name <- c("(A0) BC growth\n(base)", "(A2) US growth", "(A3) BC growth,\nhigh maturity", "(A4) USgrowth,\nhigh maturity", "(A14) Low discard\nmortality", "(A5) High discard\nmortality", "(A15) 100% \ndiscard mortality")
 
     fig_dir <- "figs/ss3/set_a_mat"
 
@@ -390,6 +390,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     bind_rows() %>%
     left_join(fleet_names, by = c("FleetName" = "Fleet_name")) %>%
     mutate(FName = factor(FName, levels = fleet_names$FName)) %>%
+    mutate(scen = factor(scen, levels = model_name)) |>
     ggplot(aes(Yr, Exp, linetype = Sex, shape = Sex)) +
     facet_grid(vars(FName), vars(scen), scales = "free_y") +
     geom_point(aes(y = Obs, colour = FName)) +
@@ -400,8 +401,9 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
       strip.background = element_blank(),
       legend.position = "bottom") +
     scale_shape_manual(values = c(16, 1)) +
-    guides(colour = "none")
-  .ggsave("mean_length.png", g, height = 6, width = 8)
+    guides(colour = "none") +
+    scale_x_continuous(breaks = seq(1900, 2020, 20))
+  .ggsave("mean_length.png", g, height = 6.5, width = 9)
 
   # Length comps
   heights <- c(4, 5, 6, 4, NA, 6, NA, 8) + 1
