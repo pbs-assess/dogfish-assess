@@ -36,6 +36,7 @@ multi_rep <- furrr::future_map(mods, function(x) {
     hidewarn = TRUE
   )
 })
+plan(sequential)
 saveRDS(multi_rep, file = "data/generated/replist-ref-pts.rds")
 
 out_F <- seq_along(multi_rep) |>
