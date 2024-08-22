@@ -44,62 +44,63 @@ make_f_catch <- function(dir, total, years = 10) {
   suppressWarnings(
     dat <- SS_readdat(paste0("ss3/", dir, "/data.ss"), verbose = FALSE)
   )
-  temp <- filter(dat$catch, year >= 2018) |> # last 5
+  bratio_dat <- filter(dat$catch, year >= 2018) |> # last 5
     filter(fleet %in% c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) |> # active fleets catching dogfish
     group_by(fleet) |>
     summarise(m = mean(catch))
 
   # keep surveys and iRec and salmon bycatch constant at average levels:
-  temp1 <- filter(temp, fleet %in% c(6, 7, 8, 9, 10)) # surveys + salmon
+  temp1 <- filter(bratio_dat, fleet %in% c(6, 7, 8, 9, 10)) # surveys + salmon
   temp1$catch_or_F_before_mortality <- temp1$m
   total_constant_catch <- sum(temp1$m)
   total_remaining_quota <- total - total_constant_catch
 
   if (total_remaining_quota > 0) {
-    temp2 <- filter(temp, fleet %in% c(1, 2, 3, 4, 5)) # quota fishing fleets
+    temp2 <- filter(bratio_dat, fleet %in% c(1, 2, 3, 4, 5)) # quota fishing fleets
     temp2 <- mutate(temp2, fraction = m / sum(m))
     temp2 <- mutate(temp2, catch_or_F_before_mortality = total_remaining_quota * fraction)
-    temp <- bind_rows(temp1, temp2)
-    stopifnot(round(sum(temp$catch_or_F_before_mortality), 0) == round(total, 0))
+    bratio_dat <- bind_rows(temp1, temp2)
+    stopifnot(round(sum(bratio_dat$catch_or_F_before_mortality), 0) == round(total, 0))
   } else {
-    temp <- temp1
+    bratio_dat <- temp1
   }
 
-  temp <- left_join(temp, mult, by = join_by(fleet))
+  bratio_dat <- left_join(bratio_dat, mult, by = join_by(fleet))
 
   # midwater is dead catch in data.ss; do separately
-  temp_non_midwater <- filter(temp, fleet != 3)
+  temp_non_midwater <- filter(bratio_dat, fleet != 3)
   temp_non_midwater <- mutate(temp_non_midwater, catch_or_F = catch_or_F_before_mortality / catch_multiplier) |>
     select(-catch_or_F_before_mortality, -catch_multiplier)
 
   # midwater is dead catch in data.ss; do separately
   catch_multiplier_trawl <- filter(mult, fleet == 2) |> pull(catch_multiplier)
-  temp_midwater <- filter(temp, fleet == 3)
+  temp_midwater <- filter(bratio_dat, fleet == 3)
   temp_midwater <- mutate(temp_midwater, catch_or_F = catch_or_F_before_mortality / catch_multiplier_trawl) |>
     select(-catch_or_F_before_mortality, -catch_multiplier)
 
-  temp <- bind_rows(temp_non_midwater, temp_midwater)
-  temp <- purrr::map_dfr(2024:(2024 + years - 1), \(y) data.frame(temp, year = y))
+  bratio_dat <- bind_rows(temp_non_midwater, temp_midwater)
+  bratio_dat <- purrr::map_dfr(2024:(2024 + years - 1), \(y) data.frame(bratio_dat, year = y))
 
-  missing_fleets <- unique(c(dat$catch$fleet))[!unique(dat$catch$fleet) %in% unique(temp$fleet)]
-  df <- expand.grid(fleet = missing_fleets, catch_or_F = 0, year = unique(temp$year))
-  temp <- bind_rows(df, temp)
+  missing_fleets <- unique(c(dat$catch$fleet))[!unique(dat$catch$fleet) %in% unique(bratio_dat$fleet)]
+  df <- expand.grid(fleet = missing_fleets, catch_or_F = 0, year = unique(bratio_dat$year))
+  bratio_dat <- bind_rows(df, bratio_dat)
 
-  transmute(temp, year = year, seas = 1, fleet = fleet, catch_or_F = catch_or_F) |>
+  transmute(bratio_dat, year = year, seas = 1, fleet = fleet, catch_or_F = catch_or_F) |>
     arrange(fleet, year) |>
     mutate(catch_or_F = round(catch_or_F, 4L))
 }
 
-run_projection <- function(model = "A0", catch, hessian = FALSE, do_fit = TRUE) {
+run_projection <- function(model = "A0", catch, hessian = FALSE, do_fit = TRUE, years = 10) {
     # cat("Catches:", catch, "t\n")
     # cat("Model:", model, "\n")
     fo <- paste0(model, "-forecast-", catch)
     to_folder <- paste0("ss3/", fo, "/")
-    if (file.exists(to_folder)) do_fit <- FALSE
+    # if (file.exists(to_folder)) do_fit <- FALSE
     if (do_fit) {
+      system(paste0("rm -rf ", to_folder))
       system(paste0("cp -r ss3/", model, "/ ", to_folder))
       f <- SS_readforecast(paste0("ss3/", fo, "/forecast.ss"))
-      f$ForeCatch <- make_f_catch(total = catch, dir = fo)
+      f$ForeCatch <- make_f_catch(total = catch, dir = fo, years = years)
       f$Nforecastyrs <- max(f$ForeCatch$year) - min(f$ForeCatch$year) + 1
       SS_writeforecast(f, paste0("ss3/", fo), overwrite = TRUE)
       fit_ss3(fo, hessian = hessian)
@@ -142,30 +143,34 @@ length(mods)
 
 torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
-plan(multicore, workers =  60)
 
-# out3 <- filter(torun, catch %in% c(0, 200), model == "A5_highdiscard") |>
-#   purrr::pmap(run_projection, hessian = F)
-# out3 |>
-#   bind_rows() |>
-#   filter(label == "Bratio") |>
-#   ggplot(aes(year, est, colour = as.factor(catch))) + geom_line() +
-#   facet_wrap(~model)
+# don't accidentally overwrite!
+if (FALSE) {
+  plan(multicore, workers = 60)
+  out <- furrr::future_pmap(torun, run_projection, hessian = TRUE)
+  plan(sequential)
+  saveRDS(out, "data/generated/projections.rds")
+}
 
-out2 <- furrr::future_pmap(torun, run_projection, hessian = TRUE)
+# rebuilding?
+# if (FALSE) {
+  (tacs <- seq(0, 400, by = 100))
+  torun <- expand.grid(model = mods, catch = tacs)
+  nrow(torun)
+  plan(multisession, workers = 40)
+  out_rebuild <- furrr::future_pmap(torun, run_projection, hessian = TRUE, years = 150L)
+  plan(sequential)
+  saveRDS(out_rebuild, "data/generated/projections-rebuilding.rds")
+# }
 
-plan(sequential)
+out <- readRDS("data/generated/projections.rds")
 
-saveRDS(out2, "data/generated/projections.rds")
-out2 <- readRDS("data/generated/projections.rds")
-
-x <- bind_rows(out2)
+x <- bind_rows(out)
 x <- filter(x, model %in% mods)
-
 lu <- data.frame(model = mods, model_name = factor(model_name, levels = model_name))
 
 mn <- model_name
-temp <- x |>
+bratio_dat <- x |>
   filter(year > 1900, label %in% "Bratio", !is.na(year), se < 2, est < 0.999) |>
   # filter(!grepl("B", model)) |>
   left_join(lu) |>
@@ -185,7 +190,7 @@ make_proj_by_model <- function(dat, type = c("B", "F"), ylab = "S / S<sub>0</sub
     geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
     geom_line() +
     geom_line(data = filter(dat, catch == 0)) + # dark on top
-    scale_x_continuous(breaks = seq(1960, 2090, 20)) +
+    scale_x_continuous(breaks = seq(1960, 2990, 20)) +
     scale_colour_viridis_d(direction = -1, option = "D") +
     scale_fill_viridis_d(direction = -1, option = "D") +
     annotate(
@@ -197,7 +202,7 @@ make_proj_by_model <- function(dat, type = c("B", "F"), ylab = "S / S<sub>0</sub
     facet_wrap(~model_name) +
     ylab(ylab) +
     xlab("") +
-    labs(colour = "Catch (t)\nassuming 30%\ndiscard mortality") +
+    labs(colour = "Catch (t)") +
     gfplot::theme_pbs() +
     theme(axis.title = ggtext::element_markdown())
 
@@ -213,7 +218,7 @@ make_proj_by_model <- function(dat, type = c("B", "F"), ylab = "S / S<sub>0</sub
   g
 }
 
-temp |> filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
+bratio_dat |> filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
   make_proj_by_model()
 ggsave("figs/ss3/refpts/proj-facet-model.png", width = 8.5, height = 6.5)
 
@@ -231,6 +236,7 @@ make_proj_by_catch_level <- function(dat, ylab = "S / S<sub>0</sub>") {
     )) +
     geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
     geom_line() +
+    geom_line(data = filter(dat, model == "A0")) + # dark on top
     scale_x_continuous(breaks = seq(1960, 2090, 20)) +
     scale_colour_manual(values = cols) +
     # scale_colour_brewer(palette = "Paired") +
@@ -252,15 +258,15 @@ make_proj_by_catch_level <- function(dat, ylab = "S / S<sub>0</sub>") {
     theme(axis.title = ggtext::element_markdown())
 }
 
-temp |> filter(catch %in% tacs[seq(1, 12, 2)]) |>
+bratio_dat |> filter(catch %in% tacs[seq(1, 12, 2)]) |>
   filter(!grepl("B", model)) |> make_proj_by_catch_level()
 ggsave("figs/ss3/refpts/proj-facet-catch.png", width = 9, height = 4.5)
 
-# F ? --------------------------
+# F ----------------------------------------------------------------
 
 multi_rep <- readRDS("data/generated/replist-ref-pts.rds")
 
-tempF <- x |>
+fratio_dat <- x |>
   filter(year > 1900, label %in% "F", !is.na(year), se < 2, est < 1e6, est >= 0) |>
   # filter(!grepl("B", model)) |>
   left_join(lu) |>
@@ -277,10 +283,10 @@ out_F <- seq_along(multi_rep) |>
   select(F_Btgt = est, F_Btgt_se = se, model_name = scen)
 row.names(out_F) <- NULL
 
-tempF <- left_join(tempF, out_F) |>
+fratio_dat <- left_join(fratio_dat, out_F) |>
   mutate(model_name = factor(model_name, levels = lu$model_name))
 
-tempF |>
+fratio_dat |>
   filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
   ggplot(aes(year, est / F_Btgt,
     ymin = (est - 2 * se) / F_Btgt, ymax = (est + 2 * se) / F_Btgt,
@@ -288,21 +294,13 @@ tempF |>
   )) +
   geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
   geom_line() +
-  geom_line(data = filter(tempF, catch == 0)) + # dark on top
+  geom_line(data = filter(fratio_dat, catch == 0)) + # dark on top
   scale_x_continuous(breaks = seq(1960, 2090, 20)) +
   scale_colour_viridis_d(direction = -1, option = "D", guide = guide_legend(reverse = F)) +
   scale_fill_viridis_d(direction = -1, option = "D", guide = guide_legend(reverse = F)) +
-  # annotate(
-  #   "rect",
-  #   xmin = 2024, xmax = max(x$year, na.rm = TRUE),
-  #   ymin = 0, ymax = 1e6,
-  #   alpha = 0.1, fill = "grey55"
-  # ) +
   coord_cartesian(expand = FALSE, ylim = c(0, 10)) +
   geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
-  # geom_hline(yintercept = 0.2, lty = 2, colour = "grey40") +
   facet_wrap(~model_name) +
-  # ylab(expression(F / F[0.4S0])) +
   xlab("") +
   ylab("F / F<sub>0.4S0</sub>") +
   gfplot::theme_pbs() +
@@ -310,31 +308,27 @@ tempF |>
   labs(colour = "Catch (t)\nassuming 30%\ndiscard mortality")
 ggsave("figs/ss3/refpts/proj-F-facet-model.png", width = 8.5, height = 6.5)
 
-tempF |>
+fratio_dat |>
   filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
   filter(!grepl("B", model)) |>
   mutate(catch = forcats::fct_rev(catch)) |>
   ggplot(aes(year, est / F_Btgt,
     ymin = (est - 2 * se) / F_Btgt, ymax = (est + 2 * se) / F_Btgt,
-    # colour = catch, group = paste(model_name, catch), fill = catch)) +
     colour = model_name, group = paste(model_name, catch), fill = catch
   )) +
   geom_ribbon(fill = "grey70", alpha = 0.7, colour = NA) +
   geom_line() +
+  geom_line(data = filter(fratio_dat, model == "A0", catch %in% tacs[seq(1, 1e2, 2)])) + # dark on top
   scale_x_continuous(breaks = seq(1960, 2090, 20)) +
   scale_colour_manual(values = cols) +
-  # scale_colour_brewer(palette = "Paired") +
-  # scale_colour_viridis_d(direction = -1, option = "C") +
   annotate(
     "rect",
     xmin = 2024, xmax = max(x$year, na.rm = TRUE),
     ymin = 0, ymax = 1e6,
     alpha = 0.1, fill = "grey55"
   ) +
-  # scale_y_continuous(trans = "sqrt") +
   coord_cartesian(expand = FALSE, ylim = c(0, 15)) +
   geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
-  # facet_wrap(~model_name) +
   facet_wrap(~catch) +
   ylab("F / F<sub>0.4S0</sub>") +
   xlab("") +
@@ -343,7 +337,7 @@ tempF |>
   theme(axis.title = ggtext::element_markdown())
 ggsave("figs/ss3/refpts/proj-F-facet-catch.png", width = 9, height = 4.5)
 
-make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", xlab = "Catch (t) assuming 30% discard mortality", type = c("F", "LRP", "USR")) {
+make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", xlab = "Catch (t)", type = c("F", "LRP", "USR")) {
   pal <- RColorBrewer::brewer.pal(8, "Greys")[7:2]
   type <- match.arg(type)
   dat <- dat |>
@@ -378,6 +372,9 @@ make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", x
       mutate(frac = sum(frac_975, frac_75, frac_50, frac_25, frac_025))
   }
 
+  labs <- c("P \u2265 0.95", "0.75 \u2264 P < 0.95", "0.50 \u2264 P < 0.75", "0.25 \u2264 P < 0.50", "0.05 \u2264 P < 0.25", "P < 0.05")
+
+  if (type == "F") labs <- rev(labs)
   dat |>
     ungroup() |>
     mutate(frac = as.factor(frac)) |>
@@ -387,7 +384,7 @@ make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", x
     geom_tile(colour = "grey50") +
     scale_fill_manual(
       values = pal, breaks = c(0:5),
-      labels = rev(c("P \u2265 0.95", "0.75 \u2264 P < 0.95", "0.50 \u2264 P < 0.75", "0.25 \u2264 P < 0.50", "0.05 \u2264 P < 0.25", "P < 0.05")), guide = guide_legend(reverse = TRUE)
+      labels = labs, guide = guide_legend(reverse = TRUE)
     ) +
     coord_cartesian(expand = FALSE) +
     scale_x_continuous(breaks = tacs[seq(1, 1e2, 2)]) +
@@ -400,39 +397,20 @@ make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", x
     facet_wrap(~year)
 }
 
-tempF |>
+fratio_dat |>
   filter(!grepl("B", model), catch != "1500", catch != "1400") |>
   make_tigure_decision()
 ggsave("figs/ss3/refpts/f-ref-pt-tigure.png", width = 10, height = 4)
 
-temp |>
+bratio_dat |>
   filter(!grepl("B", model), catch != "1500", catch != "1400") |>
-  make_tigure_decision(type = "LRP", fill_label = "P(B < 0.2B<sub>0</sub>)")
+  make_tigure_decision(type = "LRP", fill_label = "P(B > 0.2B<sub>0</sub>)")
 ggsave("figs/ss3/refpts/lrp-ref-pt-tigure.png", width = 10, height = 4)
 
-temp |>
+bratio_dat |>
   filter(!grepl("B", model), catch != "1500", catch != "1400") |>
-  make_tigure_decision(type = "USR", fill_label = "P(B < 0.4B<sub>0</sub>)")
+  make_tigure_decision(type = "USR", fill_label = "P(B > 0.4B<sub>0</sub>)")
 ggsave("figs/ss3/refpts/usr-ref-pt-tigure.png", width = 10, height = 4)
-
-# temp |>
-#   filter(!grepl("B", model)) |>
-#   filter(year == 2024) |>
-#   group_by(year, catch, model_name) |>
-#   summarise(
-#     frac = (est < F_Btgt),
-#   ) |>
-#   mutate(catch = as.numeric(as.character(catch))) |>
-#   mutate(model_name = forcats::fct_rev(model_name)) |>
-#   ggplot(aes(catch, model_name, fill = frac)) + geom_tile(colour = "grey50") +
-#   scale_fill_manual(values = c("grey30", "grey90")) +
-#   coord_cartesian(expand = FALSE) +
-#   scale_x_continuous(breaks = tacs) +
-#   labs(fill = "F < F<sub>0.4S0</sub>") +
-#   theme(legend.title = ggtext::element_markdown()) +
-#   ylab("") + xlab("Catch (t) assuming 30% discard mortality") +
-#   theme(axis.ticks = element_blank())
-
 
 if (FALSE) {
   setwd("figs/ss3/refpts/")
@@ -447,4 +425,4 @@ if (FALSE) {
 
 f <- list.files("ss3", pattern = "-forecast-", full.names = T)
 f
-x <- sapply(f, unlink, recursive = T, force = T)
+# x <- sapply(f, unlink, recursive = T, force = T)
