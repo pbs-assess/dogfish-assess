@@ -3,6 +3,8 @@ library(dplyr)
 library(ggplot2)
 library(future)
 
+source("ss3/99-utils.R")
+
 fit_ss3 <- function(
     model_dir = "model1",
     hessian = TRUE,
@@ -139,33 +141,41 @@ mods <- mods[keep]
 model_name <- model_name[keep]
 
 length(mods)
-(tacs <- seq(0, 1500, by = 100))
+(tacs <- c(0, 100, 200, 300, seq(400, 1200, by = 200)))
 
 torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
 
 # don't accidentally overwrite!
-if (FALSE) {
-  plan(multicore, workers = 60)
-  out <- furrr::future_pmap(torun, run_projection, hessian = TRUE)
-  plan(sequential)
-  saveRDS(out, "data/generated/projections.rds")
-}
-
-# rebuilding?
 # if (FALSE) {
+plan(multicore, workers = 70)
+out <- furrr::future_pmap(torun, run_projection, hessian = TRUE)
+plan(sequential)
+saveRDS(out, "data/generated/projections.rds")
+# }
+
+# rebuilding
+# don't accidentally overwrite!
+if (FALSE) {
   (tacs <- seq(0, 400, by = 100))
   torun <- expand.grid(model = mods, catch = tacs)
   nrow(torun)
-  plan(multisession, workers = 40)
-  out_rebuild <- furrr::future_pmap(torun, run_projection, hessian = TRUE, years = 150L)
+  plan(multisession)
+  out_rebuild <- furrr::future_pmap(torun, run_projection, hessian = F, years = 150L)
   plan(sequential)
   saveRDS(out_rebuild, "data/generated/projections-rebuilding.rds")
-# }
+}
 
-out <- readRDS("data/generated/projections.rds")
+PLOT_TYPE <- "rebuilding" # SET HERE!!
 
-x <- bind_rows(out)
+if (PLOT_TYPE == "rebuilding") {
+  out_rebuild <- readRDS("data/generated/projections-rebuilding.rds")
+  x <- bind_rows(out_rebuild)
+} else {
+  out <- readRDS("data/generated/projections.rds")
+  x <- bind_rows(out)
+}
+
 x <- filter(x, model %in% mods)
 lu <- data.frame(model = mods, model_name = factor(model_name, levels = model_name))
 
@@ -218,9 +228,42 @@ make_proj_by_model <- function(dat, type = c("B", "F"), ylab = "S / S<sub>0</sub
   g
 }
 
-bratio_dat |> filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
-  make_proj_by_model()
-ggsave("figs/ss3/refpts/proj-facet-model.png", width = 8.5, height = 6.5)
+if (PLOT_TYPE != "rebuilding") {
+  bratio_dat |> filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
+    make_proj_by_model()
+  ggsave_optipng("figs/ss3/refpts/proj-facet-model.png", width = 8.5, height = 6.5)
+} else {
+  line_dat <- bratio_dat |>
+    filter(!grepl("^\\(B", model_name)) |>
+    group_by(model_name, catch) |>
+    group_split() |>
+    purrr::map_dfr(\(x) {
+      x <- filter(x, year >= 2024)
+      if (x$est[length(x$est)] <= 0.2) {
+        out <- NA
+      } else {
+        out <- min(x$year[x$est > 0.2])
+      }
+      data.frame(x, b0.2 = out)
+    }) |>
+    select(year, model_name, b0.2, catch) |> distinct()
+
+  bratio_dat |>
+    filter(!grepl("^\\(B", model_name)) |>
+    make_proj_by_model() +
+    coord_cartesian(expand = FALSE, ylim = c(0, 0.8)) +
+    geom_vline(aes(xintercept = b0.2, colour = catch), data = line_dat, lty = 2) +
+    scale_x_continuous(breaks = seq(2023, 2023+150, 50), labels = c(0, 50, 100, 150)) +
+    annotate(
+      "rect",
+      xmin = 2024+50, xmax = 2024+100,
+      ymin = 0, ymax = 1e6,
+      alpha = 0.15, fill = "grey55"
+    ) +
+    scale_colour_viridis_d(option = "C", begin = 0, direction = -1, end = 0.9) +
+    xlab("Years after 2024")
+  ggsave_optipng("figs/ss3/refpts/rebuild-facet-model.png", width = 8.5, height = 6.5)
+}
 
 cols <- c("grey10", RColorBrewer::brewer.pal(12L, "Paired"))
 names(cols) <- model_name[!grepl("^\\(B", model_name)]
@@ -258,9 +301,19 @@ make_proj_by_catch_level <- function(dat, ylab = "S / S<sub>0</sub>") {
     theme(axis.title = ggtext::element_markdown())
 }
 
-bratio_dat |> filter(catch %in% tacs[seq(1, 12, 2)]) |>
-  filter(!grepl("B", model)) |> make_proj_by_catch_level()
-ggsave("figs/ss3/refpts/proj-facet-catch.png", width = 9, height = 4.5)
+if (PLOT_TYPE != "rebuilding") {
+  bratio_dat |> filter(catch %in% tacs[seq(1, 12, 2)]) |>
+    filter(!grepl("B", model)) |> make_proj_by_catch_level()
+  ggsave("figs/ss3/refpts/proj-facet-catch.png", width = 9, height = 4.5)
+} else {
+  bratio_dat |>
+    make_proj_by_catch_level() +
+    coord_cartesian(expand = FALSE, ylim = c(0, 0.8)) +
+    geom_vline(aes(xintercept = b0.2, colour = model_name), data = line_dat, lty = 1) +
+    scale_x_continuous(breaks = seq(1950, 3000, 50))
+  # facet_grid(model_name ~ catch) +
+  # geom_line(colour = "black")
+}
 
 # F ----------------------------------------------------------------
 
