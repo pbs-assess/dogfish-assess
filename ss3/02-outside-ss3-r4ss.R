@@ -41,13 +41,7 @@ mods <- c("A1", "A0",
   "A15_100discard",
   "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
 
-# for (i in seq_along(mods)) {
-#   d <- r4ss::SS_readctl(paste0("ss3/", mods[i], "/control.ss_new"))
-#   print(mods[i])
-#   print(any(grepl("extraSD", row.names(d$Q_parms))))
-# }
-
-# # Make sure starter matches...
+# Make sure starter matches...
 tocopy <- seq_along(mods)[-2] # copying 2
 for (i in tocopy) {
   to <- file.path(ss_home, mods[i], "starter.ss")
