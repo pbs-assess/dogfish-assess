@@ -135,7 +135,7 @@
 #_growth_parms
 #_ LO HI INIT PRIOR PR_SD PR_type PHASE env_var&link dev_link dev_minyr dev_maxyr dev_PH Block Block_Fxn
 # Sex: 1  BioPattern: 1  NatMort
- 0.01 0.114 0.05 0 0 0 -50 0 0 0 0 0 0 0 # NatM_p_1_Fem_GP_1
+ 0.01 0.114 0.057 0 0 0 -50 0 0 0 0 0 0 0 # NatM_p_1_Fem_GP_1
 # Sex: 1  BioPattern: 1  Growth
  1 55 28.4 0 0 0 -50 0 0 0 0 0 0 0 # L_at_Amin_Fem_GP_1
  30 100 90.87 0 0 0 -50 0 0 0 0 0 0 0 # L_at_Amax_Fem_GP_1
