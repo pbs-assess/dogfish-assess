@@ -1,3 +1,5 @@
+options(max.print = 1e9)
+
 library(r4ss)
 library(dplyr)
 library(ggplot2)
@@ -101,6 +103,7 @@ run_projection <- function(model = "A0", catch, hessian = FALSE, do_fit = TRUE, 
     if (do_fit) {
       system(paste0("rm -rf ", to_folder))
       system(paste0("cp -r ss3/", model, "/ ", to_folder))
+      system(paste0("cp ", to_folder, "control.ss_new ", to_folder, "control.ss")) # swap inits for fitted for speed
       f <- SS_readforecast(paste0("ss3/", fo, "/forecast.ss"))
       f$ForeCatch <- make_f_catch(total = catch, dir = fo, years = years)
       f$Nforecastyrs <- max(f$ForeCatch$year) - min(f$ForeCatch$year) + 1
@@ -147,12 +150,12 @@ torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
 
 # don't accidentally overwrite!
-# if (FALSE) {
-plan(multicore, workers = 70)
-out <- furrr::future_pmap(torun, run_projection, hessian = TRUE)
-plan(sequential)
-saveRDS(out, "data/generated/projections.rds")
-# }
+if (FALSE) {
+  plan(multicore, workers = 70)
+  out <- furrr::future_pmap(torun, run_projection, hessian = TRUE)
+  plan(sequential)
+  saveRDS(out, "data/generated/projections.rds")
+}
 
 # rebuilding
 # don't accidentally overwrite!
@@ -160,7 +163,7 @@ if (FALSE) {
   (tacs <- seq(0, 400, by = 100))
   torun <- expand.grid(model = mods, catch = tacs)
   nrow(torun)
-  plan(multisession)
+  plan(multicore, workers = 30)
   out_rebuild <- furrr::future_pmap(torun, run_projection, hessian = F, years = 150L)
   plan(sequential)
   saveRDS(out_rebuild, "data/generated/projections-rebuilding.rds")
