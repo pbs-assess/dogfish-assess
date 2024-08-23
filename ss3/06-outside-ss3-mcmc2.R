@@ -7,8 +7,8 @@ ss_home <- here::here("ss3")
 # SS_dir <- c("A1", "B2_2010step")[1]
 
 SS_dir <- c(
-  # "A1",
-  "A0",
+  "A1",
+  #"A0",
   #"A2_USgrowth",
   #"A3_highmat",
   #"A4_USgrowth_highmat",
@@ -136,7 +136,7 @@ purrr::walk(TORUN, \(i) {
   #     adapt_delta = adapt_delta)
   # )
 
-  CHAINS <- 10
+  CHAINS <- 8
   set.seed((i + 12) * 100)
   init <- lapply(1:CHAINS, function(chains) {
     lapply(names(par_base$coeflist), function(x) {
@@ -153,12 +153,11 @@ purrr::walk(TORUN, \(i) {
   # metric <- "mle"
   x <- sample_nuts(model = fn_exe,
                    path = file.path(ss_home, SS_dir[i]),
-                   iter = 800,
+                   iter = 500,
                    # iter = 100,
                    # init = init,
-
                    # control = list(metric = "mle", adapt_delta = 0.8),
-                   warmup = 300,
+                   warmup = 250,
                    # warmup = 20,
                    thin = 1,
                    chains = CHAINS,
