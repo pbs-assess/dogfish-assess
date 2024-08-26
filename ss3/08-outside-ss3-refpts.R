@@ -98,7 +98,9 @@ make_depl_plot <- function(dat, .col) {
     scale_colour_manual(values = .col, guide = guide_legend(reverse = TRUE)) +
     scale_fill_manual(values = .col, guide = guide_legend(reverse = TRUE))
 }
-out_depl |> filter(!grepl("^\\(B", scen)) |> make_depl_plot(.col = cols);
+out_depl |>
+  filter(!grepl("^\\(B", scen)) |>
+  make_depl_plot(.col = cols);
 ggsave("figs/ss3/refpts/depl-ref-ts.png", width = 7, height = 4)
 out_depl |> filter(grepl("^\\(B", scen) | grepl("A0", scen)) |>
   make_depl_plot(.col = cols_B) +
@@ -121,7 +123,7 @@ paste0(mround(min(x$lwr), 2), "--", mround(max(x$upr), 2)) |>
 
 mround(1 - mean(x$est), 2) |>
   write_tex("InvEnsDeplMean", "ref-pts.tex")
-paste0(mround(1 - min(x$upr), 2), "--", mround(1 - max(x$lwr), 2)) |>
+paste0(mround(1 - max(x$upr), 2), "--", mround(1 - min(x$lwr), 2)) |>
   write_tex("InvEnsDeplCI", "ref-pts.tex")
 
 # ggrepel::geom_text_repel(data = filter(out, year == 2023), mapping = aes(x = year, y = est, label = scen), segment.size = 0.4, direction='x', nudge_x = 0.1, force=1)
