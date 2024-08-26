@@ -73,6 +73,8 @@ make_f_catch <- function(dir, total, years = 10) {
 
   # midwater is dead catch in data.ss; do separately
   temp_non_midwater <- filter(bratio_dat, fleet != 3)
+
+  # apply catch_multiplier such that we go from 'catch' to 'dead catch':
   temp_non_midwater <- mutate(temp_non_midwater, catch_or_F = catch_or_F_before_mortality / catch_multiplier) |>
     select(-catch_or_F_before_mortality, -catch_multiplier)
 
@@ -159,15 +161,21 @@ if (FALSE) {
 
 # rebuilding
 # don't accidentally overwrite!
-if (FALSE) {
+# if (FALSE) {
   (tacs <- seq(0, 400, by = 100))
   torun <- expand.grid(model = mods, catch = tacs)
   nrow(torun)
-  plan(multicore, workers = 30)
-  out_rebuild <- furrr::future_pmap(torun, run_projection, hessian = F, years = 150L)
+  plan(multicore, workers = 15)
+  out_rebuild <- furrr::future_pmap(torun, run_projection, hessian = TRUE, years = 150L)
+  # out_rebuild <- furrr::future_pmap(filter(torun, model %in% "A0"), run_projection, hessian = F, years = 100L)
+  # out_rebuild <- purrr::pmap(data.frame(model = "A0", catch = 0),
+  #   run_projection, hessian = F, years = 150L)
+  # out_rebuild[[1]] |> ggplot(aes(year, est)) + geom_line() + facet_wrap(~label, scales = "free_y") +
+  #   # xlim(2000, 2200) +
+  #   geom_vline(xintercept = 2023)
   plan(sequential)
   saveRDS(out_rebuild, "data/generated/projections-rebuilding.rds")
-}
+# }
 
 PLOT_TYPE <- "forecast" # SET HERE!!
 # PLOT_TYPE <- "rebuilding" # SET HERE!!
