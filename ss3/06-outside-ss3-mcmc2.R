@@ -1,3 +1,5 @@
+## set model number to `run`
+
 library(adnuts)
 
 # Run MCMC
@@ -6,25 +8,29 @@ ss_home <- here::here("ss3")
 
 # SS_dir <- c("A1", "B2_2010step")[1]
 
-SS_dir <- c(
-  "A1",
-  #"A0",
-  #"A2_USgrowth",
-  #"A3_highmat",
-  #"A4_USgrowth_highmat",
-  #"A5_highdiscard",
-  #"A6_IPHC+CPUE",
-  #"A7_SYNonly",
-  # "A8_HBLLonly",
-  #"A9_lowM", "A10_highM",
-  #"A11_low_zfrac",
-  #"A12_high_zfrac",
-  #"A13_extraSD",
-  # "B1_1990inc",
-  "B2_2010step"
-  # "B3_2005step",
-  # "B4_1990inc_lowM",
-  #"B5_2010step_lowM"
+SS_dir <- 
+c(
+  "A1", 
+  # "A0",
+  "A2_USgrowth", 
+  "A3_highmat", 
+  "A4_USgrowth_highmat", 
+  "A5_highdiscard",
+  "A6_IPHC+CPUE", 
+  "A7_SYNonly", 
+  "A8_HBLLonly", 
+  "A9_lowM", 
+  "A10_highM",
+  "A11_low_zfrac", 
+  "A12_high_zfrac", 
+  "A13_extraSD", 
+  "A14_lowdiscard",
+  "A15_100discard",
+  # "B1_1990inc", 
+  "B2_2010step", 
+  # "B3_2005step", 
+  # "B4_1990inc_lowM", 
+  "B5_2010step_lowM"
 )
 
 
@@ -64,7 +70,7 @@ fit_ss3 <- function(model_dir = "model1",
 # plan(multicore, workers = 10)
 
 # furrr::future_walk(5:length(SS_dir), \(i) {
-purrr::walk(TORUN, \(i) {
+purrr::walk(run, \(i) {
   print(i)
 # for(i in 1:length(SS_dir)) {
 
@@ -136,7 +142,7 @@ purrr::walk(TORUN, \(i) {
   #     adapt_delta = adapt_delta)
   # )
 
-  CHAINS <- 8
+  CHAINS <- 4
   set.seed((i + 12) * 100)
   init <- lapply(1:CHAINS, function(chains) {
     lapply(names(par_base$coeflist), function(x) {
@@ -153,11 +159,11 @@ purrr::walk(TORUN, \(i) {
   # metric <- "mle"
   x <- sample_nuts(model = fn_exe,
                    path = file.path(ss_home, SS_dir[i]),
-                   iter = 500,
+                   iter = 800,
                    # iter = 100,
                    # init = init,
                    # control = list(metric = "mle", adapt_delta = 0.8),
-                   warmup = 250,
+                   warmup = 300,
                    # warmup = 20,
                    thin = 1,
                    chains = CHAINS,
