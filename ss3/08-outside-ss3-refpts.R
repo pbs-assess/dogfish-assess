@@ -119,6 +119,11 @@ mround(mean(x$est), 2) |>
 paste0(mround(min(x$lwr), 2), "--", mround(max(x$upr), 2)) |>
   write_tex("EnsDeplCI", "ref-pts.tex")
 
+mround(1 - mean(x$est), 2) |>
+  write_tex("InvEnsDeplMean", "ref-pts.tex")
+paste0(mround(1 - min(x$upr), 2), "--", mround(1 - max(x$lwr), 2)) |>
+  write_tex("InvEnsDeplCI", "ref-pts.tex")
+
 # ggrepel::geom_text_repel(data = filter(out, year == 2023), mapping = aes(x = year, y = est, label = scen), segment.size = 0.4, direction='x', nudge_x = 0.1, force=1)
 
 get_F_ts_target <- function(replist) {
@@ -360,10 +365,6 @@ out_catch |>
     plot.margin = unit(c(0.1, 0.5, 0.1, 0.1), "cm")
   )
 ggsave("figs/ss3/refpts/2024-yield-catch.png", width = 4.5, height = 3.8)
-
-
-write_tex(filter(out_catch, grepl("A0", scen)) |> pull(est) |> mround(0), "A02024Yield", "ref-pts.tex")
-
 
 x <- filter(out_catch, grepl("A0", scen))
 write_tex(x |> pull(est) |> mround(0), "BaseNextYrYield", "ref-pts.tex")
