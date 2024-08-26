@@ -1,4 +1,4 @@
-options(max.print = 1e9)
+options(max.print = 1e9) # for r4ss print to forecast file
 
 library(r4ss)
 library(dplyr)
@@ -169,7 +169,8 @@ if (FALSE) {
   saveRDS(out_rebuild, "data/generated/projections-rebuilding.rds")
 }
 
-PLOT_TYPE <- "rebuilding" # SET HERE!!
+PLOT_TYPE <- "forecast" # SET HERE!!
+# PLOT_TYPE <- "rebuilding" # SET HERE!!
 
 if (PLOT_TYPE == "rebuilding") {
   out_rebuild <- readRDS("data/generated/projections-rebuilding.rds")
@@ -232,8 +233,16 @@ make_proj_by_model <- function(dat, type = c("B", "F"), ylab = "S / S<sub>0</sub
 }
 
 if (PLOT_TYPE != "rebuilding") {
+
   bratio_dat |> filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
     make_proj_by_model()
+    # annotate(
+    #   "rect",
+    #   xmin = 2024+50, xmax = 2024+50+50,
+    #   ymin = 0, ymax = 1e6,
+    #   alpha = 0.1, fill = "grey55"
+    # ) +
+    # geom_vline(data = line_dat, mapping = aes(xintercept = year, colour = catch), na.rm = TRUE)
   ggsave_optipng("figs/ss3/refpts/proj-facet-model.png", width = 8.5, height = 6.5)
 } else {
   line_dat <- bratio_dat |>
@@ -251,11 +260,22 @@ if (PLOT_TYPE != "rebuilding") {
     }) |>
     select(year, model_name, b0.2, catch) |> distinct()
 
+  line_dat <- bratio_dat |> group_by(model_name, catch) |>
+    group_split() |>
+    purrr::map_dfr(\(xx) {
+      xx <- filter(xx, year >= 2024)
+      if (max(xx$est) < 0.2) out <- NA
+      if (max(xx$est) >= 0.2) {
+        out <- xx$year[min(which(xx$est >= 0.2))]
+      }
+      data.frame(b0.2 = out, catch = xx$catch[1], model_name = xx$model_name[1])
+    })
+
   bratio_dat |>
-    filter(!grepl("^\\(B", model_name)) |>
+    # filter(!grepl("^\\(B", model_name)) |>
     make_proj_by_model() +
     coord_cartesian(expand = FALSE, ylim = c(0, 0.8)) +
-    geom_vline(aes(xintercept = b0.2, colour = catch), data = line_dat, lty = 2) +
+    geom_vline(aes(xintercept = b0.2, colour = catch), data = line_dat, lty = 2, na.rm = TRUE) +
     scale_x_continuous(breaks = seq(2023, 2023+150, 50), labels = c(0, 50, 100, 150)) +
     annotate(
       "rect",
@@ -266,7 +286,32 @@ if (PLOT_TYPE != "rebuilding") {
     scale_colour_viridis_d(option = "C", begin = 0, direction = -1, end = 0.9) +
     xlab("Years after 2024")
   ggsave_optipng("figs/ss3/refpts/rebuild-facet-model.png", width = 8.5, height = 6.5)
-}
+
+  line_dat |>
+    mutate(model_name = factor(model_name, levels = rev(levels(lu$model_name)))) |>
+    ggplot(aes(b0.2, model_name, colour = catch)) +
+    geom_point(pch = 19) +
+    scale_colour_viridis_d(option = "C", begin = 0, direction = -1, end = 0.9) +
+    annotate(
+      "rect",
+      xmin = 2023, xmax = 2023+150,
+      ymin = 0.5, ymax = length(unique(line_dat$model_name)) + 0.5,
+      alpha = 0.15, fill = "grey55"
+    ) +
+    annotate(
+      "rect",
+      xmin = 2023+50, xmax = 2023+100,
+      ymin = 0.5, ymax = length(unique(line_dat$model_name)) + 0.5,
+      alpha = 0.15, fill = "grey55"
+    ) +
+    coord_cartesian(expand = FALSE, xlim = c(2023, 2023+150)) +
+    theme(panel.grid.major.y = element_line(colour = "grey90", linetype =  2)) +
+    labs(colour = "Catch (t)", x = "Year forecasted S/S<sub>0</sub> > 0.2") +
+    theme(axis.title = ggtext::element_markdown()) +
+    theme(axis.title.y.left = element_blank()) +
+    scale_x_continuous(breaks = seq(2023, 2023+150, 50), labels = c(0, 50, 100, 150))
+  ggsave_optipng("figs/ss3/refpts/rebuild-timeframe-dots.png", width = 5, height = 4)
+  }
 
 cols <- c("grey10", RColorBrewer::brewer.pal(12L, "Paired"))
 names(cols) <- model_name[!grepl("^\\(B", model_name)]
@@ -454,17 +499,19 @@ make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", x
 }
 
 fratio_dat |>
-  filter(!grepl("B", model), catch != "1500", catch != "1400") |>
+  filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 200)) |>
   make_tigure_decision()
 ggsave("figs/ss3/refpts/f-ref-pt-tigure.png", width = 10, height = 4)
 
 bratio_dat |>
-  filter(!grepl("B", model), catch != "1500", catch != "1400") |>
+  # filter(!grepl("B", model), catch != "1500", catch != "1400") |>
+  filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 200)) |>
   make_tigure_decision(type = "LRP", fill_label = "P(B > 0.2B<sub>0</sub>)")
 ggsave("figs/ss3/refpts/lrp-ref-pt-tigure.png", width = 10, height = 4)
 
 bratio_dat |>
-  filter(!grepl("B", model), catch != "1500", catch != "1400") |>
+  # filter(!grepl("B", model), catch != "1500", catch != "1400") |>
+  filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 200)) |>
   make_tigure_decision(type = "USR", fill_label = "P(B > 0.4B<sub>0</sub>)")
 ggsave("figs/ss3/refpts/usr-ref-pt-tigure.png", width = 10, height = 4)
 
