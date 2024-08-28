@@ -2,7 +2,8 @@ library(dplyr)
 
 ss_home <- here::here("ss3")
 
-#### Fit ss3 model version 3.30.22.1 with custom compilation that fixes lognormal prior density function
+#### Fit ss3 model version 3.30.22.1
+# Note: use a custom compilation that fixes lognormal prior density function if necessary
 fit_ss3 <- function(model_dir = "model1",
   hessian = FALSE,
   ss_home = here::here("ss3"),
@@ -41,7 +42,7 @@ mods <- c("A1", "A0",
   "A15_100discard",
   "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
 
-# Make sure starter matches...
+# Make sure starter and forecast files match...
 tocopy <- seq_along(mods)[-2] # copying 2
 for (i in tocopy) {
   to <- file.path(ss_home, mods[i], "starter.ss")
@@ -51,6 +52,15 @@ for (i in tocopy) {
   cat("Copying forecast.ss to:", to, "\n")
   file.copy(file.path(ss_home, "A0/forecast.ss"), to, overwrite = TRUE)
   cat("\n")
+}
+
+# Copy ss.exe executable from A0 (Windows users, set up ss.exe executable in each model directory)
+if (FALSE) {
+  for (i in tocopy) {
+    to <- file.path(ss_home, mods[i], "ss.exe")
+    cat("Copying ss.exe to:", to, "\n")
+    file.copy(file.path(ss_home, "A0/ss.exe"), to, overwrite = TRUE)
+  }
 }
 
 # Fit a single model
@@ -64,6 +74,7 @@ snowfall::sfInit(parallel = TRUE, cpus = min(floor(parallel::detectCores() / 2))
 snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
 snowfall::sfStop()
 
+# Some code to generate r4ss reports and look through the figures
 if (FALSE) {
 
   # Load r4ss list
