@@ -60,11 +60,12 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     })
     saveRDS(multi_rep, file = file.path(ss_home, "multi_rep_mat.rds"))
 
-    # Save the model parameters in model 1 for Res. Doc.
+    # Save the model parameters in model 1 (A0) for Res. Doc.
+    # This table is then annotated by hand in ss3_par_annotate_dogfish.csv
     multi_rep[[1]]$parameters %>%
       mutate(`Estimated?` = ifelse(Phase > 0, "Yes", "Fixed")) %>%
       select(Label, `Estimated?`, Value, Parm_StDev) %>%
-      readr::write_csv(file = "tables/ss3_par.csv")
+      readr::write_csv(file = "tables/ss3_par_A0.csv")
 
     g <- lapply(1:2, function(i) {
       replist <- multi_rep[[i]]
@@ -172,7 +173,6 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     #  labs(x = "Length", y = "Maturity")
     #g <- cowplot::plot_grid(g2, g1, rel_widths = c(1, 1.25))
     #.ggsave("maturity.png", g, height = 2, width = 6)
-
 
   } else if (set_to_plot == "index") {
 

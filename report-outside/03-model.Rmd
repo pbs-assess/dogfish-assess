@@ -222,7 +222,7 @@ Structural issues with the models explored here precluded the use of MCMC to pro
 ## Tables
 
 ```{r ss3-par, results="asis"}
-ss3_par <- readxl::read_excel(here::here("tables/ss3_par_annotate_dogfish.xlsx")) %>%
+ss3_par <- readr::read_csv(here::here("tables/ss3_par_annotate_dogfish.csv")) %>%
   mutate(Parameter = .data$Parameter %>% strsplit("_") %>% 
            sapply(paste0, collapse = "\\_"),
          Value = round(.data$Value, 3),
@@ -232,7 +232,7 @@ csasdown::csas_table(
   ss3_par,
   font_size = 8,
   format = "latex",
-  caption = "Parameters reported from SS3 for model A1, including the parameter name in the report file, value, and standard error (if estimated) calculated from inverting the Hessian matrix. Male biological parameters are parameterized as offsets from the female parameter in logspace. For example, if the male parameter were $y$ and the female parameter were $x$, the offset in the control and report files should be $\\log(y/x)$.",
+  caption = "Parameters reported from SS3 for model A0, including the parameter name in the report file, value, and standard error (if estimated) calculated from inverting the Hessian matrix. Male biological parameters are parameterized as offsets from the female parameter in logspace. For example, the male natural mortality value $y$ is equal to the female parameter $x$, the offset in the control and report files should be $\\log(y/x) = 0$.",
   align = c("l", "l", "r", "r", "l")
 ) %>%
   kableExtra::column_spec(4, width = "1.5cm") %>%
