@@ -976,7 +976,7 @@ SS3_steep <- function(replist) {
   h <- 0.2 * exp(z0 * zfrac * (1 - 0.2^beta))
   hmax <- 0.2 * exp(z0)
 
-  return(c("h" = h, "hmax" = hmax, "S0" = S0, "M" = M))
+  return(c("zfrac" = zfrac, "Beta" = beta, "h" = h, "hmax" = hmax, "S0" = S0, "M" = M))
 }
 
 # Population fecundity
