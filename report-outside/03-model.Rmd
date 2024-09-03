@@ -232,7 +232,7 @@ csasdown::csas_table(
   ss3_par,
   font_size = 8,
   format = "latex",
-  caption = "Parameters reported from SS3 for model A0, including the parameter name in the report file, value, and standard error (if estimated) calculated from inverting the Hessian matrix. Male biological parameters are parameterized as offsets from the female parameter in logspace. For example, the male natural mortality value $y$ is equal to the female parameter $x$, the offset in the control and report files should be $\\log(y/x) = 0$.",
+  caption = "Parameters reported from SS3 for model A0, including the parameter name in the report file, value, and standard error (if estimated) calculated from inverting the Hessian matrix. Male biological parameters are parameterized as offsets from the female parameter in logspace. For example, the male natural mortality value $y$ is equal to the female parameter $x$, the offset in the control and report files should be $\\log(y/x) = 0$. Parameters labelled as \\texttt{\\_Mult} act as multipliers relating dead catch to observed catch. I.e., they are the reciprocal of the discard mortality rates from Table~\\ref{tab:postdiscardrates}",
   align = c("l", "l", "r", "r", "l")
 ) %>%
   kableExtra::column_spec(4, width = "1.5cm") %>%
