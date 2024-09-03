@@ -31,12 +31,14 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
   bottom_trawl_gear <- c("Trawl + hook and line", "Trawl", "Bottom trawl", "Unknown/trawl")
   f1 <- catch %>%
     filter(gear %in% bottom_trawl_gear) %>%
-    summarise(value = sum(landing), .by = year) %>%
+    select(year, landing, discard) %>%
+    summarise(value = sum(landing), landing = sum(landing), discard = sum(discard), .by = year) %>%
     mutate(fleet = 1)
 
   f2 <- catch %>%
     filter(gear %in% bottom_trawl_gear) %>%
-    summarise(value = sum(discard), .by = year) %>%
+    select(year, landing, discard) %>%
+    summarise(value = sum(discard), landing = sum(landing), discard = sum(discard), .by = year) %>%
     mutate(fleet = 2)
 
   # Due to initial fleet set-up, discards + landings were combined for midwater trawl
@@ -51,51 +53,54 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
 
   f3 <- catch %>%
     filter(gear == "Midwater trawl") %>%
-    summarise(value = sum(landing + disc_mort * discard), .by = year) %>%
+    select(year, landing, discard) %>%
+    summarise(value = sum(landing + disc_mort * discard), landing = sum(landing), discard = sum(discard), .by = year) %>%
     mutate(fleet = 3)
 
   f4 <- catch %>%
     filter(gear == "Hook and line") %>%
-    summarise(value = sum(landing), .by = year) %>%
+    select(year, landing, discard) %>%
+    summarise(value = sum(landing), landing = sum(landing), discard = sum(discard), .by = year) %>%
     mutate(fleet = 4)
 
   f5 <- catch %>%
     filter(gear == "Hook and line") %>%
-    summarise(value = sum(discard), .by = year) %>%
+    select(year, landing, discard) %>%
+    summarise(value = sum(discard), landing = sum(landing), discard = sum(discard), .by = year) %>%
     mutate(fleet = 5)
 
   # IPHC
   catch_ll <- readRDS("data/generated/catch_longline.rds")
   f6 <- catch_ll %>%
     filter(survey_abbrev == "IPHC FISS") %>%
-    mutate(value = 1e-3 * catch_count, fleet = 6) %>%
-    select(year, value, fleet)
+    mutate(value = 1e-3 * catch_count, landing = 0, discard = value, fleet = 6) %>%
+    select(year, value, landing, discard, fleet)
 
   # HBLL
   f7 <- catch_ll %>%
     filter(survey_abbrev != "IPHC FISS") %>%
-    mutate(value = 1e-3 * catch_count, fleet = 7) %>%
-    select(year, value, fleet)
+    mutate(value = 1e-3 * catch_count, landing = 0, discard = value, fleet = 7) %>%
+    select(year, value, landing, discard, fleet)
 
   # Trawl
   catch_trawl_survey <- readRDS("data/generated/catch_trawlsurvey.rds")
   f8 <- catch_trawl_survey %>%
-    mutate(value = catch_ton, fleet = 8) %>%
-    select(year, value, fleet)
+    mutate(value = catch_ton, landing = 0, discard = value, fleet = 8) %>%
+    select(year, value, landing, discard, fleet)
 
   f9 <- readRDS("data/generated/catch_recreational.rds") %>%
     filter(outside) %>%
     ungroup() %>%
     summarise(value = 1e-3 * sum(catch_count), .by = year) %>%
-    mutate(fleet = 9) %>%
-    select(year, value, fleet)
+    mutate(landing = 0, discard = value, fleet = 9) %>%
+    select(year, value, landing, discard, fleet)
 
   f10 <- readRDS("data/generated/catch_salmonbycatch.rds") %>%
     filter(outside) %>%
     ungroup() %>%
     summarise(value = 1e-3 * sum(catch_count), .by = year) %>%
-    mutate(fleet = 10) %>%
-    select(year, value, fleet)
+    mutate(landing = 0, discard = value, fleet = 10) %>%
+    select(year, value, landing, discard, fleet)
 
   out <- rbind(f1, f2, f3, f4, f5, f6, f7, f8, f9, f10) %>%
     mutate(value = round(value, 3)) %>%
@@ -106,6 +111,7 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
     arrange(fleet, year)
 
   if (midwater_discard_rate == 0.37) {
+    browser()
     # Same y-axis for all fleets
     g <- out %>%
       mutate(fleet2 = paste(fleet, "-", names(fleet_index)[fleet]) %>% factor(fleet_factor)) %>%
@@ -129,6 +135,24 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
       coord_cartesian(expand = FALSE) +
       labs(x = "Year", y = "Catch (t)")
     ggsave("figs/ss3/catch_fleet2.png", g, height = 4, width = 8)
+
+    # Panel by landing/discard
+    g <- rbind(f1, f3, f4, f9, f10) %>%
+      mutate(fleet_name = names(fleet_index)[fleet]) %>%
+      mutate(fleet_name = sub(" Landings", "", fleet_name)) %>%
+      select(year, landing, discard, fleet_name) %>%
+      reshape2::melt(id.vars = c("year", "fleet_name")) %>%
+      mutate(variable = ifelse(variable == "landing", "Landings", "Discards")) %>%
+      ggplot(aes(year, value, fill = variable)) +
+      geom_col(width = 1, linewidth = 0.05, colour = "grey40") +
+      facet_wrap(vars(fleet_name), scales = "free_y") +
+      gfplot::theme_pbs() +
+      #coord_trans(y = "sqrt", expand = FALSE) +
+      coord_cartesian(expand = FALSE, xlim = c(1935, 2024.5)) +
+      theme(legend.position = "bottom") +
+      scale_fill_manual(values = c("grey80", "black")) +
+      labs(x = "Year", y = "Catch", fill = NULL)
+    ggsave("figs/ss3/catch_fleet_discard_landings.png", g, height = 4, width = 8)
   }
 
   if (csv) {
