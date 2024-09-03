@@ -121,9 +121,9 @@ mround(mean(x$est), 2) |>
 paste0(mround(min(x$lwr), 2), "--", mround(max(x$upr), 2)) |>
   write_tex("EnsDeplCI", "ref-pts.tex")
 
-mround(1 - mean(x$est), 2) |>
+paste0(mround(100 - mean(x$est) * 100, 0), "\\%") |>
   write_tex("InvEnsDeplMean", "ref-pts.tex")
-paste0(mround(1 - max(x$upr), 2), "--", mround(1 - min(x$lwr), 2)) |>
+paste0(paste0(mround(100 - max(x$upr) * 100, 0), "\\%"), "--", paste0(mround(100 - min(x$lwr) * 100, 0)), "\\%") |>
   write_tex("InvEnsDeplCI", "ref-pts.tex")
 
 # ggrepel::geom_text_repel(data = filter(out, year == 2023), mapping = aes(x = year, y = est, label = scen), segment.size = 0.4, direction='x', nudge_x = 0.1, force=1)
