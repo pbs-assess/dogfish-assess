@@ -39,7 +39,7 @@ fit_ss3 <- function(
   system(cmd)
 }
 
-make_f_catch <- function(dir, total, years = 10) {
+make_f_catch <- function(dir, total, years = 10, debug_mode = FALSE) {
   ctl <- SS_readctl(paste0("ss3/", dir, "/control.ss_new"))
   file.copy(paste0("ss3/", dir, "/data_echo.ss_new"), paste0("ss3/", dir, "/data.ss_new"))
   i <- grepl("_Mult:", row.names(ctl$MG_parms))
@@ -51,7 +51,7 @@ make_f_catch <- function(dir, total, years = 10) {
   bratio_dat <- filter(dat$catch, year >= 2018) |> # last 5
     filter(fleet %in% c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) |> # active fleets catching dogfish
     group_by(fleet) |>
-    summarise(m = mean(catch))
+    summarise(m = mean(catch, na.rm = TRUE))
 
   # keep surveys and iRec and salmon bycatch constant at average levels:
   temp1 <- filter(bratio_dat, fleet %in% c(6, 7, 8, 9, 10)) # surveys + salmon
@@ -91,9 +91,18 @@ make_f_catch <- function(dir, total, years = 10) {
   df <- expand.grid(fleet = missing_fleets, catch_or_F = 0, year = unique(bratio_dat$year))
   bratio_dat <- bind_rows(df, bratio_dat)
 
-  transmute(bratio_dat, year = year, seas = 1, fleet = fleet, catch_or_F = catch_or_F) |>
-    arrange(fleet, year) |>
-    mutate(catch_or_F = round(catch_or_F, 4L))
+  if (debug_mode) {
+    out <- mutate(bratio_dat, year = year, seas = 1, fleet = fleet, catch_or_F = catch_or_F) |>
+      arrange(fleet, year) |>
+      mutate(catch_or_F = round(catch_or_F, 4L)) |>
+      rename(average_recent_catch = m)
+    out <- left_join(out, mult)
+  } else {
+    out <- transmute(bratio_dat, year = year, seas = 1, fleet = fleet, catch_or_F = catch_or_F) |>
+      arrange(fleet, year) |>
+      mutate(catch_or_F = round(catch_or_F, 4L))
+  }
+  out
 }
 
 run_projection <- function(model = "A0", catch, hessian = FALSE, do_fit = TRUE, years = 10) {
@@ -151,10 +160,37 @@ length(mods)
 torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
 
+# Debugging catches in forecast:
+if (FALSE) {
+  x <- run_projection(model = "A0", catch = 100, hessian = FALSE, years = 1)
+  replist <- r4ss::SS_output("ss3/A0-forecast-100")
+  # replist$timeseries %>% filter(Era == "FORE")
+  deadB <- replist$timeseries %>%
+    filter(Era == "FORE") %>%
+    select(starts_with("dead(B)"))
+  names(deadB) <- replist$FleetNames[1:10]
+  deadB <- reshape2::melt(deadB) |>
+    rename(fleet_name = variable, dead_catch_SS3 = value)
+
+  input_catches <- make_f_catch("A0-forecast-100", total = 100, years = 1, debug_mode = TRUE)
+  input_catches$fleet_name <- replist$FleetNames[1:10]
+  input_catches <- select(input_catches, -seas) |>
+    as_tibble() |>
+    mutate(implied_catch = catch_or_F * catch_multiplier) |>
+    select(-fleet) |>
+    select(-fraction) |>
+    select(-year) |>
+    select(fleet_name, everything())
+  input_catches
+
+  left_join(input_catches, deadB)
+}
+
 # don't accidentally overwrite!
 if (FALSE) {
   plan(multicore, workers = 70)
   out <- furrr::future_pmap(torun, run_projection, hessian = TRUE)
+  run_projection(model = "A0", catch = 100, hessian = FALSE)
   plan(sequential)
   saveRDS(out, "data/generated/projections.rds")
 }
@@ -426,14 +462,14 @@ if (PLOT_TYPE != "rebuilding") {
     ylab("F / F<sub>0.4S0</sub>") +
     gfplot::theme_pbs() +
     theme(axis.title = ggtext::element_markdown()) +
-    labs(colour = "Catch (t)\nassuming 30%\ndiscard mortality") +
+    labs(colour = "Catch (t)", fill = "Catch (t)") +
     annotate(
       "rect",
       xmin = 2024, xmax = max(x$year, na.rm = TRUE),
       ymin = 0, ymax = 1e6,
       alpha = 0.1, fill = "grey55"
     )
-  ggsave("figs/ss3/refpts/proj-F-facet-model.png", width = 8.5, height = 6.5)
+  ggsave_optipng("figs/ss3/refpts/proj-F-facet-model.png", width = 8.5, height = 6.5)
 
   fratio_dat |>
     filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
@@ -441,13 +477,14 @@ if (PLOT_TYPE != "rebuilding") {
     mutate(catch = forcats::fct_rev(catch)) |>
     ggplot(aes(year, est / F_Btgt,
       ymin = (est - 2 * se) / F_Btgt, ymax = (est + 2 * se) / F_Btgt,
-      colour = model_name, group = paste(model_name, catch), fill = catch
+      colour = model_name, group = paste(model_name, catch), fill = model_name
     )) +
     geom_ribbon(alpha = 0.3, colour = NA) +
     geom_line() +
     geom_line(data = filter(fratio_dat, model == "A0", catch %in% tacs[seq(1, 1e2, 2)])) + # dark on top
     scale_x_continuous(breaks = seq(1960, 2090, 20)) +
     scale_colour_manual(values = cols) +
+    scale_fill_manual(values = cols) +
     annotate(
       "rect",
       xmin = 2024, xmax = max(x$year, na.rm = TRUE),
@@ -459,10 +496,10 @@ if (PLOT_TYPE != "rebuilding") {
     facet_wrap(~catch) +
     ylab("F / F<sub>0.4S0</sub>") +
     xlab("") +
-    labs(colour = "Model") +
+    labs(colour = "Model", fill = "Model") +
     gfplot::theme_pbs() +
     theme(axis.title = ggtext::element_markdown())
-  ggsave("figs/ss3/refpts/proj-F-facet-catch.png", width = 9, height = 4.5)
+  ggsave_optipng("figs/ss3/refpts/proj-F-facet-catch.png", width = 9, height = 4.5)
 
   make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", xlab = "Catch (t)", type = c("F", "LRP", "USR")) {
     pal <- RColorBrewer::brewer.pal(8, "Greys")[7:2]

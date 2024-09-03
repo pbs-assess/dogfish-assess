@@ -30,11 +30,11 @@
  1 -1 1 1 1 MidwaterTrawl  # 3
  1 -1 1 1 1 HookLine_Landings  # 4
  1 -1 1 1 1 HookLine_Discards  # 5
- 1 -1 1 2 1 IPHC  # 6
- 1 -1 1 2 1 HBLL  # 7
+ 1 -1 1 1 1 IPHC  # 6
+ 1 -1 1 1 1 HBLL  # 7
  1 -1 1 1 1 SYN  # 8
- 1 -1 1 2 1 iRec # 9
- 1 -1 1 2 1 Salmon_Bycatch # 10
+ 1 -1 1 1 1 iRec # 9
+ 1 -1 1 1 1 Salmon_Bycatch # 10
  3 1 1 1 0 HS_MSA # 11
  3 1 1 1 0 Bottom_Trawl_CPUE # 12
 #Bycatch_fleet_input_goes_next
