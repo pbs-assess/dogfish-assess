@@ -96,8 +96,12 @@ If the unfished population is 100 females that each produce 10 pups, then $S_0 =
 At 20 percent of unfished, the population of 20 females produces 200 pups, which is also the maximum recruitment if pup survival were to be one.
 The maximum steepness is 0.33 (200/600).
 
-The unfished spawning output per recruit $\phi_0$ is calculated from natural mortality, maturity, and fecundity. Low fecundity implies an upper limit to natural mortality because $\phi_0$ must remain above one.
-With high natural mortality, it is possible to calculate $\phi_0 < 1$, which implies that a female cannot produce enough offspring over the course of her lifetime to replace herself.
+The unfished spawning output per recruit $\phi_0$ is calculated from natural mortality, maturity, and fecundity. Low fecundity also implies an upper limit to natural mortality because $\phi_0$ must remain above one.
+With high natural mortality, it is possible to calculate $\phi_0 < 1$. In other words, the unfished replacement line $1/\phi_0 > 1$. 
+Such as situation implies that a female cannot produce enough offspring over the course of her lifetime to replace herself.
+The upper bound on natural mortality implied from the various combinations of growth curves and maturity ogives considered here are presented in Figure \@ref(fig:max-M).
+The range in the upper bound is between 0.083--0.095.
+The upper bound marginally increases with either earlier maturity or faster growth.
 
 ### Selectivity
 
@@ -290,6 +294,11 @@ knitr::include_graphics(here::here("figs/mat-lit-with-synoptic.png"))
 ```{r fec-age, fig.cap="(ref:fig-fec-age)"}
 knitr::include_graphics(here::here("figs/ss3/fecundity.png"))
 ```
+
+```{r max-M, fig.cap="The slope of the unfished replacement line as a function of natural mortality, conditional on a combination of growth curve (colour) or maturity ogive (linetype). These biological parameters determine the fecundity at age schedule in the population model. Low fecundity implies an upper bound on natural mortality. The slope of the unfished replacement line cannot exceed 1, which implies that the survival of newborn offspring is greater than 1 and is impossible for a closed population. High natural mortality indicates that a female on average cannot replace herself over the course of her lifetime."}
+knitr::include_graphics(here::here("figs/ss3/M_bound_fec.png"))
+```
+
 
 \clearpage
 
