@@ -5,7 +5,7 @@
 fleet_names <- data.frame(
   Fleet_name = c("Bottom_Trawl_Landings", "Bottom_Trawl_Discards", "MidwaterTrawl", "HookLine_Landings", "HookLine_Discards",
                  "Bottom_Trawl_CPUE", "HBLL", "HS_MSA", "IPHC", "SYN", "iRec", "Salmon_Bycatch"),
-  FName = c("Bottom Trawl\nLandings", "Bottom Trawl\nDiscards", "Midwater Trawl", "Hook-Line\nLandings", "Hook-Line\nDiscards",
+  FName = c("Bottom Trawl\nLandings", "Bottom Trawl\nDiscards", "Midwater Trawl", "Longline\nLandings", "Hook-Line\nDiscards",
             "Bottom Trawl CPUE", "HBLL Outside", "HS MSA", "IPHC", "Synoptic", "iRec", "Salmon_Bycatch")
 )
 
