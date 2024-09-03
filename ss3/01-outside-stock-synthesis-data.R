@@ -6,8 +6,8 @@ fleet_index <- c(
   "Bottom Trawl Discards" = 2,   # Catch series since 1966, catches smaller fish - Use DISCARDS lengths (1990s to 2019, sparse)
   "Midwater Trawl" = 3,         # Use UNSORTED lengths (data quantity, 1980s-1990s) - not a strong difference in unsorted comps over time when
                                # discards went from 0 to 90 percent
-  "Hook & Line Landings" = 4,      # Use RETAINED lengths
-  "Hook & Line Discards" = 5,      # Map selectivity to BottomTrawlDiscards
+  "Longline Landings" = 4,      # Use RETAINED lengths
+  "Longline Discards" = 5,      # Map selectivity to BottomTrawlDiscards
   "IPHC" = 6,
   "HBLL" = 7,
   "SYN" = 8,
@@ -91,16 +91,18 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
   f9 <- readRDS("data/generated/catch_recreational.rds") %>%
     filter(outside) %>%
     ungroup() %>%
-    summarise(value = 1e-3 * sum(catch_count), .by = year) %>%
-    mutate(landing = 0, discard = value, fleet = 9) %>%
+    reshape2::dcast(list("year", "disposition"), value.var = "catch_count") %>%
+    mutate(landing = 1e-3 * Kept, discard = 1e-3 * Released, value = landing + discard, fleet = 9) %>%
     select(year, value, landing, discard, fleet)
+  #range(f9$discard/f9$value) # greater than 85 percent discard rate
 
   f10 <- readRDS("data/generated/catch_salmonbycatch.rds") %>%
     filter(outside) %>%
     ungroup() %>%
-    summarise(value = 1e-3 * sum(catch_count), .by = year) %>%
-    mutate(landing = 0, discard = value, fleet = 10) %>%
+    reshape2::dcast(list("year", "kept_rel"), value.var = "catch_count") %>%
+    mutate(landing = 1e-3 * KEPT, discard = 1e-3 * RELEASED, value = landing + discard, fleet = 10) %>%
     select(year, value, landing, discard, fleet)
+  #f10$discard/f10$value # greater than 85 percent discard rate
 
   out <- rbind(f1, f2, f3, f4, f5, f6, f7, f8, f9, f10) %>%
     mutate(value = round(value, 3)) %>%
@@ -111,7 +113,6 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
     arrange(fleet, year)
 
   if (midwater_discard_rate == 0.37) {
-    browser()
     # Same y-axis for all fleets
     g <- out %>%
       mutate(fleet2 = paste(fleet, "-", names(fleet_index)[fleet]) %>% factor(fleet_factor)) %>%
@@ -140,6 +141,7 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
     g <- rbind(f1, f3, f4, f9, f10) %>%
       mutate(fleet_name = names(fleet_index)[fleet]) %>%
       mutate(fleet_name = sub(" Landings", "", fleet_name)) %>%
+      mutate(fleet_name = factor(fleet_name, levels = c("Bottom Trawl", "Midwater Trawl", "Longline", "iRec", "Salmon Bycatch"))) %>%
       select(year, landing, discard, fleet_name) %>%
       reshape2::melt(id.vars = c("year", "fleet_name")) %>%
       mutate(variable = ifelse(variable == "landing", "Landings", "Discards")) %>%
