@@ -1,4 +1,4 @@
-﻿Parameter,Estimated?,Value,Standard Error,Description
+Parameter,Estimated?,Value,Standard Error,Description
 NatM_uniform_Fem_GP_1,Fixed,0.065,NA,"Female natural mortality, derived from literature"
 L_at_Amin_Fem_GP_1,Fixed,28.4,NA,"Female mean length at age 0, estimated from data"
 L_at_Amax_Fem_GP_1,Fixed,90.87,NA,"Female mean length at age 40, estimated from data"
@@ -21,15 +21,15 @@ Wtlen_1_Mal_GP_1,Fixed,3.54E-06,NA,"Male length-weight scalar (a), estimated fro
 Wtlen_2_Mal_GP_1,Fixed,3.03,NA,"Male length-weight exponent (b), estimated from data"
 CohortGrowDev,Fixed,1,NA,Internal SS3 parameter
 Catch_Mult:_1_Bottom_Trawl_Landings,Fixed,1,NA,Catch multiplier
-Catch_Mult:_2_Bottom_Trawl_Discards,Fixed,2.7027,NA,Catch multiplier - accounts for 30\% discard mortality
+Catch_Mult:_2_Bottom_Trawl_Discards,Fixed,2.7027,NA,Catch multiplier - accounts for discard mortality
 Catch_Mult:_3_MidwaterTrawl,Fixed,1,NA,Catch multiplier
 Catch_Mult:_4_HookLine_Landings,Fixed,1,NA,Catch multiplier
-Catch_Mult:_5_HookLine_Discards,Fixed,3.7037,NA,Catch multiplier - accounts for 30\% discard mortality
+Catch_Mult:_5_HookLine_Discards,Fixed,3.7037,NA,Catch multiplier - accounts for discard mortality
 Catch_Mult:_6_IPHC,Fixed,3.7037,NA,Catch multiplier
 Catch_Mult:_7_HBLL,Fixed,3.7037,NA,Catch multiplier
 Catch_Mult:_8_SYN,Fixed,2.7027,NA,Catch multiplier
-Catch_Mult:_9_iRec,Fixed,10,NA,Catch multiplier - accounts for 30\% discard mortality
-Catch_Mult:_10_Salmon_Bycatch,Fixed,1.23457,NA,Catch multiplier - accounts for 30\% discard mortality
+Catch_Mult:_9_iRec,Fixed,10,NA,Catch multiplier - accounts for discard mortality
+Catch_Mult:_10_Salmon_Bycatch,Fixed,1.23457,NA,Catch multiplier - accounts for discard mortality
 FracFemale_GP_1,Fixed,0.5,NA,Proportion of recruitment that is female
 SR_LN(R0),Yes,9.37022,0.0335044,Unfished recruitment
 SR_surv_zfrac,Fixed,0.4,NA,Stock-recruit productivity parameter
