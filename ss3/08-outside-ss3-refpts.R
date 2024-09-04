@@ -360,6 +360,7 @@ out_catch |>
   geom_point(pch = 21, fill = "white", size = 2) +
   coord_flip() +
   xlab("") +
+  expand_limits(y = 0) +
   ylab("Yield (dead catch) (t) in 2024 at F<sub>0.4S0</sub>") +
   theme(
     axis.title.x = element_markdown(),
