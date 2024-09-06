@@ -12,26 +12,6 @@ d <- read.csv("data/raw/IPHC_dogfish_lengths2021.csv") %>%
   mutate(length = length_pcl * 1.20) |> #see Tribuzio ref for the conversions to tail extended
   filter(is.na(length) == FALSE)
 
-#get this in the format as the gfdata to use the plot function
-d <- d |> mutate(sex  = ifelse(d$sex == "F", 2, ifelse(d$sex == "M", 1, NA)))
-d$usability_code <- 1
-d$survey_abbrev <- "IPHC FISS"
-d$survey <- "IPHC FISS"
-d$species_common_name <- "north pacific spiny dogfish"
-d$age <- NA
-d$sample_id <- 1
-d$grouping_code <- 1
-d$age_length <- "length"
-d$sample_type_code <- 1
-d$survey_id <- 1
-d$specimen_id <- seq_along(1:nrow(d))
-
-lengths_ip <- tidy_lengths_raw(d, survey = c("IPHC FISS"), sample_type = "survey")
-ip <- plot_lengths(lengths_ip,  show_year = "all")
-
-ggsave("figs/lengths-iphc-survey-inside.png", ip, width = 4, height = 6)
-
-
 #get the lat and longs of the stations
 iphc_coast <- readRDS("data/raw/Non-Pacific halibut data_raw.rds")
 glimpse(iphc_coast)
