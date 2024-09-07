@@ -8,28 +8,28 @@ ss_home <- here::here("ss3")
 
 # SS_dir <- c("A1", "B2_2010step")[1]
 
-SS_dir <- 
+SS_dir <-
 c(
-  "A1", 
+  "A1",
   # "A0",
-  "A2_USgrowth", 
-  "A3_highmat", 
-  "A4_USgrowth_highmat", 
+  "A2_USgrowth",
+  "A3_highmat",
+  "A4_USgrowth_highmat",
   "A5_highdiscard",
-  "A6_IPHC+CPUE", 
-  "A7_SYNonly", 
-  "A8_HBLLonly", 
-  "A9_lowM", 
+  "A6_IPHC+CPUE",
+  "A7_SYNonly",
+  "A8_HBLLonly",
+  "A9_lowM",
   "A10_highM",
-  "A11_low_zfrac", 
-  "A12_high_zfrac", 
-  "A13_extraSD", 
+  "A11_low_zfrac",
+  "A12_high_zfrac",
+  "A13_extraSD",
   "A14_lowdiscard",
   "A15_100discard",
-  # "B1_1990inc", 
-  "B2_2010step", 
-  # "B3_2005step", 
-  # "B4_1990inc_lowM", 
+  # "B1_1990inc",
+  "B2_2010step",
+  # "B3_2005step",
+  # "B4_1990inc_lowM",
   "B5_2010step_lowM"
 )
 
@@ -213,3 +213,9 @@ purrr::walk(run, \(i) {
 # mcmc_output <- lapply(
 #
 # )
+
+lapply(c("A1", "B2_2010step"), function(x) {
+  setwd(file.path(ss_home, paste0(x, "_mceval")))
+  system("ss -nox -mceval modelname ss3_opt", show.output.on.console = FALSE)
+})
+setwd(here::here())

@@ -1,4 +1,4 @@
-
+dir.create("figs/mcmc", showWarnings = FALSE)
 
 FRENCH <- FALSE
 library(rosettafish)
@@ -18,11 +18,13 @@ ss_home <- here::here("ss3")
 
 SS_dir <- c("A1", "B2_2010step")
 
+WARMUP <- 300
+
 for (i in 1:length(SS_dir)) {
   samps <- readRDS(file.path(ss_home, paste0("adnuts_", SS_dir[i], ".rds")))
   #adnuts::launch_shinyadmb(samps)
 
-  replist <- r4ss::SS_output(file.path(ss_home, SS_dir[i]))
+  replist <- r4ss::SS_output(file.path(ss_home, SS_dir[i]), "_mceval")
 
   rename_fn <- function(x) {
     strsplit(x, "_") %>%
@@ -44,10 +46,11 @@ for (i in 1:length(SS_dir)) {
       })
   }
 
+  ignore <- paste0("ForeRecr_", 2029:2123)
   par_key <- data.frame(
     Par = rownames(samps$monitor),
     ss_par = replist$parameters %>%
-      filter(Phase > 0) %>%
+      filter(Phase > 0, !Label %in% ignore) %>%
       pull(Label) %>% c("Log-posterior")
   ) %>%
     mutate(ss_name = rename_fn(ss_par))
@@ -113,12 +116,11 @@ for (i in 1:length(SS_dir)) {
           axis.text.x = element_text(angle = 45, hjust = 1),
           legend.position = "bottom")
   .ggsave(paste0("figs/mcmc/prior_dens_", SS_dir[i], ".png"), g, height = 10, width = 7)
-}
 
   # Trace plots
   g_worm <- samps_est %>%
     filter(ss_name %in% par_plot) %>%
-    filter(It > 10) %>%
+    filter(It > WARMUP) %>%
     ggplot(aes(It, value, colour = Chain)) +
     geom_line(linewidth = 0.25) +
     gfplot::theme_pbs() +
@@ -131,7 +133,7 @@ for (i in 1:length(SS_dir)) {
 
   g_post <- samps_est %>%
     filter(ss_name %in% par_plot) %>%
-    filter(It > 10) %>%
+    filter(It > WARMUP) %>%
     ggplot(aes(value)) +
     gfplot::theme_pbs() +
     geom_histogram(aes(y = after_stat(ndensity)),
@@ -147,7 +149,7 @@ for (i in 1:length(SS_dir)) {
   # Selectivity
   samps_sel <- samps_est %>%
     filter(grepl("sel", Par)) %>%
-    filter(It > 10)
+    filter(It > WARMUP)
 
   g_worm <- samps_sel %>%
     ggplot(aes(It, value, colour = Chain)) +
@@ -226,7 +228,7 @@ for (i in 1:length(SS_dir)) {
   samps_est %>%
     filter(ss_name %in% par_plot) %>%
     filter(!is.na(ss_name)) %>%
-    filter(It > 10) %>%
+    filter(It > WARMUP) %>%
     mutate(It2 = paste0(Chain, "-", It)) %>%
     reshape2::dcast(list("It2", "ss_name"), value.var = "value") %>%
     select(-It2) %>%
@@ -237,7 +239,7 @@ for (i in 1:length(SS_dir)) {
   samps_est %>%
     filter(!ss_name %in% par_plot) %>%
     filter(!is.na(ss_name)) %>%
-    filter(It > 10) %>%
+    filter(It > WARMUP) %>%
     mutate(It2 = paste0(Chain, "-", It)) %>%
     reshape2::dcast(list("It2", "ss_name"), value.var = "value") %>%
     select(-It2) %>%
@@ -312,3 +314,12 @@ hist(ss_cor$value, breaks = seq(-1, 1, 0.05))
 
 ss_cor %>%
   filter(abs(value) > 0.5)
+
+if (FALSE) {
+  setwd("figs/mcmc")
+  system(paste0(
+    "find -X . -name '*.png' -print0 | xargs -0 -n ",
+    1, " -P ", 6, " /opt/homebrew/bin/optipng -strip all"
+  ))
+  setwd(here::here())
+}

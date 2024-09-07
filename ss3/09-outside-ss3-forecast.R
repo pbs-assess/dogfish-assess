@@ -569,13 +569,13 @@ if (PLOT_TYPE != "rebuilding") {
   bratio_dat |>
     # filter(!grepl("B", model), catch != "1500", catch != "1400") |>
     filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 200)) |>
-    make_tigure_decision(type = "LRP", fill_label = "P(B > 0.2B<sub>0</sub>)")
+    make_tigure_decision(type = "LRP", fill_label = "P(S > 0.2S<sub>0</sub>)")
   ggsave_optipng("figs/ss3/refpts/lrp-ref-pt-tigure.png", width = 10, height = 4)
 
   bratio_dat |>
     # filter(!grepl("B", model), catch != "1500", catch != "1400") |>
     filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 200)) |>
-    make_tigure_decision(type = "USR", fill_label = "P(B > 0.4B<sub>0</sub>)")
+    make_tigure_decision(type = "USR", fill_label = "P(S > 0.4S<sub>0</sub>)")
   ggsave_optipng("figs/ss3/refpts/usr-ref-pt-tigure.png", width = 10, height = 4)
 
   if (FALSE) {
