@@ -179,7 +179,8 @@ ss3_index <- function(csv = TRUE) {
     select(-survey_abbrev)
 
   # Synoptic Trawl
-  syn <- readRDS("data/generated/geostat-ind-synoptic.rds") %>%
+  syn <- readRDS("data/generated/geostat-ind-synoptic-lg.rds") %>%
+    select(-type) |>
     mutate(fleet = fleet_index["SYN"])
 
   hs_msa <- readRDS("data/generated/hs-msa-index.rds") %>%
