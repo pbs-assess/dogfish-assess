@@ -1,6 +1,7 @@
 library(snowfall)
 library(dplyr)
 library(ggplot2)
+theme_set(gfplot::theme_pbs())
 
 ss_home <- here::here("ss3")
 model_dir <- c("A0", "A9_lowM", "B2_2010step")
