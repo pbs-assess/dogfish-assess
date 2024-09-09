@@ -119,6 +119,12 @@ table(dc$length_type)
 table(dc$sampling_desc)
 table(dc$gear_desc)
 
+d2024 <- readRDS("data/raw/syn-wcvi-dogfish-samples-2024.rds")
+gfplot::tidy_lengths_raw(d2024, survey = "SYN WCVI") |>
+  right_join(data.frame(survey_abbrev = "SYN WCVI", year = seq(2004, 2024))) |>
+  gfplot::plot_lengths() + ggtitle("")
+ggsave("figs/lengths-syn-2024.png", width = 3, height = 8)
+
 
 # Outside commercial length ----
 ins <- grep("4B", dc$major_stat_area_name)
