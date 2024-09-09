@@ -1031,13 +1031,22 @@ SS3_fecundity <- function(x, scenario, type = c("PP", "mat")) { # PP = pup produ
 }
 
 
-SS3_prof <- function(x, val, variable) {
+SS3_prof <- function(x, val, variable, retro_type = FALSE) {
+
   dat <- lapply(1:length(x), function(i) {
     mutate(x[[i]]$recruit, value = val[i]) %>%
-      filter(.data$era %in% c("Fixed", "Main"))
+      filter(.data$era %in% c("Fixed", "Main", "Late"))
   }) %>%
     bind_rows() %>%
     mutate(dep = SpawnBio/SpawnBio[1], .by = value)
+
+  if (retro_type) {
+    last <- filter(dat, Yr == max(dat$Yr), value == 0)
+    dat <- filter(dat, era != "Late")
+    dat <- bind_rows(dat, last)
+  } else {
+    dat <- filter(dat, era != "Late")
+  }
 
   g <- ggplot(dat, aes(Yr, {{ variable }}, colour = factor(value))) +
     geom_line()
@@ -1127,13 +1136,13 @@ SS3_prof_like <- function(x, par, xval = c("par", "steep", "dep"), component = c
 
 
 SS3_retro <- function(ret) {
-  g1 <- SS3_prof(ret, abs(ypeel), SpawnBio) +
+  g1 <- SS3_prof(ret, abs(ypeel), SpawnBio, retro_type = TRUE) +
     labs(x = "Year", y = "Spawning output", colour = "Years peeled") +
     expand_limits(y = 0)
-  g2 <- SS3_prof(ret, abs(ypeel), pred_recr) +
+  g2 <- SS3_prof(ret, abs(ypeel), pred_recr, retro_type = TRUE) +
     labs(x = "Year", y = "Recruitment", colour = "Years peeled") +
     expand_limits(y = 0)
-  g3 <- SS3_prof(ret, abs(ypeel), dep) +
+  g3 <- SS3_prof(ret, abs(ypeel), dep, retro_type = TRUE) +
     labs(x = "Year", y = "Spawning depletion", colour = "Years peeled") +
     expand_limits(y = 0)
   g <- ggpubr::ggarrange(g1, g2, g3, ncol = 1, common.legend = TRUE, legend = "bottom")
