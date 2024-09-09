@@ -137,29 +137,60 @@ fit <- sdmTMB(
   spatiotemporal = "rw",
   spatial = "on",
   silent = FALSE,
-  anisotropy = TRUE,
-  control = sdmTMBcontrol(newton_loops = 1L)
+  anisotropy = TRUE
 )
 
+fit_lg <- update(fit, family = delta_lognormal())
+fit_dgg <- update(fit, family = delta_gengamma())
+
+AIC(fit, fit_lg, fit_dgg) |> arrange(AIC)
+
+saveRDS(fit_lg, file = "data/generated/synoptic-sdmTMB-lognormal.rds")
 saveRDS(fit, file = "data/generated/synoptic-sdmTMB.rds")
 fit <- readRDS("data/generated/synoptic-sdmTMB.rds")
 sanity(fit)
+sanity(fit_lg)
 plot_anisotropy(fit)
 ggsave("figs/synoptic/aniso.png", width = 4, height = 4)
+plot_anisotropy(fit_lg)
+ggsave("figs/synoptic/aniso-lg.png", width = 4, height = 4)
 fit
+fit_lg
 fit$sd_report
+fit_lg$sd_report
 
 set.seed(123)
 r1 <- residuals(fit, model = 1, type = "mle-mvn")
 qqnorm(r1);abline(0, 1)
+set.seed(123)
 r2 <- residuals(fit, model = 2, type = "mle-mvn")
-qqnorm(r2);abline(0, 1)
+qqnorm(r2, main = "Gamma");abline(0, 1)
+
+set.seed(123)
+r3 <- residuals(fit_lg, model = 2, type = "mle-mvn")
+qqnorm(r3, main = "Lognormal");abline(0, 1)
+
+set.seed(123)
+r4 <- residuals(fit_dgg, model = 2, type = "mle-mvn")
+qqnorm(r4, main = "Gengamma");abline(0, 1)
 
 set.seed(123)
 s <- simulate(fit, nsim = 300, type = "mle-mvn")
-dr <- dharma_residuals(s, fit, test_uniformity = F)
-ggplot(dr, aes(expected, observed)) + geom_abline(intercept = 0, slope = 1, colour = "red") + geom_point() + xlab("Expected") + ylab("Observed")
+dr1 <- dharma_residuals(s, fit, test_uniformity = F)
+ggplot(dr1, aes(expected, observed)) + geom_abline(intercept = 0, slope = 1, colour = "red") + geom_point() + xlab("Expected") + ylab("Observed")
 ggsave("figs/synoptic/qq.png", width = 5, height = 5, dpi = 180)
+
+set.seed(123)
+s <- simulate(fit_lg, nsim = 300, type = "mle-mvn")
+dr2 <- dharma_residuals(s, fit, test_uniformity = F)
+ggplot(dr2, aes(expected, observed)) + geom_abline(intercept = 0, slope = 1, colour = "red") + geom_point() + xlab("Expected") + ylab("Observed")
+ggsave("figs/synoptic/qq-lg.png", width = 5, height = 5, dpi = 180)
+
+set.seed(123)
+s <- simulate(fit_dgg, nsim = 300, type = "mle-mvn")
+dr3 <- dharma_residuals(s, fit, test_uniformity = F)
+ggplot(dr3, aes(expected, observed)) + geom_abline(intercept = 0, slope = 1, colour = "red") + geom_point() + xlab("Expected") + ylab("Observed")
+ggsave("figs/synoptic/qq-gg.png", width = 5, height = 5, dpi = 180)
 
 g <- gfplot::synoptic_grid |> dplyr::select(-survey_domain_year)
 g <- rename(g, depth_m = depth)
@@ -181,9 +212,33 @@ ind <- get_index(p, bias_correct = TRUE)
 saveRDS(ind, file = "data/generated/geostat-ind-synoptic.rds")
 ind <- readRDS("data/generated/geostat-ind-synoptic.rds")
 
+p_lg <- predict(fit_lg, newdata = grid, return_tmb_object = TRUE)
+ind_lg <- get_index(p_lg, bias_correct = TRUE)
+saveRDS(ind_lg, file = "data/generated/geostat-ind-synoptic-lg.rds")
+ind_lg <- readRDS("data/generated/geostat-ind-synoptic-lg.rds")
+
+p_gg <- predict(fit_dgg, newdata = grid, return_tmb_object = TRUE)
+ind_gg <- get_index(p_gg, bias_correct = TRUE)
+saveRDS(ind_gg, file = "data/generated/geostat-ind-synoptic-gg.rds")
+ind_gg <- readRDS("data/generated/geostat-ind-synoptic-gg.rds")
+
+bind_rows(
+  mutate(ind, family = "delta gamma"),
+  mutate(ind_lg, family = "delta lognormal"),
+  mutate(ind_gg, family = "delta generalized gamma")
+) |>
+  ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = family)) +
+  geom_pointrange(position = position_dodge(width = 0.2)) +
+  coord_cartesian(ylim = c(0, NA))
+
 survs <- select(d, year, survey_abbrev) |> distinct() |>
   group_by(year) |>
   summarise(survey_abbrev = paste(survey_abbrev, collapse = ", "))
+
+# ******** PICK INDEX HERE ************ #
+ind <- ind_lg
+p <- p_lg
+fit <- fit_lg
 
 ind <- left_join(ind, survs, by = join_by(year))
 
@@ -297,6 +352,7 @@ ggsave("figs/synoptic/depth_marginal.png", gg3, height = 6, width = 4)
 #m <- ggeffects::ggeffect(fit, terms = "depth_m [20:269, by=10]", offset = 0)
 
 # Index by survey area
+
 library(snowfall)
 sfInit(parallel = TRUE, cpus = 4)
 sfLibrary(sdmTMB)
@@ -396,11 +452,16 @@ ind_compare <- rbind(
     mutate(type = "Spatiotemporal model")
 )
 
+
+yrs <- select(ind_compare, year, survey_abbrev, type) |>
+  filter(type == "Design-based") |>
+  distinct() |> select(-type)
+
 g <- ind_compare %>%
-  #mutate(value = est) %>%
-  mutate(value = est/mean(est),
-         lwr = lwr/mean(est),
-         upr = upr/mean(est),
+  right_join(yrs) |>
+  mutate(value = est/exp(mean(log(est))),
+         lwr = lwr/exp(mean(log(est))),
+         upr = upr/exp(mean(log(est))),
          .by = c(type, survey_abbrev)) %>%
   mutate(upr = ifelse(survey_abbrev == "SYN QCS", pmin(upr, 7), upr)) %>%
   mutate(upr = ifelse(survey_abbrev == "SYN WCHG", pmin(upr, 6), upr)) %>%
@@ -418,4 +479,48 @@ g <- ind_compare %>%
   scale_colour_brewer(palette = "Set2")
 ggsave("figs/synoptic/syn_index_compare_design.png", g, height = 5, width = 6)
 
+## 2024:
 
+library(sdmTMB)
+d <- readRDS("data/raw/syn-wcvi-dogfish-2024.rds")
+d$area_swept1 <- d$doorspread_m * d$tow_length_m
+d$area_swept2 <- d$doorspread_m * (d$speed_mpm * d$duration_min)
+d$area_swept <- ifelse(!is.na(d$area_swept1), d$area_swept1, d$area_swept2)
+
+d <- add_utm_columns(d)
+
+d <- filter(d, !is.na(depth_m))
+mesh <- make_mesh(d, c("X", "Y"), cutoff = 5)
+plot(mesh)
+mesh$mesh$n
+
+m <- sdmTMB(catch_weight ~ 0 + poly(log(depth_m), 2L),
+  time_varying = ~ 1,
+  time_varying_type = "rw",
+  family = delta_lognormal(), mesh = mesh, time = "year",
+  anisotropy = TRUE,
+  silent = FALSE,
+  data = d
+)
+m
+m$sd_report
+sanity(m)
+
+grid_survey <- dplyr::filter(grid, survey == "SYN WCVI") |> select(-year) |>
+  distinct() |>
+  replicate_df(time_name = "year", time_values = unique(d$year))
+
+p2024 <- predict(m, newdata = grid_survey, return_tmb_object = TRUE)
+ind2024 <- get_index(p2024, bias_correct = TRUE)
+
+ind2024 |>
+  mutate(
+    value = est/exp(mean(log(est))),
+    lwr = lwr/exp(mean(log(est))),
+    upr = upr/exp(mean(log(est)))) |>
+  ggplot(aes(year, value, ymin = lwr, ymax = upr)) +
+  geom_pointrange() +
+  coord_cartesian(ylim = c(0, NA), expand = FALSE, xlim = c(2003, 2025)) +
+  scale_x_continuous(breaks = seq(2000, 2025, 2)) +
+  ylab("Biomass index") + xlab("")
+ggsave("figs/synoptic/syn_2024.png", width = 5, height = 4)

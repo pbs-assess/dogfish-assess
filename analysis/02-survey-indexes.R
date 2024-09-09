@@ -2,7 +2,7 @@ library(dplyr)
 library(ggplot2)
 
 ind_hbll_out <- readRDS("data/generated/geostat-ind-hbll-out.rds")
-ind_syn_out <- readRDS("data/generated/geostat-ind-synoptic.rds")
+ind_syn_out <- readRDS("data/generated/geostat-ind-synoptic-lg.rds")
 ind_iphc_out <- readRDS("data/generated/geostat-ind-iphc.rds")
 ind_syn_out_f <- readRDS("data/generated/geostat-ind-synoptic-female.rds")
 ind_syn_out_m <- readRDS("data/generated/geostat-ind-synoptic-male.rds")
@@ -85,7 +85,7 @@ hbll <- readRDS("data/generated/geostat-ind-hbll-out.rds") %>%
   select(-survey_abbrev)
 
 # Synoptic Trawl
-syn <- readRDS("data/generated/geostat-ind-synoptic.rds") %>%
+syn <- readRDS("data/generated/geostat-ind-synoptic-lg.rds") %>%
   mutate(fleet = "Synoptic")
 
 hs_msa <- readRDS("data/generated/hs-msa-index.rds") %>%
