@@ -1,6 +1,8 @@
 library(dplyr)
 library(ggplot2)
 
+theme_set(gfplot::theme_pbs())
+
 ind_hbll_out <- readRDS("data/generated/geostat-ind-hbll-out.rds")
 ind_syn_out <- readRDS("data/generated/geostat-ind-synoptic-lg.rds")
 ind_iphc_out <- readRDS("data/generated/geostat-ind-iphc.rds")
@@ -145,6 +147,30 @@ g2 <- ggplot(fits, aes(survey, y = 1-exp(est*5), ymin =1- exp(lwr*5), ymax = 1-e
   scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1), breaks = seq(0.1, 1, 0.2)) +
   ylab("Proportion decline extrapolated\nto 50 years (one generation)") +
   geom_hline(yintercept = c(0.3, 0.5, 0.7), lty = 2)
+
+mults <- group_by(dd, fleet) |> summarise(decades = max(decade) - min(decade)) |>
+  rename(survey = fleet)
+
+fits <- left_join(fits, mults)
+
+# times by length of each survey for longest time series decline:
+
+g3 <- fits |>
+  mutate(
+    lwr = 1 - exp(lwr * decades),
+    upr = 1 - exp(upr * decades),
+    est = 1 - exp(est * decades)
+  ) |>
+  mutate(yrs = 10 * round(decades, 1)) |>
+  ggplot(aes(survey, y = est, ymin = lwr, ymax = upr)) +
+  geom_pointrange() +
+  coord_flip() + xlab("") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1), breaks = seq(0.1, 1, 0.2)) +
+  ylab("Proportion decline extrapolated\nto 50 years (one generation)") +
+  geom_hline(yintercept = c(0.3, 0.5, 0.7), lty = 2) +
+  geom_text(mapping = aes(x = survey, y = est, label = decades))
+g3
+
 cowplot::plot_grid(g1, g2, align = "h")
 ggsave("figs/cosewic-decline-indexes.png", width = 7, height = 3)
 
@@ -152,4 +178,24 @@ if (FALSE) {
   system("optipng -strip all figs/cosewic-decline-indexes.png")
 }
 
-fits |> mutate(est = 1 - exp(est), lwr = 1 - exp(lwr), upr = 1 - exp(upr))
+xx <- fits |> mutate(est = 1 - exp(est), lwr = 1 - exp(lwr), upr = 1 - exp(upr))
+
+s_rate <- xx |>  filter(survey == "Synoptic") |> pull(est)
+s_rate <- as.character(round(s_rate * 100, 0))
+
+h_rate <- xx |>  filter(survey == "HBLL Outside") |> pull(est)
+h_rate <- as.character(round(h_rate * 100, 0))
+
+i_rate <- xx |>  filter(survey == "IPHC") |> pull(est)
+i_rate <- as.character(round(i_rate * 100, 0))
+
+c_rate <- xx |>  filter(survey == "Bottom Trawl CPUE") |> pull(est)
+c_rate <- as.character(round(c_rate * 100, 0))
+
+source("ss3/99-utils.R")
+file.remove("values/survey-declines.tex")
+write_tex(s_rate, "DeclineSyn", "survey-declines.tex")
+write_tex(h_rate, "DeclineHBLL", "survey-declines.tex")
+write_tex(c_rate, "DeclineCPUE", "survey-declines.tex")
+write_tex(i_rate, "DeclineIPHC", "survey-declines.tex")
+
