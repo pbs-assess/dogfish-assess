@@ -16,7 +16,7 @@ c(
   "A3_highmat",
   "A4_USgrowth_highmat",
   "A5_highdiscard",
-  "A6_IPHC+CPUE",
+  "A6_IPHC_CPUE",
   "A7_SYNonly",
   "A8_HBLLonly",
   "A9_lowM",
