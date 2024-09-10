@@ -188,7 +188,7 @@ if (FALSE) {
 
 # don't accidentally overwrite!
 # if (FALSE) {
-  plan(multicore, workers = 40)
+  plan(multicore, workers = 68)
   out <- furrr::future_pmap(torun, run_projection, hessian = TRUE)
   # run_projection(model = "A0", catch = 100, hessian = FALSE)
   plan(sequential)
@@ -202,7 +202,7 @@ if (FALSE) {
   torun <- expand.grid(model = mods, catch = tacs)
   torun <- torun |> filter(!grepl("B", model))
   nrow(torun)
-  plan(multicore, workers = 25)
+  plan(multicore, workers = 65)
   out_rebuild <- furrr::future_pmap(torun, run_projection, hessian = TRUE, years = 150L)
   # out_rebuild <- furrr::future_pmap(filter(torun, model %in% "A0"), run_projection, hessian = F, years = 100L)
   # out_rebuild <- purrr::pmap(data.frame(model = "A0", catch = 0),
