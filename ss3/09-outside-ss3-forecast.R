@@ -187,17 +187,17 @@ if (FALSE) {
 }
 
 # don't accidentally overwrite!
-# if (FALSE) {
+if (FALSE) {
   plan(multicore, workers = 68)
   out <- furrr::future_pmap(torun, run_projection, hessian = TRUE)
   # run_projection(model = "A0", catch = 100, hessian = FALSE)
   plan(sequential)
   saveRDS(out, "data/generated/projections.rds")
-# }
+}
 
 # rebuilding
 # don't accidentally overwrite!
-# if (FALSE) {
+if (FALSE) {
   (tacs <- seq(0, 400, by = 100))
   torun <- expand.grid(model = mods, catch = tacs)
   torun <- torun |> filter(!grepl("B", model))
@@ -212,13 +212,22 @@ if (FALSE) {
   #   geom_vline(xintercept = 2023)
   plan(sequential)
   saveRDS(out_rebuild, "data/generated/projections-rebuilding.rds")
-# }
+}
 
 PLOT_TYPE <- "forecast" # SET HERE!!
 PLOT_TYPE <- "rebuilding" # SET HERE!!
 
 if (PLOT_TYPE == "rebuilding") {
   out_rebuild <- readRDS("data/generated/projections-rebuilding.rds")
+  # o2 <- readRDS("data/generated/projections-rebuilding-A6only.rds")
+  # grep("A6", purrr::map_chr(out_rebuild, function(x) as.character(x$model[1])))
+  # out_rebuild[[7]] <- o2[[1]]
+  # out_rebuild[[20]] <- o2[[2]]
+  # out_rebuild[[33]] <- o2[[3]]
+  # out_rebuild[[46]] <- o2[[4]]
+  # out_rebuild[[59]] <- o2[[5]]
+  # saveRDS(out_rebuild, "data/generated/projections-rebuilding.rds")
+
   x <- bind_rows(out_rebuild)
   tacs <- seq(0, 400, by = 100)
 } else {
@@ -320,6 +329,11 @@ if (PLOT_TYPE != "rebuilding") {
     filter(!grepl("^\\(B", model_name))
 
   bratio_dat |>
+
+    # These crash!
+    mutate(se = ifelse(catch == 400 & model_name == "(A7) SYN only", 0, se)) |>
+    mutate(se = ifelse(catch == 400 & model_name == "(A13) Extra SD on IPHC" & se > 0.001, 0, se)) |>
+
     filter(!grepl("^\\(B", model_name)) |>
     make_proj_by_model() +
     coord_cartesian(expand = FALSE, ylim = c(0, 0.8)) +
@@ -335,6 +349,11 @@ if (PLOT_TYPE != "rebuilding") {
   ggsave_optipng("figs/ss3/refpts/rebuild-facet-model.png", width = 8.5, height = 6.5)
 
   line_dat |>
+
+    # SS3 SE problems!? 0 or huge... these crash below 0:
+    filter(!(catch == 400 & model_name == "(A7) SYN only")) |>
+    filter(!(catch == 400 & model_name == "(A13) Extra SD on IPHC")) |>
+
     mutate(model_name = factor(model_name, levels = rev(levels(lu$model_name)))) |>
     mutate(b0.2_lwr = ifelse(is.na(b0.2_lwr), 9999, b0.2_lwr)) |>
     mutate(catch = forcats::fct_rev(catch)) |>
@@ -408,6 +427,9 @@ if (PLOT_TYPE != "rebuilding") {
   ggsave_optipng("figs/ss3/refpts/proj-facet-catch.png", width = 9, height = 4.5)
 } else {
   bratio_dat |>
+    # SEs are 0 or huge!??
+    mutate(se = ifelse(catch == 400 & model_name == "(A7) SYN only", 0, se)) |>
+    mutate(se = ifelse(catch == 400 & model_name == "(A13) Extra SD on IPHC" & se > 0.001, 0, se)) |>
     make_proj_by_catch_level() +
     coord_cartesian(expand = FALSE, ylim = c(0, 0.8)) +
     # geom_vline(aes(xintercept = b0.2, colour = model_name), data = line_dat, lty = 1) +
