@@ -192,15 +192,11 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
 
   } else if (set_to_plot == "M") {
 
-    # Compare low M (combination of A and B models)
-
+    # Compare low M and M change models (combination of A and B models)
     mods <- c("A0", "A9_lowM", "A10_highM", "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
-    model_name <- c("(A0) M = 0.074 (base)", "(A9) M = 0.05 (low M)", "(A10) M = 0.082 (high M)",
-      "(B1) M = 0.074, inc. 1990", "(B2) M = 0.074, step 2010",
-      "(B3) M = 0.074, step 2005", "(B4) M = 0.05, inc. 1990", "(B5) M = 0.05, inc. 2010")
-
-    #mods <- c("A1", "A9_lowM", "B2_2010step")
-    #model_name <- c("(A1) M = 0.074", "(A9) M = 0.05", "(B2) M = 0.074, step 2010")
+    model_name <- c("(A0) M = 0.065 (base)", "(A9) M = 0.057 (low M)", "(A10) M = 0.074 (high M)",
+      "(B1) M = 0.065, inc. 1990", "(B2) M = 0.065, step 2010",
+      "(B3) M = 0.065, step 2005", "(B4) M = 0.057, inc. 1990", "(B5) M = 0.057, inc. 2010")
 
     fig_dir <- "figs/ss3/set_b"
 
