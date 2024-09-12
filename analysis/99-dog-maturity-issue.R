@@ -1,5 +1,5 @@
 library(gfplot)
-library(dplyr)
+library(tidyr)
 library(ggplot2)
 theme_set(theme_pbs())
 
@@ -7,7 +7,7 @@ theme_set(theme_pbs())
 d <- readRDS("data/raw/survey-samples.rds")
 d <- mutate(d, species_common_name = "north pacific spiny dogfish") # some missing!?, there are NAs at the bottom of the dataset for ALL columns
 
-d2 |> filter(sex %in% c(1,2)) |>
+d |> filter(sex %in% c(1,2)) |>
   drop_na(maturity_code) |>
   filter(maturity_code != 0) |>
   filter(survey_abbrev %in% c("SYN WCHG", "SYN HS", "SYN QCS", "SYN WCVI")) |>
