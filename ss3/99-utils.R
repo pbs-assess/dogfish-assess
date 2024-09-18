@@ -7,7 +7,7 @@ write_tex <- function(x, macro, file = "values.tex", append = TRUE) {
     readr::write_lines(paste0("values/", file), append = append)
 }
 ggsave_optipng <- function(filename, width = NA, height = NA, ...) {
-  ggsave(filename, width = width, height = height)
+  ggsave(filename, width = width, height = height, ...)
   cmd <- paste0("optipng -strip all ", filename)
   if (system("which optipng") == 0L) system(cmd)
 }
