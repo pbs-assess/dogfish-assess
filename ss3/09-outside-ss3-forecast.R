@@ -157,6 +157,7 @@ model_name <- model_name[keep]
 
 length(mods)
 (tacs <- c(0, 100, 200, 300, seq(400, 1200, by = 200)))
+(tacs <- c(seq(0, 1200, by = 100)))
 
 torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
