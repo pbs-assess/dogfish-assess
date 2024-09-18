@@ -222,6 +222,36 @@ g <- d %>%
 g
 ggsave("figs/reconstructed-catch-discards-outside-zoom.png", g, width = 5, height = 5)
 
+d %>%
+  filter(year <= 2023) |>
+  filter(year >= 1978) |>
+  filter(area != "4B") %>%
+  reshape2::melt(id.vars = c("year", "gear", "species_common_name", "area")) %>%
+  mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
+    value = value/1e6) %>%
+  group_by(year, gear, area) |> summarise(value = sum(value)) |>
+  mutate(area = paste0(area, " (zoomed in to 1980-2023)")) |>
+  ggplot(aes(year, value, fill = gear)) +
+  geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = expansion(mult = c(0, .02))) +
+  # facet_grid(vars(variable), vars(area), scales = "fixed", switch = "y") +
+  theme_pbs() +
+  scale_fill_manual(values = cols) +
+  coord_cartesian(xlim = c(1978, 2023), ylim = c(0, 6)) +
+  # expand_limits(y = 0) +
+  labs(y = NULL, x = "Year", fill = "Gear") +
+  theme(legend.position = "bottom",
+    strip.placement = "outside") +
+  guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
+  annotate(
+    "rect", xmin = 1978, xmax = 2023,
+    ymin = 4.5, ymax = 9.333, alpha = 0.15, fill = "black"
+  ) +
+  ylab("Catch (t) (discards + landings)")
+source("ss3/99-utils.R")
+ggsave_optipng("figs/reconstructed-catch-discards-outside-zoom-high-risk-band.png", width = 5, height = 4)
+
 
 g <- d %>%
   filter(area != "4B") %>%
