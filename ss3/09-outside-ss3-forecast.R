@@ -48,15 +48,16 @@ make_f_catch <- function(dir, total, years = 10, debug_mode = FALSE) {
   suppressWarnings(
     dat <- SS_readdat(paste0("ss3/", dir, "/data.ss"), verbose = FALSE)
   )
+
   bratio_dat <- filter(dat$catch, year >= 2018) |> # last 5
     filter(fleet %in% c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) |> # active fleets catching dogfish
     group_by(fleet) |>
     summarise(m = mean(catch, na.rm = TRUE))
 
-  # keep surveys and iRec and salmon bycatch constant at average levels:
-  temp1 <- filter(bratio_dat, fleet %in% c(6, 7, 8, 9, 10)) # surveys + salmon
+  # keep trawl survey
+  temp1 <- filter(bratio_dat, fleet %in% c(8)) # (weight-based) survey catch (synoptic)
   temp1$catch_or_F_before_mortality <- temp1$m
-  total_constant_catch <- sum(temp1$m)
+  total_constant_catch <- sum(temp1$m[!temp1$fleet %in% c(9, 10)]) # exclude salmon and iREC (not in quota and in numbers)
   total_remaining_quota <- total - total_constant_catch
 
   if (total_remaining_quota > 0) {
