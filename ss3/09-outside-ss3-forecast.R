@@ -523,11 +523,10 @@ if (PLOT_TYPE != "rebuilding") {
     theme(axis.title = ggtext::element_markdown())
   ggsave_optipng("figs/ss3/refpts/proj-F-facet-catch.png", width = 9, height = 4.5)
 
-  make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", xlab = "Catch (t)", type = c("F", "LRP", "USR")) {
-    pal <- RColorBrewer::brewer.pal(8, "Greys")[7:2]
+  make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", xlab = "Catch (t)", type = c("F", "LRP", "USR"), years = c(2024, 2025, 2026, 2027, 2028), pal = RColorBrewer::brewer.pal(8, "Greys")[7:2]) {
     type <- match.arg(type)
     dat <- dat |>
-      filter(year %in% c(2024, 2025, 2026)) |>
+      filter(year %in% years) |>
       group_by(year, catch, model_name)
 
     if (type == "F") {
@@ -579,26 +578,42 @@ if (PLOT_TYPE != "rebuilding") {
       theme(legend.title = ggtext::element_markdown(), legend.position = "bottom") +
       ylab("") +
       xlab(xlab) +
-      theme(axis.ticks = element_blank(), legend.text = ggtext::element_markdown()) +
-      facet_wrap(~year)
+      # theme(axis.ticks = element_blank(), legend.text = ggtext::element_markdown()) +
+      theme(legend.text = ggtext::element_markdown()) +
+      facet_wrap(~year, nrow = 1)
   }
 
+  # get current catch:
+  dc <- r4ss::SS_readdat("ss3/A0/data.ss_new")
+  catch2023 <- dc$catch |> filter(year == 2023) |> pull(catch) |> sum()
+  catch2023
+  # catch2022 <- dc$catch |> filter(year == 2022) |> pull(catch) |> sum()
+  # catch2021 <- dc$catch |> filter(year == 2021) |> pull(catch) |> sum()
+
   fratio_dat |>
-    filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 200)) |>
-    make_tigure_decision()
-  ggsave_optipng("figs/ss3/refpts/f-ref-pt-tigure.png", width = 10, height = 4)
+    filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 100)) |>
+    make_tigure_decision() +
+    geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
+    scale_x_continuous(breaks = seq(0, 1200, 400))
+    # geom_vline(xintercept = catch2022, lty = 2, col = "grey20") +
+    # geom_vline(xintercept = catch2021, lty = 2, col = "grey20")
+  ggsave_optipng("figs/ss3/refpts/f-ref-pt-tigure.png", width = 10, height = 3.6)
 
   bratio_dat |>
     # filter(!grepl("B", model), catch != "1500", catch != "1400") |>
-    filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 200)) |>
-    make_tigure_decision(type = "LRP", fill_label = "P(S > 0.2S<sub>0</sub>)")
-  ggsave_optipng("figs/ss3/refpts/lrp-ref-pt-tigure.png", width = 10, height = 4)
+    filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 100)) |>
+    make_tigure_decision(type = "LRP", fill_label = "P(S > 0.2S<sub>0</sub>)")+
+    geom_vline(xintercept = catch2023, lty = 2, col = "grey40")+
+    scale_x_continuous(breaks = seq(0, 1200, 400))
+  ggsave_optipng("figs/ss3/refpts/lrp-ref-pt-tigure.png", width = 10, height = 3.4)
 
   bratio_dat |>
     # filter(!grepl("B", model), catch != "1500", catch != "1400") |>
-    filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 200)) |>
-    make_tigure_decision(type = "USR", fill_label = "P(S > 0.4S<sub>0</sub>)")
-  ggsave_optipng("figs/ss3/refpts/usr-ref-pt-tigure.png", width = 10, height = 4)
+    filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 100)) |>
+    make_tigure_decision(type = "USR", fill_label = "P(S > 0.4S<sub>0</sub>)")+
+    geom_vline(xintercept = catch2023, lty = 2, col = "grey40")+
+    scale_x_continuous(breaks = seq(0, 1200, 400))
+  ggsave_optipng("figs/ss3/refpts/usr-ref-pt-tigure.png", width = 10, height = 3.4)
 
   if (FALSE) {
     setwd("figs/ss3/refpts/")
