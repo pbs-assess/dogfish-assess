@@ -8,6 +8,10 @@ system(paste0(
 setwd(here::here())
 
 if (FALSE) {
+  system('rsync -avu "figs/ss3/" "../dogfish-assess-resdoc/figs/ss3')
+}
+
+if (FALSE) {
   setwd("../dogfish-assess-resdoc/figs/")
   system(paste0(
     "find -X . -name '*.png' -print0 | xargs -0 -n ",
