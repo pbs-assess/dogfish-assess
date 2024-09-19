@@ -377,17 +377,17 @@
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  SzSel_Male_Final_MidwaterTrawl(3)
              0             1      0.884402           0.5      0.287717             2          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_MidwaterTrawl(3)
 # 4   HookLine_Landings LenSelex
-            35           110       101.432            95          14.25             6          3          0          0          0          0          0          0          0  #  Size_DblN_peak_HookLine_Landings(4)
+            35           110       101.432            95         14.25             6          5          0          0          0          0          0          0          0  #  Size_DblN_peak_HookLine_Landings(4)
            -10            50           -10             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_top_logit_HookLine_Landings(4)
-           -10            10       4.79594             4           0.3             6          3          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_HookLine_Landings(4)
+           -10            10       4.79594             4           0.3             6          4          0          0          0          0          0          0          0  #  Size_DblN_ascend_se_HookLine_Landings(4)
            -10            50            15             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_descend_se_HookLine_Landings(4)
           -999            70          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_start_logit_HookLine_Landings(4)
           -999           999          -999             0             0             0        -50          0          0          0          0          0          0          0  #  Size_DblN_end_logit_HookLine_Landings(4)
-          -100             0      -20.2021           -10          14.25             6          3          0          0          0          0          0          0          0  #  SzSel_Male_Peak_HookLine_Landings(4)
-           -10            10      -1.96691             0           0.3             6          3          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_HookLine_Landings(4)
-           -50            10       2.46477         -13.2           0.3             6          3          0          0          0          0          0          0          0  #  SzSel_Male_Descend_HookLine_Landings(4)
+          -100             0      -20.2021           -10         14.25             6          5          0          0          0          0          0          0          0  #  SzSel_Male_Peak_HookLine_Landings(4)
+           -10            10      -1.96691             0           0.3             6          4          0          0          0          0          0          0          0  #  SzSel_Male_Ascend_HookLine_Landings(4)
+           -50            10       2.46477         -13.2           0.3             6          4          0          0          0          0          0          0          0  #  SzSel_Male_Descend_HookLine_Landings(4)
           -999           100          -999             0             0             0        -50          0          0          0          0          0          0          0  #  SzSel_Male_Final_HookLine_Landings(4)
-             0             1           0.1           0.5      0.287717             2          3          0          0          0          0          0          0          0  #  SzSel_Male_Scale_HookLine_Landings(4)
+             0             1           0.1           0.5      0.287717             2          4          0          0          0          0          0          0          0  #  SzSel_Male_Scale_HookLine_Landings(4)
 # 5   HookLine_Discards LenSelex
 # 6   IPHC LenSelex
             35           200           150            95          28.5             6          3          0          0          0          0          0          0          0  #  Size_DblN_peak_IPHC(6)
