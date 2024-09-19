@@ -21,7 +21,7 @@ ss_home <- here::here("ss3")
 
 source("ss3/99-model-names.R")
 
-reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly", "A15_100discard")
+reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly", "A15_100discard", "A2_USgrowth", "A4_USgrowth_highmat")
 
 keep <- which(!mods %in% reject)
 mods <- mods[keep]
