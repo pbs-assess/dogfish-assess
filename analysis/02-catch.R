@@ -244,10 +244,10 @@ d %>%
   theme(legend.position = "bottom",
     strip.placement = "outside") +
   guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
-  annotate(
-    "rect", xmin = 1978, xmax = 2023,
-    ymin = 4.5, ymax = 9.333, alpha = 0.15, fill = "black"
-  ) +
+  # annotate(
+  #   "rect", xmin = 1978, xmax = 2023,
+  #   ymin = 4.5, ymax = 9.333, alpha = 0.15, fill = "black"
+  # ) +
   ylab("Catch (t) (discards + landings)")
 source("ss3/99-utils.R")
 ggsave_optipng("figs/reconstructed-catch-discards-outside-zoom-high-risk-band.png", width = 5, height = 4)

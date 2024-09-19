@@ -377,6 +377,7 @@ if (PLOT_TYPE != "rebuilding") {
       alpha = 0.1, fill = "grey55"
     ) +
     coord_flip(expand = FALSE, ylim = c(2023, 2023+150)) +
+    gfplot::theme_pbs() +
     theme(panel.grid.major.y = element_line(colour = "grey90", linetype = 2)) +
     labs(colour = "Catch (t)", y = "Year forecasted S/S<sub>0</sub> > 0.2") +
     theme(axis.title = ggtext::element_markdown()) +
