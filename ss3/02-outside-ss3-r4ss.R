@@ -65,13 +65,13 @@ if (FALSE) {
 
 # Fit a single model
 if (FALSE) {
-  fit_ss3(mods[2], hessian = TRUE, ss_home = ss_home)
+  fit_ss3(mods[3], hessian = F, ss_home = ss_home, extra_args = "-maxfn 500")
   r4ss::SS_output("ss3/A0") |> r4ss::SS_plots()
 }
 
 # Fit all of many models in parallel
 snowfall::sfInit(parallel = TRUE, cpus = min(floor(parallel::detectCores() / 2)), length(mods))
-snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home)
+snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home, extra_args = "-maxfn 250")
 snowfall::sfStop()
 
 # Some code to generate r4ss reports and look through the figures
@@ -80,7 +80,7 @@ if (FALSE) {
   # Load r4ss list
   covar <- TRUE
   replist <- r4ss::SS_output(
-    file.path(ss_home, mods[2]),
+    file.path(ss_home, mods[3]),
     verbose = FALSE,
     printstats = FALSE,
     covar = covar,
@@ -88,8 +88,19 @@ if (FALSE) {
   )
   replist$Length_Comp_Fit_Summary
 
-  # Save report list
-  #saveRDS(replist, file = file.path(ss_home, paste0("r4ss_", mods[1], ".rds")))
+  # # Save report list
+  # #saveRDS(replist, file = file.path(ss_home, paste0("r4ss_", mods[1], ".rds")))
+  #
+  # # Selectivity at length (estimated)
+  # SS3_sel(list(replist), "", type = "Lsel", bin_width = 5, do_mat = FALSE) +
+  #   coord_cartesian(xlim = c(40, 115), ylim = c(0, 1.1))
+  #
+  # # Selectivity at age (converted from size based, also show maturity ogive)
+  # SS3_sel(list(replist), "", bin_width = 5)
+  # .ggsave("sel_age.png", g, height = 6, width = 8)
+  #
+  # # Selectivity at age (converted from size based, also show maturity ogive)
+  # SS3_sel(list(replist), "", bin_width = 5, scale_max_1 = TRUE)
 
   # Generate HTML report
   if (covar) {
@@ -105,7 +116,7 @@ if (FALSE) {
     mutate(CV = abs(Parm_StDev/Value) |> round(2)) |>
     View()
 
-  r4ss::SSplotSelex(replist, fleets = 1)
+  r4ss::SSplotSelex(replist, fleets = 4)
   r4ss::SSplotTimeseries(replist, subplot = 12)
   # r4ss::SSplotRecdevs(replist)
   r4ss::SSplotCatch(replist)
