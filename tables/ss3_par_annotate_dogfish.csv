@@ -5,7 +5,7 @@ L_at_Amax_Fem_GP_1,Fixed,90.87,NA,"Female mean length at age 40, estimated from 
 VonBert_K_Fem_GP_1,Fixed,0.058,NA,"Female von Bertalanffy K parameter, estimated from data"
 CV_young_Fem_GP_1,Fixed,0.25,NA,"Female variability in length at age 0, estimated from data"
 CV_old_Fem_GP_1,Fixed,0.075,NA,"Female variability in length at age 40, estimated from data"
-Wtlen_1_Fem_GP_1,Fixed,1.89E-06,NA,"Female length-weight scalar (a), estimated from data"
+Wtlen_1_Fem_GP_1,Fixed,1.89e-6,NA,"Female length-weight scalar (a), estimated from data"
 Wtlen_2_Fem_GP_1,Fixed,3.19,NA,"Female length-weight exponent (b), estimated from data"
 Mat50%_Fem_GP_1,Fixed,97.6,NA,Not used - female maturity at age (from literature) directly specified in control file
 Mat_slope_Fem_GP_1,Fixed,-0.168,NA,Not used - female maturity at age (from literature) directly specified in control file
@@ -17,7 +17,7 @@ L_at_Amax_Mal_GP_1,Fixed,-0.093,NA,"Male offset for mean length at age 40, estim
 VonBert_K_Mal_GP_1,Fixed,0.428,NA,"Male offset for von Bertalanffy K parameter, estimated from data"
 CV_young_Mal_GP_1,Fixed,0,NA,"Male offset for variability in length at age 0, estimated from data"
 CV_old_Mal_GP_1,Fixed,0.287,NA,"Male offset for variability in length at age 40, estimated from data"
-Wtlen_1_Mal_GP_1,Fixed,3.54E-06,NA,"Male length-weight scalar (a), estimated from data"
+Wtlen_1_Mal_GP_1,Fixed,3.54e-6,NA,"Male length-weight scalar (a), estimated from data"
 Wtlen_2_Mal_GP_1,Fixed,3.03,NA,"Male length-weight exponent (b), estimated from data"
 CohortGrowDev,Fixed,1,NA,Internal SS3 parameter
 Catch_Mult:_1_Bottom_Trawl_Landings,Fixed,1,NA,Catch multiplier
@@ -31,80 +31,80 @@ Catch_Mult:_8_SYN,Fixed,2.7027,NA,Catch multiplier
 Catch_Mult:_9_iRec,Fixed,10,NA,Catch multiplier - accounts for discard mortality
 Catch_Mult:_10_Salmon_Bycatch,Fixed,1.23457,NA,Catch multiplier - accounts for discard mortality
 FracFemale_GP_1,Fixed,0.5,NA,Proportion of recruitment that is female
-SR_LN(R0),Yes,9.47401,0.0333696,Unfished recruitment
+SR_LN(R0),Yes,9.38566,0.0309014,Unfished recruitment
 SR_surv_zfrac,Fixed,0.4,NA,Stock-recruit productivity parameter
 SR_surv_Beta,Fixed,1,NA,Stock-recruit beta parameter
 SR_sigmaR,Fixed,0.4,NA,Not used - no recruitment deviations
 SR_regime,Fixed,0,NA,Not used
 SR_autocorr,Fixed,0,NA,Not used
-LnQ_base_IPHC(6),Fixed,-1.42873,NA,Not used - index catchability calculated internally
-LnQ_base_HBLL(7),Fixed,0.961675,NA,Not used - index catchability calculated internally
-LnQ_base_SYN(8),Fixed,-9.33124,NA,Not used - index catchability calculated internally
-LnQ_base_HS_MSA(11),Fixed,-2.3693,NA,Not used - index catchability calculated internally
-LnQ_base_Bottom_Trawl_CPUE(12),Fixed,4.28835,NA,Not used - index catchability calculated internally
-Size_DblN_peak_Bottom_Trawl_Landings(1),Yes,113.937,1.9369,Selectivity parameter $\mu^\textrm{Female}$
+LnQ_base_IPHC(6),Fixed,-1.3797,NA,Not used - index catchability calculated internally
+LnQ_base_HBLL(7),Fixed,1.01121,NA,Not used - index catchability calculated internally
+LnQ_base_SYN(8),Fixed,-9.72124,NA,Not used - index catchability calculated internally
+LnQ_base_HS_MSA(11),Fixed,-2.36626,NA,Not used - index catchability calculated internally
+LnQ_base_Bottom_Trawl_CPUE(12),Fixed,4.28212,NA,Not used - index catchability calculated internally
+Size_DblN_peak_Bottom_Trawl_Landings(1),Yes,110.127,1.90362,Selectivity parameter $\mu^\textrm{Female}$
 Size_DblN_top_logit_Bottom_Trawl_Landings(1),Fixed,-10,NA,Not used
-Size_DblN_ascend_se_Bottom_Trawl_Landings(1),Yes,5.52329,0.164367,"Selectivity parameter $\Delta^\textrm{Female, asc}$"
+Size_DblN_ascend_se_Bottom_Trawl_Landings(1),Yes,5.47924,0.177822,"Selectivity parameter $\Delta^\textrm{Female, asc}$"
 Size_DblN_descend_se_Bottom_Trawl_Landings(1),Fixed,15,NA,"Not used, flat-top selectivity"
 Size_DblN_start_logit_Bottom_Trawl_Landings(1),Fixed,-999,NA,Not used
 Size_DblN_end_logit_Bottom_Trawl_Landings(1),Fixed,-999,NA,Not used
-SzSel_Male_Peak_Bottom_Trawl_Landings(1),Yes,-3.49018,11.9393,Selectivity parameter $\mu^\textrm{Male}$
-SzSel_Male_Ascend_Bottom_Trawl_Landings(1),Yes,0.909256,0.286898,"Selectivity parameter $\Delta^\textrm{Male, asc}$"
-SzSel_Male_Descend_Bottom_Trawl_Landings(1),Yes,-11.8,0.299997,"Selectivity parameter $\Delta^\textrm{Male, dsc}$"
+SzSel_Male_Peak_Bottom_Trawl_Landings(1),Yes,-4.53755,10.9522,Selectivity parameter $\mu^\textrm{Male}$
+SzSel_Male_Ascend_Bottom_Trawl_Landings(1),Yes,0.911752,0.29097,"Selectivity parameter $\Delta^\textrm{Male, asc}$"
+SzSel_Male_Descend_Bottom_Trawl_Landings(1),Yes,-11.8,0.300001,"Selectivity parameter $\Delta^\textrm{Male, dsc}$"
 SzSel_Male_Final_Bottom_Trawl_Landings(1),Fixed,-999,NA,Not used
-SzSel_Male_Scale_Bottom_Trawl_Landings(1),Yes,0.0522039,0.0466244,Selectivity parameter $A^\textrm{Male}$
-Size_DblN_peak_Bottom_Trawl_Discards(2),Yes,57.6374,2.29182,Selectivity parameter $\mu^\textrm{Female}$
+SzSel_Male_Scale_Bottom_Trawl_Landings(1),Yes,0.0369589,0.0277658,Selectivity parameter $A^\textrm{Male}$
+Size_DblN_peak_Bottom_Trawl_Discards(2),Yes,50.6081,2.0421,Selectivity parameter $\mu^\textrm{Female}$
 Size_DblN_top_logit_Bottom_Trawl_Discards(2),Fixed,-10,NA,Not used
-Size_DblN_ascend_se_Bottom_Trawl_Discards(2),Yes,4.70475,0.254754,"Selectivity parameter $\Delta^\textrm{Female, asc}$"
-Size_DblN_descend_se_Bottom_Trawl_Discards(2),Yes,6.72777,0.206751,"Selectivity parameter $\Delta^\textrm{Female, dsc}$"
+Size_DblN_ascend_se_Bottom_Trawl_Discards(2),Yes,4.47339,0.263134,"Selectivity parameter $\Delta^\textrm{Female, asc}$"
+Size_DblN_descend_se_Bottom_Trawl_Discards(2),Yes,6.42241,0.180046,"Selectivity parameter $\Delta^\textrm{Female, dsc}$"
 Size_DblN_start_logit_Bottom_Trawl_Discards(2),Fixed,-999,NA,Not used
 Size_DblN_end_logit_Bottom_Trawl_Discards(2),Fixed,-999,NA,Not used
-SzSel_Male_Peak_Bottom_Trawl_Discards(2),Yes,1.57659,2.91852,Selectivity parameter $\mu^\textrm{Male}$
-SzSel_Male_Ascend_Bottom_Trawl_Discards(2),Yes,0.382038,0.270006,"Selectivity parameter $\Delta^\textrm{Male, asc}$"
-SzSel_Male_Descend_Bottom_Trawl_Discards(2),Yes,-1.13018,0.236352,"Selectivity parameter $\Delta^\textrm{Male, dsc}$"
+SzSel_Male_Peak_Bottom_Trawl_Discards(2),Yes,6.95292,2.7186,Selectivity parameter $\mu^\textrm{Male}$
+SzSel_Male_Ascend_Bottom_Trawl_Discards(2),Yes,0.489007,0.278301,"Selectivity parameter $\Delta^\textrm{Male, asc}$"
+SzSel_Male_Descend_Bottom_Trawl_Discards(2),Yes,-0.819991,0.230457,"Selectivity parameter $\Delta^\textrm{Male, dsc}$"
 SzSel_Male_Final_Bottom_Trawl_Discards(2),Fixed,-999,NA,Not used
-SzSel_Male_Scale_Bottom_Trawl_Discards(2),Yes,0.804685,0.152416,Selectivity parameter $A^\textrm{Male}$
-Size_DblN_peak_MidwaterTrawl(3),Yes,56.4586,1.08251,Selectivity parameter $\mu^\textrm{Female}$
+SzSel_Male_Scale_Bottom_Trawl_Discards(2),Yes,0.560239,0.124998,Selectivity parameter $A^\textrm{Male}$
+Size_DblN_peak_MidwaterTrawl(3),Yes,55.1566,1.08491,Selectivity parameter $\mu^\textrm{Female}$
 Size_DblN_top_logit_MidwaterTrawl(3),Fixed,-10,NA,Not used
-Size_DblN_ascend_se_MidwaterTrawl(3),Yes,4.83324,0.16786,"Selectivity parameter $\Delta^\textrm{Female, asc}$"
-Size_DblN_descend_se_MidwaterTrawl(3),Yes,4.85545,0.170221,"Selectivity parameter $\Delta^\textrm{Female, dsc}$"
+Size_DblN_ascend_se_MidwaterTrawl(3),Yes,4.79651,0.177845,"Selectivity parameter $\Delta^\textrm{Female, asc}$"
+Size_DblN_descend_se_MidwaterTrawl(3),Yes,4.88362,0.165016,"Selectivity parameter $\Delta^\textrm{Female, dsc}$"
 Size_DblN_start_logit_MidwaterTrawl(3),Fixed,-999,NA,Not used
 Size_DblN_end_logit_MidwaterTrawl(3),Fixed,-999,NA,Not used
-SzSel_Male_Peak_MidwaterTrawl(3),Yes,-2.23885,1.73011,Selectivity parameter $\mu^\textrm{Male}$
-SzSel_Male_Ascend_MidwaterTrawl(3),Yes,-0.225299,0.237906,"Selectivity parameter $\Delta^\textrm{Male, asc}$"
-SzSel_Male_Descend_MidwaterTrawl(3),Yes,1.85907,0.209156,"Selectivity parameter $\Delta^\textrm{Male, dsc}$"
+SzSel_Male_Peak_MidwaterTrawl(3),Yes,-2.30821,1.69383,Selectivity parameter $\mu^\textrm{Male}$
+SzSel_Male_Ascend_MidwaterTrawl(3),Yes,-0.278574,0.242562,"Selectivity parameter $\Delta^\textrm{Male, asc}$"
+SzSel_Male_Descend_MidwaterTrawl(3),Yes,1.83465,0.201539,"Selectivity parameter $\Delta^\textrm{Male, dsc}$"
 SzSel_Male_Final_MidwaterTrawl(3),Fixed,-999,NA,Not used
-SzSel_Male_Scale_MidwaterTrawl(3),Yes,0.682019,0.0732577,Selectivity parameter $A^\textrm{Male}$
-Size_DblN_peak_HookLine_Landings(4),Yes,37.8038,1.96633,Selectivity parameter $\mu^\textrm{Female}$
+SzSel_Male_Scale_MidwaterTrawl(3),Yes,0.702597,0.0758455,Selectivity parameter $A^\textrm{Male}$
+Size_DblN_peak_HookLine_Landings(4),Yes,105.892,1.4573,Selectivity parameter $\mu^\textrm{Female}$
 Size_DblN_top_logit_HookLine_Landings(4),Fixed,-10,NA,Not used
-Size_DblN_ascend_se_HookLine_Landings(4),Yes,4.00106,0.300167,"Selectivity parameter $\Delta^\textrm{Female, asc}$"
+Size_DblN_ascend_se_HookLine_Landings(4),Yes,4.65067,0.200646,"Selectivity parameter $\Delta^\textrm{Female, asc}$"
 Size_DblN_descend_se_HookLine_Landings(4),Fixed,15,NA,"Not used, flat-top selectivity"
 Size_DblN_start_logit_HookLine_Landings(4),Fixed,-999,NA,Not used
 Size_DblN_end_logit_HookLine_Landings(4),Fixed,-999,NA,Not used
-SzSel_Male_Peak_HookLine_Landings(4),Yes,-3.2689,5.80076,Selectivity parameter $\mu^\textrm{Male}$
-SzSel_Male_Ascend_HookLine_Landings(4),Yes,2.43263e-8,0.3,"Selectivity parameter $\Delta^\textrm{Male, asc}$"
-SzSel_Male_Descend_HookLine_Landings(4),Yes,-13.1988,0.300076,"Selectivity parameter $\Delta^\textrm{Male, dsc}$"
+SzSel_Male_Peak_HookLine_Landings(4),Yes,-16.0402,2.30385,Selectivity parameter $\mu^\textrm{Male}$
+SzSel_Male_Ascend_HookLine_Landings(4),Yes,-0.107351,0.270813,"Selectivity parameter $\Delta^\textrm{Male, asc}$"
+SzSel_Male_Descend_HookLine_Landings(4),Yes,-13.2112,0.299292,"Selectivity parameter $\Delta^\textrm{Male, dsc}$"
 SzSel_Male_Final_HookLine_Landings(4),Fixed,-999,NA,Not used
-SzSel_Male_Scale_HookLine_Landings(4),Yes,0.998159,0.0185016,Selectivity parameter $A^\textrm{Male}$
-Size_DblN_peak_IPHC(6),Yes,146.076,7.23283,Selectivity parameter $\mu^\textrm{Female}$
+SzSel_Male_Scale_HookLine_Landings(4),Yes,0.0281437,0.00747995,Selectivity parameter $A^\textrm{Male}$
+Size_DblN_peak_IPHC(6),Yes,164.417,8.67674,Selectivity parameter $\mu^\textrm{Female}$
 Size_DblN_top_logit_IPHC(6),Fixed,-10,NA,Not used
-Size_DblN_ascend_se_IPHC(6),Yes,7.00067,0.120934,"Selectivity parameter $\Delta^\textrm{Female, asc}$"
+Size_DblN_ascend_se_IPHC(6),Yes,7.12945,0.112478,"Selectivity parameter $\Delta^\textrm{Female, asc}$"
 Size_DblN_descend_se_IPHC(6),Fixed,15,NA,"Not used, flat-top selectivity"
 Size_DblN_start_logit_IPHC(6),Fixed,-999,NA,Not used
 Size_DblN_end_logit_IPHC(6),Fixed,-999,NA,Not used
-SzSel_Male_Peak_IPHC(6),Yes,-67.1721,7.17377,Selectivity parameter $\mu^\textrm{Male}$
-SzSel_Male_Ascend_IPHC(6),Yes,-1.89346,0.179725,"Selectivity parameter $\Delta^\textrm{Male, asc}$"
-SzSel_Male_Descend_IPHC(6),Yes,-11.3312,0.224909,"Selectivity parameter $\Delta^\textrm{Male, dsc}$"
+SzSel_Male_Peak_IPHC(6),Yes,-85.3166,8.62447,Selectivity parameter $\mu^\textrm{Male}$
+SzSel_Male_Ascend_IPHC(6),Yes,-1.92184,0.178841,"Selectivity parameter $\Delta^\textrm{Male, asc}$"
+SzSel_Male_Descend_IPHC(6),Yes,-11.3508,0.226276,"Selectivity parameter $\Delta^\textrm{Male, dsc}$"
 SzSel_Male_Final_IPHC(6),Fixed,-999,NA,Not used
-SzSel_Male_Scale_IPHC(6),Yes,0.0144507,0.00635317,Selectivity parameter $A^\textrm{Male}$
-Size_DblN_peak_SYN(8),Yes,64.1374,1.01536,Selectivity parameter $\mu^\textrm{Female}$
+SzSel_Male_Scale_IPHC(6),Yes,0.00455677,0.00273972,Selectivity parameter $A^\textrm{Male}$
+Size_DblN_peak_SYN(8),Yes,63.738,1.10166,Selectivity parameter $\mu^\textrm{Female}$
 Size_DblN_top_logit_SYN(8),Fixed,-10,NA,Not used
-Size_DblN_ascend_se_SYN(8),Yes,5.12877,0.124521,"Selectivity parameter $\Delta^\textrm{Female, asc}$"
-Size_DblN_descend_se_SYN(8),Yes,6.72656,0.16106,"Not used, flat-top selectivity"
+Size_DblN_ascend_se_SYN(8),Yes,5.30531,0.135706,"Selectivity parameter $\Delta^\textrm{Female, asc}$"
+Size_DblN_descend_se_SYN(8),Yes,6.73853,0.180391,"Not used, flat-top selectivity"
 Size_DblN_start_logit_SYN(8),Fixed,-999,NA,Not used
 Size_DblN_end_logit_SYN(8),Fixed,-999,NA,Not used
-SzSel_Male_Peak_SYN(8),Yes,8.46184,1.0171,Selectivity parameter $\mu^\textrm{Male}$
-SzSel_Male_Ascend_SYN(8),Yes,0.918602,0.142581,"Selectivity parameter $\Delta^\textrm{Male, asc}$"
-SzSel_Male_Descend_SYN(8),Yes,-10.5102,0.308794,"Selectivity parameter $\Delta^\textrm{Male, dsc}$"
+SzSel_Male_Peak_SYN(8),Yes,18.5921,1.09922,Selectivity parameter $\mu^\textrm{Male}$
+SzSel_Male_Ascend_SYN(8),Yes,1.46594,0.149941,"Selectivity parameter $\Delta^\textrm{Male, asc}$"
+SzSel_Male_Descend_SYN(8),Yes,-10.3832,0.301356,"Selectivity parameter $\Delta^\textrm{Male, dsc}$"
 SzSel_Male_Final_SYN(8),Fixed,-999,NA,Not used
-SzSel_Male_Scale_SYN(8),Yes,0.550849,0.061722,Selectivity parameter $A^\textrm{Male}$
+SzSel_Male_Scale_SYN(8),Yes,0.921486,0.0696086,Selectivity parameter $A^\textrm{Male}$
