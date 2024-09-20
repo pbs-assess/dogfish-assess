@@ -150,7 +150,7 @@ run_projection <- function(model = "A0", catch, hessian = FALSE, do_fit = TRUE, 
 }
 
 source("ss3/99-model-names.R")
-reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly", "A15_100discard")
+reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly", "A15_100discard", "A2_USgrowth", "A4_USgrowth_highmat")
 keep <- which(!mods %in% reject)
 mods <- mods[keep]
 model_name <- model_name[keep]
@@ -216,8 +216,10 @@ if (FALSE) {
   saveRDS(out_rebuild, "data/generated/projections-rebuilding.rds")
 }
 
-PLOT_TYPE <- "forecast" # SET HERE!!
-PLOT_TYPE <- "rebuilding" # SET HERE!!
+# PLOT_TYPE <- "forecast" # SET HERE!!
+# PLOT_TYPE <- "rebuilding" # SET HERE!!
+
+for (PLOT_TYPE in c("forecast", "rebuilding")) {
 
 if (PLOT_TYPE == "rebuilding") {
   out_rebuild <- readRDS("data/generated/projections-rebuilding.rds")
@@ -348,7 +350,7 @@ if (PLOT_TYPE != "rebuilding") {
       alpha = 0.15, fill = "grey55"
     ) +
     xlab("Years after 2024")
-  ggsave_optipng("figs/ss3/refpts/rebuild-facet-model.png", width = 8.5, height = 6.5)
+  ggsave_optipng("figs/ss3/refpts/rebuild-facet-model.png", width = 8.5, height = 5.0)
 
   line_dat |>
 
@@ -629,7 +631,7 @@ if (PLOT_TYPE != "rebuilding") {
 
   # clean up
 }
-
+}
 f <- list.files("ss3", pattern = "-forecast-", full.names = T)
 f
 # x <- sapply(f, unlink, recursive = T, force = T)
