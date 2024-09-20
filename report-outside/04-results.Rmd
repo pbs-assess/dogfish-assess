@@ -167,7 +167,7 @@ knitr::include_graphics(here::here("figs/ss3/set_a_mat/len_comp_1937_model1.png"
 knitr::include_graphics(here::here("figs/ss3/set_a_mat/sel_annual_A1.png"))
 ```
 
-```{r ss3-zfrac-profile, fig.cap="Left: Likelihood profile of $z_\\textrm{frac}$ in the base model (A1). The solid black line is the total negative log-likelihood and the coloured lines correspond to individual data components. Right: Likelihood profile where values of $z_\\textrm{frac}$ is converted to the steepness."}
+```{r ss3-zfrac-profile, fig.cap="Left: Likelihood profile of $z_\\textrm{frac}$ in the base model (A1). The solid black line is the total negative log-likelihood and the coloured lines correspond to individual data components. Right: Likelihood profile where values of $z_\\textrm{frac}$ is converted to the steepness.", eval=FALSE}
 knitr::include_graphics(here::here("figs/ss3/prof/like_zfrac.png"))
 ```
 

@@ -245,7 +245,7 @@ csasdown::csas_table(
 
 \begin{landscapepage}
 
-```{r ss3-eq, results="asis"}
+```{r ss3-eq, results="asis", eval=FALSE}
 ss3_eq <- readxl::read_excel(here::here("tables/equations.xlsx"), sheet = "SS3_model") %>%
   mutate(Equation = paste0("$", .data$Equation, "$"),
          Number = 1:n())
@@ -258,7 +258,7 @@ csasdown::csas_table(
 )
 ```
 
-```{r ss3-likelihoods, results="asis"}
+```{r ss3-likelihoods, results="asis", eval=FALSE}
 ss3_like <- readxl::read_excel(here::here("tables/equations.xlsx"), sheet = "SS3_likelihood") %>%
   mutate(Equation = paste0("$", .data$Equation, "$"),
          Number = 1:n())
@@ -285,13 +285,13 @@ knitr::include_graphics(here::here("figs/ss3/growth-compare.png"))
 
 (ref:fig-mat-age) Estimates of female maturity at age, either from the literature and converted from maturity at length from biological samples in the Synoptic survey and then converted to maturity at age in SS3 using the specified growth curve. @taylor2009 estimated two maturity ogives based on biological samples collected in Puget Sound in either the 1940s or 2000s, and the minimum age of a mature female was 18 years. For the synoptic survey, maturity at age was converted from maturity at length in conjunction with two growth curves (Figure \@ref(fig:len-age)). 
 
-```{r mat-age, fig.cap="(ref:fig-mat-age)"}
+```{r mat-age, fig.cap="(ref:fig-mat-age)", eval=FALSE}
 knitr::include_graphics(here::here("figs/mat-lit-with-synoptic.png"))
 ```
 
 (ref:fig-fec-age) Fecundity at length relationship from @ketchen1972 (left) and the corresponding fecundity at age is converted in conjunction with two growth curves (right, Figure \@ref(fig:len-age)). The minimum age of a mature female in the population model was set to 18 years.
 
-```{r fec-age, fig.cap="(ref:fig-fec-age)"}
+```{r fec-age, fig.cap="(ref:fig-fec-age)", eval=FALSE}
 knitr::include_graphics(here::here("figs/ss3/fecundity.png"))
 ```
 
