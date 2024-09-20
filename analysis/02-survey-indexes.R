@@ -146,16 +146,15 @@ g2 <- ggplot(fits, aes(survey, y = 1-exp(est*5), ymin =1- exp(lwr*5), ymax = 1-e
   coord_flip() + xlab("") +
   scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1), breaks = seq(0.1, 1, 0.2)) +
   ylab("Proportion decline extrapolated\nto 50 years (one generation)") +
-  geom_hline(yintercept = c(0.3, 0.5, 0.7), lty = 2)
+  geom_hline(yintercept = c(0.3, 0.5, 0.7), lty = 2, alpha = 0.3)+
+  theme(axis.text.y = element_blank())
 
 mults <- group_by(dd, fleet) |> summarise(decades = max(decade) - min(decade)) |>
   rename(survey = fleet)
 
-fits <- left_join(fits, mults)
-
 # times by length of each survey for longest time series decline:
 
-g3 <- fits |>
+g3 <- left_join(fits, mults) |>
   mutate(
     lwr = 1 - exp(lwr * decades),
     upr = 1 - exp(upr * decades),
@@ -166,13 +165,15 @@ g3 <- fits |>
   geom_pointrange() +
   coord_flip() + xlab("") +
   scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1), breaks = seq(0.1, 1, 0.2)) +
-  ylab("Proportion decline extrapolated\nto 50 years (one generation)") +
-  geom_hline(yintercept = c(0.3, 0.5, 0.7), lty = 2) +
-  geom_text(mapping = aes(x = survey, y = est, label = decades))
+  ylab("Proportion decline\nover length of time series") +
+  geom_hline(yintercept = c(0.3, 0.5, 0.7), lty = 2, alpha = 0.3) +
+  geom_text(mapping = aes(x = survey, y = upr - 0.02, label = paste0(yrs, " years")), hjust = 1) +
+  theme(axis.text.y = element_blank())
 g3
 
-cowplot::plot_grid(g1, g2, align = "h")
-ggsave("figs/cosewic-decline-indexes.png", width = 7, height = 3)
+cowplot::plot_grid(g1, g2, g3, align = "h", nrow = 1, rel_widths = c(1.41, 1, 1), labels = "auto", label_x = c(0.37, .11, .11), label_fontface = "plain",
+  label_y = 0.99)
+ggsave("figs/cosewic-decline-indexes.png", width = 9.5, height = 3.5)
 
 if (FALSE) {
   system("optipng -strip all figs/cosewic-decline-indexes.png")
@@ -199,3 +200,26 @@ write_tex(h_rate, "DeclineHBLL", "survey-declines.tex")
 write_tex(c_rate, "DeclineCPUE", "survey-declines.tex")
 write_tex(i_rate, "DeclineIPHC", "survey-declines.tex")
 
+
+# Sablefish offshore trap index
+
+
+# ind <- gfdata::get_survey_index("044")
+# saveRDS(ind, "data/raw/gfdata-survey-indexes.rds")
+ind <- readRDS("data/raw/gfdata-survey-indexes.rds")
+ind |>
+  filter(survey_abbrev == "SABLE RAND") |>
+  mutate(geo_mean = exp(mean(log(biomass)))) |>
+  mutate(upperci = upperci / geo_mean) |>
+  mutate(lowerci = lowerci / geo_mean) |>
+  mutate(biomass = biomass / geo_mean) |>
+  ggplot(aes(year, biomass)) +
+  geom_pointrange(alpha = 0.9, mapping = aes(ymin = lowerci, ymax = upperci), size = 0.4, pch = 21) +
+  # geom_line() +
+  gfplot::theme_pbs() +
+  scale_y_continuous(limits = c(0, NA),
+    expand = expansion(mult = c(0, 0.05))) +
+  ylab("Relative biomass density") + xlab("Year") +
+  geom_smooth(se = FALSE, formula = y ~ x, method = "gam",
+    method.args = list(family = Gamma(link = "log")), colour = "blue")
+ggsave_optipng("figs/sablefish-index.png", width = 5.5, height = 3.3)
