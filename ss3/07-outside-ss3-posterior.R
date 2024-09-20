@@ -3,6 +3,7 @@ dir.create("figs/mcmc", showWarnings = FALSE)
 FRENCH <- FALSE
 library(rosettafish)
 library(GGally)
+library(dplyr)
 
 if (FRENCH) options(OutDec = ",")
 
