@@ -6,6 +6,7 @@
 - Geostatistical indexes are pushed in `data/generated` so the corresponding scripts in `analysis` can be skipped.
 - SS3 model configurations are in `ss3`.
 - R code to run SS3 models and generate figures from model output are in `ss3`.
+- The MCMC sampling sampling and forecasting files will take a long time to run.
 
 ### Required CRAN packages
 
