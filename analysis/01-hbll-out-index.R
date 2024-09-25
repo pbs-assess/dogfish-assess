@@ -107,7 +107,7 @@ gg <- ggplot(d, aes(longitude, latitude, fill = Pit, colour = Pit)) +
 ggsave("figs/hbll_out/baited_hooks.png", gg, height = 9, width = 7, dpi = 150)
 
 source("analysis/plot_multiyear_survey_sets.R")
-plot_multiyear_survey_sets(d, "HBLL OUT N")
+plot_multiyear_survey_sets(d, "HBLL OUT N", "density_ppkm2")
 
 gg <- ggplot(d, aes(longitude, latitude, fill = catch_count/exp(offset), colour = catch_count/exp(offset), size = catch_count/exp(offset))) +
   geom_sf(data = coast, inherit.aes = FALSE) +
