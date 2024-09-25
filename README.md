@@ -22,6 +22,8 @@ install.packages("viridis")
 install.packages("reshape2")
 install.packages("raster")
 install.packages("terra")
+install.packages("concaveman")
+install.packages("ggforce")
 
 install.packages("MSEtool")
 install.packages("DLMtool")
