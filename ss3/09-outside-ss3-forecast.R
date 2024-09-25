@@ -189,17 +189,18 @@ if (FALSE) {
 }
 
 # don't accidentally overwrite!
-if (FALSE) {
+# if (FALSE) {
   plan(multicore, workers = 68)
   out <- furrr::future_pmap(torun, run_projection, hessian = TRUE)
   # run_projection(model = "A0", catch = 100, hessian = FALSE)
   plan(sequential)
   saveRDS(out, "data/generated/projections.rds")
-}
+# }
 
 # rebuilding
 # don't accidentally overwrite!
-if (FALSE) {
+# Warning: this will take a *very* long time run:
+# if (FALSE) {
   (tacs <- seq(0, 400, by = 100))
   torun <- expand.grid(model = mods, catch = tacs)
   torun <- torun |> filter(!grepl("B", model))
@@ -214,7 +215,7 @@ if (FALSE) {
   #   geom_vline(xintercept = 2023)
   plan(sequential)
   saveRDS(out_rebuild, "data/generated/projections-rebuilding.rds")
-}
+# }
 
 # PLOT_TYPE <- "forecast" # SET HERE!!
 # PLOT_TYPE <- "rebuilding" # SET HERE!!
