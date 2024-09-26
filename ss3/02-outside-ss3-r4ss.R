@@ -69,6 +69,11 @@ if (FALSE) {
   r4ss::SS_output("ss3/A0") |> r4ss::SS_plots()
 }
 
+if (FALSE) {
+  # Fit models in serial:
+  purrr::walk(mods, fit_ss3, hessian = TRUE, ss_home = ss_home, extra_args = "-maxfn 250")
+}
+
 # Fit all of many models in parallel
 snowfall::sfInit(parallel = TRUE, cpus = min(floor(parallel::detectCores() / 2)), length(mods))
 snowfall::sfLapply(mods, fit_ss3, hessian = TRUE, ss_home = ss_home, extra_args = "-maxfn 250")
