@@ -227,6 +227,9 @@ class: center, middle, inverse
 
 ```{r, out.width="50%"}
 include_graphics("assets/img/dogfish-norman-tait.png")
+#include_graphics("assets/img/dogfish-bill-reid.png")
+#include_graphics("assets/img/dogfish-woman-airport.png")
+#include_graphics("assets/img/dogfish-robert-davidson.png")
 ```
 
 
@@ -240,7 +243,8 @@ class: center, middle, inverse
 
 #  Commercial fishery history
 .small[
-- 1870-1916 industrial lubrication, lighting purposes (mining and lighthouses), and fertilizer. More important that whaling industry
+- 1870-1916 industrial lubrication, lighting purposes (mining and lighthouses), and fertilizer.
+- More important than whaling industry
 ]
 
 ```{r, out.width="50%"}
