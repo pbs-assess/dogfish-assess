@@ -217,12 +217,12 @@ class: center, middle, inverse
 
 ---
 
-#  First Nations Use
+#  First Nations use
 .small[
 - Found in middens 
-- oldest dated spine found in midden in Port Hardy
+- Oldest dated spine found in midden in Port Hardy
 - Uses include skin for sandpaper, liver for oil for tanning, potential starvation food
-- Dogfish Woman – most powerful supernatural being in Haida Nation, she derives her powers from Dogfish
+- Dogfish Woman — most powerful supernatural being in Haida Nation, she derives her powers from Dogfish
 ]
 
 ```{r, out.width="50%"}
@@ -231,8 +231,6 @@ include_graphics("assets/img/dogfish-norman-tait.png")
 #include_graphics("assets/img/dogfish-woman-airport.png")
 #include_graphics("assets/img/dogfish-robert-davidson.png")
 ```
-
-
 
 ---
 class: center, middle, inverse
@@ -243,7 +241,7 @@ class: center, middle, inverse
 
 #  Commercial fishery history
 .small[
-- 1870-1916 industrial lubrication, lighting purposes (mining and lighthouses), and fertilizer.
+- 1870–1916 industrial lubrication, lighting purposes (mining and lighthouses), and fertilizer
 - More important than whaling industry
 ]
 
@@ -260,38 +258,37 @@ include_graphics("assets/img/miners-lamps.png")
 
 #  Commercial fishery history
 .small[
-- 1937 – 1950 Vitamin A fishery 120 million pounds at peak in BC. Large fishery in west coast US. 
-
+- 1937–1950 Dogfish livers for Vitamin A fishery
+- 120 million pounds/year at peak in BC
+- Move to synthetic vitamin A + declines in abundance ended the fishery
 ]
 
-```{r, out.width="50%"}
+```{r, out.width="70%"}
 include_graphics("assets/img/reconstructed-catch.png")
 ```
 
 ---
 #  Commercial fishery history
 .small[
-- 1951 - 1974  government subsidy programs, eradication (inside and outside).
+- 1951–1974 government subsidy programs, eradication (inside and outside).
 - Dogfish abundance up but no longer valuable
 - 1959 subsidy to kill dogfish in SOG
-- ‘killer’ trawl boats had trouble catching large amounts of Dogfish
+- "Killer" trawl boats had trouble catching large amounts of Dogfish
 ]
-```{r, out.width="30%"}
+```{r, out.width="40%"}
 include_graphics("assets/img/dogfish-problem.png")
 ```
 ---
 
 #  Commercial fishery history
 .small[
-- 1970 - 2011 food fishery for UK markets
-- MSC certification
+- 1970–2011 food fishery for UK markets
+- Marine Stewardship Council certification
 ]
 ```{r, out.width="30%"}
 #include_graphics("assets/img/dogfish-problem.png")
 ```
 ---
-
-
 
 #  Assessment history: Wood et al. 1979
 
