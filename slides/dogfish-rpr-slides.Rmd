@@ -27,6 +27,8 @@ xaringanthemer::style_mono_accent(
   title_slide_background_position = "50% 90%",
   base_font_size = "20px",
   header_h1_font_size = "2.0rem",
+  header_h2_font_size = "1.8rem",
+  header_h3_font_size = "1.6rem",
   text_font_size = "1.4rem",
   code_font_size = "1.1rem",
   link_color = "#0047AB"
@@ -132,6 +134,7 @@ Equation:
 $$
 y = x
 $$
+
 ---
 class: center, middle, inverse
 
@@ -161,21 +164,25 @@ class: center, middle, inverse
 
 #  Assessment history 
 
-.xsmall[
+
 ### Wood et al. 1979:
 
+.small[
 - Estimated unfished vulnerable biomass (BC to Oregon) of 200,000 tonnes from Delury and Leslie depletion models
-- Assumed pup survival and recruitment was density-independent. M = 0.094, solved from the maturity and fecundity schedule
+- Assumed pup survival and recruitment was density-independent.
+- M = 0.094, solved from the maturity and fecundity schedule
 - MSY was estimated to be 9-11 thousand tonnes where MSY = FMSY * 200,000 and FMSY = 0.5 M
-- Natural mortality was proposed as the density-dependent mechanism for the yield curve. Alternative hypotheses of density-dependent growth and fecundity were biologically implausible to achieve the proposed MSY value.
+- Natural mortality was proposed as the density-dependent mechanism for the yield curve.
+- Alternative hypotheses of density-dependent growth and fecundity were biologically implausible to achieve the proposed MSY value.
 ]
 
 ---
 
 #  Assessment history 
 
-.xsmall[
 ### Gallucci et al. 2010:
+
+.xsmall[
 - Surplus production model, was not used for advice
 ]
 
@@ -220,7 +227,19 @@ class: center, middle, inverse
 ---
 #  General approach 
 
-TODO
+- Fit spatiotemporal models to Dogfish catch weight or count with 'offset' for effort
+
+- Use delta-lognormal or negative binomial (NB2) observation error
+
+- Predict on grid covering survey each year; sum density across grid
+
+- Calculate standard errors with generalized delta method
+
+.tiny[
+Thorson, J.T., Shelton, A.O., Ward, E.J., and Skaug, H.J. 2015. Geostatistical delta-generalized linear mixed models improve precision for estimated abundance indices for West Coast groundfishes. ICES J. Mar. Sci. 72(5): 1297–1310.
+
+Anderson, S.C., Ward, E.J., English, P.A., Barnett, L.A.K., and Thorson, J.T. 2024. sdmTMB: An R package for fast, flexible, and user-friendly generalized linear mixed effects models with spatial and spatiotemporal random fields. In press at J. Stat. Softw. doi:10.1101/2022.03.24.485545.
+]
 
 ---
 
@@ -257,6 +276,19 @@ include_graphics("../figs/synoptic/sets-hs.png")
 include_graphics("../figs/synoptic/sets-wcvi.png")
 ```
 
+---
+# Synoptic survey grid depth
+
+```{r, out.width="70%"}
+include_graphics("../figs/synoptic/prediction_grid_depth.png")
+```
+
+---
+#  Bottom depth response curve
+
+```{r, out.width="45%"}
+include_graphics("../figs/synoptic/depth_marginal.png")
+```
 
 ---
 # Quantile-quantile residual checks
@@ -270,20 +302,6 @@ include_graphics("../figs/synoptic/qq-lg.png")
 
 ```{r, out.width="70%"}
 include_graphics("../figs/synoptic/aniso-lg.png")
-```
-
----
-# Synoptic survey grid depth
-
-```{r, out.width="70%"}
-include_graphics("../figs/synoptic/prediction_grid_depth.png")
-```
-
----
-#  Bottom depth response curve
-
-```{r, out.width="45%"}
-include_graphics("../figs/synoptic/depth_marginal.png")
 ```
 
 ---
@@ -322,13 +340,6 @@ Derive uncertainty with generalized delta method
 
 ```{r, out.width="65%"}
 include_graphics("../figs/synoptic/syn_index.png")
-```
-
----
-#  Design vs. spatiotemporal-model-based indexes 
-
-```{r, out.width="75%"}
-include_graphics("../figs/synoptic/syn_index_compare_design.png")
 ```
 
 ---
@@ -374,6 +385,13 @@ class: center, middle
 
 ```{r, out.width="75%"}
 include_graphics("../figs/cpue/map-est.png")
+```
+
+---
+#  Population indices 
+
+```{r, out.width="650px"}
+include_graphics("../figs/ss3/index.png")
 ```
 
 ---
@@ -450,7 +468,7 @@ include_graphics("../figs/maturity-outside-survey-compare.png")
 ---
 #  Possible maturity ogives
 
-```{r, out.width="100%"}
+```{r, out.width="90%"}
 include_graphics("../figs/ss3/mat-lit-with-synoptic.png")
 ```
 
