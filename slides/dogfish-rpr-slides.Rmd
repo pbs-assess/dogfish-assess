@@ -403,18 +403,20 @@ class: center, middle, inverse
 ---
 #  A need for a stock-recruit curve for Dogfish-like species 
 
-- Unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups (B0)
+Unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups (B0).
 
-- Density-dependent unfished pup survival is 0.6, then we get 600 recruits (R0)
+If density-dependent unfished pup survival is 0.6, then we get 600 recruits (R0).
 
-- A population of N = 20 produces 200 pups (0.2 B0). If steepness is 1 in a closed population, we'd have to conjure 600 recruits from 200 pups. Thus, steepness is capped at 0.33 (200/600)
+A population of N = 20 (0.2 B0) produces 200 pups. If steepness were 1 in a closed population, we'd have to conjure 600 recruits from 200 pups.
+
+Thus, in this example, steepness is capped at 0.33: 200 pups at 0.2B0 divided by 600 pups when unfished.
 
 ---
 #  Dogfish stock recruit relationship 
 
-- $z_\mathrm{frac}$ is the proportion of unfished density dependent mortality when stock → zero (0–1, higher = more productive stock)
+$z_\mathrm{frac}$ is the proportion of unfished density dependent mortality when stock → zero (0–1, higher = more productive stock)
 
-- $\beta$ controls concavity in density dependent mortality as stock declines (1 in linear)
+$\beta$ controls concavity in density dependent mortality as stock declines (1 = linear)
 
 .tiny[
 Taylor, I.G., Gertseva, V., Methot, R.D., and Maunder, M.N. 2013. A stock–recruitment relationship based on pre-recruit survival, illustrated with application to spiny dogfish shark. Fisheries Research 142: 15–21.
