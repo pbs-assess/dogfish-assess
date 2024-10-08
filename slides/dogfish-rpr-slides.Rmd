@@ -630,7 +630,7 @@ class: center, middle, inverse
 ---
 #  Trawl survey declines are coastwide 
 
-```{r, out.width="600px"}
+```{r, out.width="600px", eval=FALSE}
 include_graphics("assets/img/image58.png")
 ```
 
