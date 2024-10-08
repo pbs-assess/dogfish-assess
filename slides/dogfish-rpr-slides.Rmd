@@ -448,9 +448,9 @@ class: center, middle
 #  Other surveys and commercial CPUE
 
 ---
-## Outside hard bottom longline (HBLL) survey 
+#### Outside hard bottom longline (HBLL) survey 
 
-```{r, out.width="60%"}
+```{r, out.width="55%"}
 include_graphics("../figs/hbll_out/cpue.png")
 ```
 
@@ -597,11 +597,11 @@ class: center, middle, inverse
 #  Population Dynamics Model
 
 ---
-#  A need for a stock-recruit curve for Dogfish-like species 
+###  Why a stock-recruit curve for Dogfish-like species?
 
 --
 
-Unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups (B0).
+Imagine an unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups (B0).
 
 --
 
@@ -640,7 +640,7 @@ include_graphics("../figs/ss3/prof/prof_zfrac_SR.png")
 ```
 
 ---
-#  Steller sea lion abundance 1971--2017 
+#  Steller sea lion abundance 1971–2017 
 
 ```{r, out.width="70%"}
 include_graphics("assets/img/image44.png")
