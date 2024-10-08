@@ -1,5 +1,6 @@
 library(dplyr)
 library(ggplot2)
+source("ss3/99-utils.R")
 
 theme_set(gfplot::theme_pbs())
 
@@ -113,9 +114,12 @@ g <- ind %>%
   gfplot::theme_pbs() +
   expand_limits(y = 0) +
   coord_cartesian(expand = FALSE, xlim = c(1980, 2025), ylim = c(0, 3.7)) +
-  labs(x = "Year", y = "Index")
+  labs(x = "Year", y = "Index value")
 g
 ggsave("figs/indices-all.png", width = 6, height = 6, dpi = 200)
+
+g + theme(axis.title.x = element_blank())
+ggsave("figs/indices-all-sar.png", width = 5, height = 5, dpi = 250)
 
 # COSEWIC ---------------------
 
@@ -193,7 +197,6 @@ i_rate <- as.character(round(i_rate * 100, 0))
 c_rate <- xx |>  filter(survey == "Bottom Trawl CPUE") |> pull(est)
 c_rate <- as.character(round(c_rate * 100, 0))
 
-source("ss3/99-utils.R")
 file.remove("values/survey-declines.tex")
 write_tex(s_rate, "DeclineSyn", "survey-declines.tex")
 write_tex(h_rate, "DeclineHBLL", "survey-declines.tex")

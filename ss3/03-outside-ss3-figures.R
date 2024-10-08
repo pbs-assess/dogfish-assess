@@ -309,13 +309,36 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     geom_linerange() +
     geom_point() +
     geom_line(aes(y = Exp, colour = scen)) +
-    expand_limits(y = 0) +
+    scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
     facet_wrap(vars(FName), scales = "free_y") +
     gfplot::theme_pbs() +
     labs(x = "Year", y = "Index", colour = "Model") +
     guides(colour = guide_legend(ncol = 2)) +
     theme(panel.spacing = unit(0, "in"), legend.position = "bottom")
   .ggsave("index_fit.png", g, height = 5, width = 6)
+
+  # Plot index with one fit for SAR:
+  Map(SS3_index, multi_rep, model_name, figure = FALSE) %>%
+    bind_rows() %>%
+    mutate(scen = forcats::fct_inorder(scen)) |>
+    mutate(scen = factor(scen, levels = model_name)) |>
+    left_join(fleet_names, by = "Fleet_name") %>%
+    filter(grepl("A0", scen)) |>
+    group_by(scen, FName) |>
+    mutate(geomean = exp(mean(log(Obs)))) |>
+    mutate(Obs = Obs / geomean, Exp = Exp / geomean) |>
+    mutate(FName = factor(FName, levels = c("HS MSA", "Bottom Trawl CPUE", "IPHC", "Synoptic", "HBLL Outside"))) |>
+    ggplot(aes(Yr, Obs, ymin = exp(log(Obs) - 1.96 * SE), ymax = exp(log(Obs) + 1.96 * SE))) +
+    geom_linerange(colour = "grey30") +
+    geom_point(pch = 21, colour = "grey30") +
+    geom_line(aes(y = Exp), lty = 1, colour = "#3182BD", lwd = 0.7, alpha = 0.8) +
+    scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+    facet_wrap(vars(FName), scales = "fixed") +
+    gfplot::theme_pbs() +
+    labs(x = "Year", y = "Index value", colour = "Model") +
+    guides(colour = guide_legend(ncol = 2)) +
+    theme(panel.spacing = unit(0, "in"), legend.position = "bottom", axis.title.x = element_blank())
+  .ggsave("index_fit_SAR.png", height = 5, width = 5)
 
   # Plot SR
   g <- SS3_SR(multi_rep, model_name) +
