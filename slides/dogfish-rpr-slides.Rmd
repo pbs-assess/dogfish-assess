@@ -201,9 +201,81 @@ class: center, middle, inverse
 ---
 class: center, middle, inverse
 
+#  Long history on the Coast
+
+---
+
+#  First Nations Use
+.small[
+- Found in middens 
+- oldest dated spine found in midden in Port Hardy
+- Uses include skin for sandpaper, liver for oil for tanning, potential starvation food
+- Dogfish Woman – most powerful supernatural being in Haida Nation, she derives her powers from Dogfish
+]
+
+```{r, out.width="50%"}
+include_graphics("assets/img/dogfish-norman-tait.png")
+```
+
+
+
+---
+class: center, middle, inverse
+
 #  Commercial fishery history 
 
 ---
+
+#  Commercial fishery history
+.small[
+- 1870-1916 industrial lubrication, lighting purposes (mining and lighthouses), and fertilizer. More important that whaling industry
+]
+
+```{r, out.width="50%"}
+include_graphics("assets/img/miners-lamps.png")
+```
+
+
+```{r, out.width="40%"}
+#include_graphics("assets/img/race-rocks-lighthouse.jpg")
+```
+
+---
+
+#  Commercial fishery history
+.small[
+- 1937 – 1950 Vitamin A fishery 120 million pounds at peak in BC. Large fishery in west coast US. 
+
+]
+
+```{r, out.width="50%"}
+include_graphics("assets/img/reconstructed-catch.png")
+```
+
+---
+#  Commercial fishery history
+.small[
+- 1951 - 1974  government subsidy programs, eradication (inside and outside).
+- Dogfish abundance up but no longer valuable
+- 1959 subsidy to kill dogfish in SOG
+- ‘killer’ trawl boats had trouble catching large amounts of Dogfish
+]
+```{r, out.width="30%"}
+include_graphics("assets/img/dogfish-problem.png")
+```
+---
+
+#  Commercial fishery history
+.small[
+- 1970 - 2011 food fishery for UK markets
+- MSC certification
+]
+```{r, out.width="30%"}
+#include_graphics("assets/img/dogfish-problem.png")
+```
+---
+
+
 
 #  Assessment history: Wood et al. 1979
 
@@ -236,7 +308,7 @@ class: center, middle, inverse
 - Basis for current TAC
 
 - Saunders 1989 assumed BC was 1/2 to 2/3 of stock
-  - therefore, 4,5000–9,333 t was "high risk"
+  - therefore, 4,500–9,333 t was "high risk"
 ]
 
 ---
@@ -260,7 +332,7 @@ class: center, middle, inverse
 ---
 #  Nearby assessments: Gulf of Alaska
 
-- Not targetted but frequently encountered and discarded
+- Not targeted but frequently encountered and discarded
 
 - Demographic model and risk analysis (Tribuzio et al. 2022)
 
@@ -273,7 +345,8 @@ class: center, middle, inverse
 
 - Similar vitamin A fishery history
 
-- Not targeted since vitamin A fishery, but sometimes landed
+- Not targeted since vitamin A fishery, but sometimes landed (but since the mid-1970s a food fish
+market developed for Dogfish)
 
 - Estimated at 34% of unfished spawning output (above overfished threshold of 25% but below target of 40%)
 
