@@ -498,7 +498,13 @@ A population of N = 20 (0.2 B0) produces 200 pups. If steepness were 1 in a clos
 Thus, in this example, steepness is capped at 0.33: 200 pups at 0.2B0 divided by 600 pups when unfished.
 
 ---
-#  Dogfish stock recruit relationship 
+#  Dogfish stock recruit relationship
+
+\begin{aligned}
+R_y &= S_y \times \exp\left(-z_0 + (z_0 - z_\mathrm{min})\left(1 - \frac{S_y}{S_0}\right)^\beta\right)\\
+z_\mathrm{min} &= z_0(1 - z_\mathrm{frac})\\
+z_0 &= -\log(1/\phi_0)
+\end{aligned}
 
 $z_\mathrm{frac}$ is the proportion of unfished density dependent mortality when stock → zero (0–1, higher = more productive stock)
 
