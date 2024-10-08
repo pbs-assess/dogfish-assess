@@ -11,6 +11,7 @@ output:
     nature:
       highlightLines: true
       countIncrementalSlides: false
+      ratio: "4:3"
 ---
 
 ```{r preamble, include=FALSE, cache=FALSE}
@@ -24,7 +25,7 @@ xaringanthemer::style_mono_accent(
   title_slide_background_position = "50% 90%",
   base_font_size = "20px",
   header_h1_font_size = "2.0rem",
-  text_font_size = "1.5rem",
+  text_font_size = "1.4rem",
   code_font_size = "1.1rem",
   link_color = "#0047AB"
 )
@@ -46,9 +47,80 @@ knitr_opts <- list(
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 
-#  Background 
+---
+class: center, middle, inverse
 
+#  This is a section break as a demo
 
+---
+class: center, middle
+
+#  This is a sub-section break
+
+---
+#  This is a regular slide with one figure at 80% width
+
+```{r, out.width="80%"}
+include_graphics("../figs/reconstructed-catch-discards-outside-sar.png")
+```
+
+.xsmall[And some extra small text (see theme.css for other sizes).]
+
+---
+#  This is a 2-column slide
+
+.pull-left[
+Point one
+
+Point two
+
+Point three
+]
+
+.pull-right[
+```{r, out.width="90%"}
+include_graphics("../figs/synoptic/depth_marginal.png")
+```
+]
+
+---
+#  This is a 2-column slide with smaller bullets
+
+.xsmall[
+.pull-left[
+- Point one
+
+- Point two
+
+- Point three
+]
+]
+
+.pull-right[
+```{r, out.width="85%"}
+include_graphics("../figs/synoptic/depth_marginal.png")
+```
+]
+
+---
+#  These bullets are releaved one by one
+
+--
+
+- Point one
+
+--
+
+- Point two
+
+--
+
+- Point three
+
+---
+class: center, middle, inverse
+
+#  End of demo!
 
 ---
 class: center, middle, inverse
@@ -103,7 +175,6 @@ US West Coast
 class: center, middle, inverse
 
 #  Data 
-
 
 ---
 #  Commercial catch data 
