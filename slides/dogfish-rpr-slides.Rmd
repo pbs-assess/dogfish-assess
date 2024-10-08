@@ -483,6 +483,19 @@ class: center, middle, inverse
 #  Reference Points
 
 ---
+
+# Why work with spawning output over spawning biomass
+
+TODO
+
+---
+
+# Why work with depletion-based over MSY-based reference points
+
+TODO
+
+---
+
 #  $S/S_0$: spawning output over unfished spawning output
 
 ```{r, out.width="100%"}
@@ -516,12 +529,16 @@ include_graphics("../figs/ss3/refpts/2024-yield-catch.png")
 ---
 #  Probability $S > 0.2S_0$ under fixed catches 
 
+<br>
+
 ```{r, out.width="100%"}
 include_graphics("../figs/ss3/refpts/lrp-ref-pt-tigure.png")
 ```
-
+  
 ---
 #  Probability $S > 0.4S_0$under fixed catches 
+
+<br>
 
 ```{r, out.width="100%"}
 include_graphics("../figs/ss3/refpts/usr-ref-pt-tigure.png")
@@ -530,16 +547,30 @@ include_graphics("../figs/ss3/refpts/usr-ref-pt-tigure.png")
 ---
 #  Probability $F < F_\mathrm{0.4S0}$ under fixed catches 
 
+<br>
+
 ```{r, out.width="100%"}
 include_graphics("../figs/ss3/refpts/f-ref-pt-tigure.png")
 ```
 
 ---
 class: center, middle, inverse
-#  COSEWIC Considerations 
+#  COSEWIC Considerations
+
+---
+
+# COSEWIC criteria
+
+COSEWIC Metric A measures the probability that the stock has declined by 70%, 50% or 30% "over the last 10 years or 3 generations, whichever is longer", but is also interpreted as a decline over the longest time series available. 
+
+We define the generation time as 1/M + age at 50% maturity. I.e., 1/0.065 + 33.5 = ~50 years
+
+Entire assessment (1937 = 2023, 86 years) = ~1.7 generations.
 
 ---
 #  Rates of decline 
+
+<br>
 
 ```{r, out.width="100%"}
 include_graphics("../figs/cosewic-decline-indexes.png")
@@ -550,7 +581,33 @@ class: center, middle, inverse
 #  Rebuilding Considerations 
 
 ---
-#  Forecasts of S/S0 under fixed catch scenarios 
+# Rebuilding Considerations 
+
+.small[
+Dogfish are subject to DFO's Precautionary Approach (PA) Framework under the Sustainable Fisheries Framework (SFF).
+]
+
+--
+
+.small[
+The PA Framework: "when a stock has reached the Critical Zone [below the LRP], a rebuilding plan must be in place with the aim of having a high probability of the stock growing out of the Critical Zone within a reasonable timeframe."
+]
+
+--
+
+.small[
+Guidelines:
+"a 'reasonable timeframe' for a stock to grow above its LRP should be between 1.5 to 2 times the generation time. However, for some stocks a longer time may be needed to reach its rebuilding target, for example due to a stock's highly depleted state or its current productivity."
+]
+
+--
+
+.small[
+*This assessment is not a rebuilding plan.*
+]
+
+---
+#  Forecasts of $S/S_0$ under fixed catch scenarios 
 
 ```{r, out.width="100%"}
 include_graphics("../figs/ss3/refpts/rebuild-facet-model.png")
@@ -704,6 +761,15 @@ include_graphics("../figs/cpue/cpue-slopes-by-month.png")
 --
 
 * Regardless of cause, there are fewer Dogfish in BC outside waters than there were 20 years ago when surveys began.
+
+---
+class: center, middle, inverse
+#  Conclusions
+
+---
+#  Conclusions
+
+TODO
 
 ---
 class: center, middle, inverse
