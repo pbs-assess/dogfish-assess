@@ -62,3 +62,11 @@ ss3/*prof*
 *-forecast-*
 
 *_mceval
+slides/dogfish-rpr-slides_cache/html/__globals
+slides/dogfish-rpr-slides_cache/html/__objects
+slides/dogfish-rpr-slides_cache/html/__packages
+
+*.rdx
+*.rdb
+*.RData
+slides/libs/header-attrs-2.28/header-attrs.js
