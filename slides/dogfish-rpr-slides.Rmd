@@ -143,17 +143,48 @@ class: center, middle, inverse
 ---
 class: center, middle, inverse
 
-#  Dogfish life history and ecology 
+#  Dogfish life history, ecology, and stock structure
 
 ---
-class: center, middle, inverse
 
-#  Dogfish stock structure 
+# Dogfish life history and ecology
+
+.small[
+.pull-two-thirds-left[
+- Maximum age ~ 80–85 years
+
+- Maximum size ~ 160 cm
+
+- Late maturing: ~ 35 years (95 cm) for females; ~ 25 years (70 cm) for males
+
+- One of longest gestations among all animals (~ 2 years)
+
+- Low intrinsic population growth rate, even among sharks
+
+- Inhabit surface to ~1,000 m; older dogfish more likely on bottom; males generally shallower than females.
+]]
+
+.pull-third-right[
+<img src="assets/img/spiny-dogfish-wiki.jpg" width="100%" style="display: block; margin: auto;">
+]
 
 ---
-class: center, middle, inverse
 
-#  Stock structure 
+#  Dogfish stock structure
+
+.small[
+- Tagging data suggest in northeast Pacific:
+
+  - an offshore population from Baja California to Aleutian Islands and Bering Sea
+  - a coastal population in the Strait of Georgia
+  - a coastal population in Puget Sound
+
+- This assessment focuses on the offshore the stock in BC
+
+- Tagging data suggests low rates (< 5%) of exchange between US and Canadian waters
+
+- Dogfish tagged off Washington and Vancouver Island tend to migrate south in winter and north in summer
+]
 
 ---
 class: center, middle, inverse
@@ -596,15 +627,37 @@ class: center, middle, inverse
 
 ---
 
-# Why work with spawning output over spawning biomass
+## Why spawning output over spawning biomass?
 
-TODO
+- Provides a more direct measure of stock productivity and we can better estimate it than for most teleost fish.
+
+--
+
+- For teleost fish, spawning biomass is typically used as a proxy for spawning output (egg production) since more direct information about fecundity is unavailable.
+
+--
+
+- Fecundity of Dogfish is comparatively well known (2–16 pups depending on size; Ketchen 1968).
+
+--
+
+- Therefore, spawning output (number of pups) is commonly used for reference points for long-lived low-fecundity species such as sharks.
+
 
 ---
 
-# Why work with depletion-based over MSY-based reference points
+# Why depletion-based reference points?
 
-TODO
+
+.pull-left[
+- Shape of yield curve with respect to depletion across values of stock-recruit $z_\mathrm{frac}$ and $\beta$ relatively constant
+
+- But height of curves (MSY) varies strongly
+]
+
+.pull-right[
+<img src="../figs/ss3/prof/zfrac_yield_curve.png" width="100%" style="display: block; margin: auto;">
+]
 
 ---
 

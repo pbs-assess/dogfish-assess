@@ -97,3 +97,20 @@ div.footer {
     width: 400px;
     font-size: .6em;
 }
+
+.pull-third-left {
+  float: left;
+  width: 33%;
+}
+.pull-two-thirds-left {
+  float: left;
+  width: 66%;
+}
+.pull-two-thirds-right {
+  float: right;
+  width: 66%;
+}
+.pull-third-right {
+  float: right;
+  width: 33%;
+}
