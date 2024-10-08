@@ -147,7 +147,7 @@ class: center, middle, inverse
 
 ---
 
-# Dogfish life history and ecology
+# Dogfish life history
 
 .small[
 .pull-two-thirds-left[
@@ -160,12 +160,24 @@ class: center, middle, inverse
 - One of longest gestations among all animals (~ 2 years)
 
 - Low intrinsic population growth rate, even among sharks
-
-- Inhabit surface to ~1,000 m; older dogfish more likely on bottom; males generally shallower than females.
 ]]
 
 .pull-third-right[
 <img src="assets/img/spiny-dogfish-wiki.jpg" width="100%" style="display: block; margin: auto;">
+]
+
+---
+
+# Dogfish ecology
+
+.small[
+- Inhabit surface to ~1,000 m; older dogfish more likely on bottom; males generally shallower than females.
+
+- Opportunistic feeders: invertebrates (squid, jellyfish, crabs, and euphausiids) and fish (Pacific herring, Pacific salmon, flatfish, and eulachon)
+
+- Low metabolism and slow digestion time—time between feeding as long as 16 days
+
+- Predators include large fish such as Lingcod, other sharks such as Bluntnose Sixgill Shark, marine mammals such as offshore killer whales, and Steller and California sea lions
 ]
 
 ---
@@ -193,28 +205,56 @@ class: center, middle, inverse
 
 ---
 
-#  Assessment history 
-
-
-### Wood et al. 1979:
+#  Assessment history: Wood et al. 1979
 
 .small[
 - Estimated unfished vulnerable biomass (BC to Oregon) of 200,000 tonnes from Delury and Leslie depletion models
-- Assumed pup survival and recruitment was density-independent.
+
+- Assumed pup survival and recruitment was density-independent
+
 - M = 0.094, solved from the maturity and fecundity schedule
-- MSY was estimated to be 9-11 thousand tonnes where MSY = FMSY * 200,000 and FMSY = 0.5 M
-- Natural mortality was proposed as the density-dependent mechanism for the yield curve.
-- Alternative hypotheses of density-dependent growth and fecundity were biologically implausible to achieve the proposed MSY value.
+
+- MSY was estimated to be 9,000–11,000 t where MSY = FMSY $\times$ 200,000 and FMSY = 0.5 M
+
+- Natural mortality proposed as density-dependent mechanism for yield curve
+
+- Alternative hypotheses of density-dependent growth and fecundity deemed biologically implausible to achieve the proposed MSY value
+]
+
+
+---
+
+#  Assessment history: Saunders 1980s
+
+.small[
+- Wood et al. 1979 model updated by Saunders in 1985, 1986, 1987, and 1989
+
+- 1989 catch recommendations were for Alaska–California stock:
+  - 9,000 t = "low risk"
+  - 9,000–14,000 t = "high risk"
+
+- This is approximately where current TAC is
+
+- Saunders 1989 assumed BC was 1/2 to 2/3 of stock
+  - therefore, 4,5000–9,333 t was "high risk" of declines
 ]
 
 ---
 
-#  Assessment history 
+#  Assessment history: Gallucci et al. 2010
 
-### Gallucci et al. 2010:
+.small[
+- Surplus production model
 
-.xsmall[
-- Surplus production model, was not used for advice
+- Catch data from longline and trawl fisheries; commercial CPUE, IPHC, NMFS Triennial survey, HS MSA survey indices
+  
+- Synoptic trawl and HBLL surveys too short at the time
+
+- Challenges with parameter estimation
+
+- "no consensus reached on a scientifically valid approach on which to base yield recommendations"
+
+- Reduction in the size distribution, long generation time, low fecundity, uncertainty in population trends, vulnerability elsewhere resulted in COSEWIC "Special Concern" in 2011
 ]
 
 ---
