@@ -447,9 +447,9 @@ class: center, middle
 #  International Pacific Halibut Commission (IPHC) setline survey 
 
 ---
-#  IPHC CPUE by set 
+##  IPHC CPUE by set 
 
-```{r, out.width="60%"}
+```{r, out.width="56%"}
 include_graphics("../figs/iphc/cpue.png")
 ```
 
@@ -535,11 +535,6 @@ include_graphics("../figs/length-age-comparison.png")
 ```
 
 ---
-#  Natural mortality 
-
-TODO
-
----
 ##  BC + US samples vs. US-assessment estimated 
 
 ```{r, out.width="95%"}
@@ -579,6 +574,15 @@ include_graphics("../figs/ss3/set_a_mat/fecundity.png")
 ```
 
 ---
+#  Natural mortality 
+
+- Estimated as 0.064 based on Hamel and Cope (2022) and BC max age of 85: M = 5.4/85
+
+- Nearly identical to Smith et al. (1998) and US West Coast assessment M = 0.065
+
+- Proceed with sex-invariant 0.065 (similar longevity)
+
+---
 #  Unfished replacement line
 
 ```{r, out.width="90%"}
@@ -595,13 +599,21 @@ class: center, middle, inverse
 ---
 #  A need for a stock-recruit curve for Dogfish-like species 
 
+--
+
 Unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups (B0).
+
+--
 
 If density-dependent unfished pup survival is 0.6, then we get 600 recruits (R0).
 
+--
+
 A population of N = 20 (0.2 B0) produces 200 pups. If steepness were 1 in a closed population, we'd have to conjure 600 recruits from 200 pups.
 
-Thus, in this example, steepness is capped at 0.33: 200 pups at 0.2B0 divided by 600 pups when unfished.
+--
+
+Thus, in this example, steepness should be capped at 0.33: 200 pups at 0.2B0 divided by 600 pups when unfished.
 
 ---
 #  Dogfish stock recruit relationship
@@ -740,7 +752,7 @@ include_graphics("../figs/ss3/refpts/f-ref-ts.png")
 ```
 
 ---
-#  Catch in 2024 at $F_\mathrm{0.4S0}$
+#  Dead catch in 2024 at $F_\mathrm{0.4S0}$
 
 ```{r, out.width="500px"}
 include_graphics("../figs/ss3/refpts/2024-yield-catch.png")
@@ -785,9 +797,17 @@ class: center, middle, inverse
 
 COSEWIC Metric A measures the probability that the stock has declined by 70%, 50% or 30% "over the last 10 years or 3 generations, whichever is longer", but is also interpreted as a decline over the longest time series available. 
 
-We define the generation time as 1/M + age at 50% maturity. I.e., 1/0.065 + 33.5 = ~50 years
+--
+
+We define the generation time as 1/M + age at 50% maturity. I.e., 1/0.065 + 33.5 = ~50 years.
+
+--
 
 Entire assessment (1937 = 2023, 86 years) = ~1.7 generations.
+
+--
+
+We can also look at just the population indices.
 
 ---
 #  Rates of decline 
@@ -850,6 +870,15 @@ class: center, middle, inverse
 ---
 #  Improvements over previous assessment 
 
+- Introduction of new population indices: HBLL + Synoptic trawl indices (~20 years) with strong trends that were not yet apparent
+
+--
+
+- Surplus production model → age-structured model
+
+- An age-structured model lets us evaluate population trajectories consistent with understanding of Dogfish growth, maturity, fecundity, and stock-recruit productivity while also fitting the length composition and index data.
+
+- Age-structured models can incorporate lags in the population response due to late maturity and low fecundity.
 
 ---
 ##  Challenges fitting some population indices 
