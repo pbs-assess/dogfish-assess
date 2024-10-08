@@ -11,11 +11,6 @@ theme_set(gfplot::theme_pbs())
 library(tidyverse)
 library(r4ss)
 source("ss3/ss3_functions.R")
-dir.create("figs/ss3", showWarnings = FALSE)
-dir.create("figs/ss3/set_a_mat", showWarnings = FALSE)
-dir.create("figs/ss3/set_a_ind", showWarnings = FALSE)
-dir.create("figs/ss3/set_b", showWarnings = FALSE)
-dir.create("figs/ss3/set_a_zfrac", showWarnings = FALSE)
 
 source("ss3/99-utils.R")
 file.remove("values/models.tex")
@@ -338,7 +333,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     labs(x = "Year", y = "Index value", colour = "Model") +
     guides(colour = guide_legend(ncol = 2)) +
     theme(panel.spacing = unit(0, "in"), legend.position = "bottom", axis.title.x = element_blank())
-  .ggsave("index_fit_SAR.png", height = 5, width = 5)
+  ggsave_optipng("figs/index_fit_SAR.png", height = 4, width = 6)
 
   # Plot SR
   g <- SS3_SR(multi_rep, model_name) +
@@ -494,9 +489,22 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
       gfplot::theme_pbs() +
       expand_limits(y = 0) +
       facet_grid(vars(variable), vars(Sex), scales = "free_y") +
-      labs(x = "Year", y = "Estimated abundance") +
+      labs(x = "Year", y = "Estimated abundance (1000s)") +
       ggtitle(model_name[1])
     .ggsave("N_age_A1.png", g2, height = 6, width = 5)
+
+    # for SAR:
+    g2 <- g$data %>%
+      mutate(variable = paste("Age", variable)) %>%
+      #mutate(value = value/max(value), .by = c(variable, Sex, scen)) %>%
+      ggplot(aes(Yr, value)) +
+      geom_line(colour = "grey30") +
+      gfplot::theme_pbs() +
+      scale_y_continuous(lim = c(-0.2, NA), expand = expansion(mult = c(0, 0.05))) +
+      facet_grid(vars(variable), vars(Sex), scales = "free_y") +
+      labs(x = "Year", y = "Estimated abundance (1000s)") +
+      theme(axis.title.x = element_blank())
+    ggsave_optipng("figs/N_age_A1_SAR.png", g2, height = 5, width = 4.5)
 
     # Compare with numbers at length
     g <- SS3_N(multi_rep[1], model_name[1], type = "length", len = seq(50, 115, 15))
@@ -507,9 +515,9 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
       gfplot::theme_pbs() +
       expand_limits(y = 0) +
       facet_grid(vars(variable), vars(Sex), scales = "free_y") +
-      labs(x = "Year", y = "Estimated abundance") +
+      labs(x = "Year", y = "Estimated abundance (1000s)") +
       ggtitle(model_name[1])
-    .ggsave("N_len_A1.png", g2, height = 6, width = 5)
+    .ggsave("N_len_A1.png", g2, height = , width = 5)
 
     # Exploitation and apical F
     g <- SS3_apicalF(multi_rep[[1]])
