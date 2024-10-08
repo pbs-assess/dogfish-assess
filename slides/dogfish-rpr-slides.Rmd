@@ -231,12 +231,12 @@ class: center, middle, inverse
 
 - 1989 catch recommendations were for Alaska–California stock:
   - 9,000 t = "low risk"
-  - 9,000–14,000 t = "high risk"
+  - 9,000–14,000 t = "high risk" (of declines)
 
-- This is approximately where current TAC is
+- Basis for current TAC
 
 - Saunders 1989 assumed BC was 1/2 to 2/3 of stock
-  - therefore, 4,5000–9,333 t was "high risk" of declines
+  - therefore, 4,5000–9,333 t was "high risk"
 ]
 
 ---
@@ -258,11 +258,28 @@ class: center, middle, inverse
 ]
 
 ---
-#  Nearby assessments 
+#  Nearby assessments: Gulf of Alaska
 
-Gulf of Alaska
+- Not targetted but frequently encountered and discarded
 
-US West Coast
+- Demographic model and risk analysis (Tribuzio et al. 2022)
+
+- Overfishing limits set based on maximum historical catch
+
+- Last assessed as not overfished
+
+---
+#  Nearby assessments: US West Coast
+
+- Similar vitamin A fishery history
+
+- Not targeted since vitamin A fishery, but sometimes landed
+
+- Estimated at 34% of unfished spawning output (above overfished threshold of 25% but below target of 40%)
+
+- Overfishing estimated during vitamin A fishery and in 1980s–early 1990s
+
+- Similar data and SS3 model to what we will present for BC; similar issues
 
 ---
 class: center, middle, inverse
