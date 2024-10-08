@@ -540,7 +540,7 @@ include_graphics("../figs/ss3/prof/prof_zfrac_SR.png")
 ```
 
 ---
-#  Steller sea lion abundance 1971-2017 
+#  Steller sea lion abundance 1971--2017 
 
 ```{r, out.width="70%"}
 include_graphics("assets/img/image44.png")
@@ -574,7 +574,7 @@ include_graphics("../figs/ss3/set_a_mat/sel_age_max1.png")
 
 ---
 
-# Length composition are not informative about depletion
+#### Length composition are not informative about depletion
 
 ```{r, out.width="43%"}
 include_graphics("../figs/ss3/set_a_mat/len_comp_1937_model1.png")
@@ -639,7 +639,7 @@ include_graphics("../figs/ss3/refpts/2024-yield-catch.png")
 *Discard mortality rate must still be applied*
 
 ---
-#  Probability $S > 0.2S_0$ under fixed catches 
+##  Probability $S > 0.2S_0$ under fixed catches 
 
 <br>
 
@@ -648,7 +648,7 @@ include_graphics("../figs/ss3/refpts/lrp-ref-pt-tigure.png")
 ```
   
 ---
-#  Probability $S > 0.4S_0$under fixed catches 
+#  Probability $S > 0.4S_0$ under fixed catches 
 
 <br>
 
@@ -657,7 +657,7 @@ include_graphics("../figs/ss3/refpts/usr-ref-pt-tigure.png")
 ```
 
 ---
-#  Probability $F < F_\mathrm{0.4S0}$ under fixed catches 
+##  Probability $F < F_\mathrm{0.4S0}$ under fixed catches 
 
 <br>
 
