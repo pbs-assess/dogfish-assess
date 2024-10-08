@@ -172,11 +172,23 @@ class: center, middle, inverse
 
 .small[
 - Inhabit surface to ~1,000 m; older dogfish more likely on bottom; males generally shallower than females.
+]
 
+--
+
+.small[
 - Opportunistic feeders: invertebrates (squid, jellyfish, crabs, and euphausiids) and fish (Pacific herring, Pacific salmon, flatfish, and eulachon)
+]
 
-- Low metabolism and slow digestion time—time between feeding as long as 16 days
+--
 
+.small[
+- Time between feeding as long as 16 days
+]
+
+--
+
+.small[
 - Predators include large fish such as Lingcod, other sharks such as Bluntnose Sixgill Shark, marine mammals such as offshore killer whales, and Steller and California sea lions
 ]
 
@@ -191,7 +203,7 @@ class: center, middle, inverse
   - a coastal population in the Strait of Georgia
   - a coastal population in Puget Sound
 
-- This assessment focuses on the offshore the stock in BC
+- This assessment focuses on the offshore BC stock
 
 - Tagging data suggests low rates (< 5%) of exchange between US and Canadian waters
 
@@ -279,7 +291,7 @@ class: center, middle, inverse
 
 - Overfishing estimated during vitamin A fishery and in 1980s–early 1990s
 
-- Similar data and SS3 model to what we will present for BC; similar issues
+- Similar data and SS3 model to what we will present here for BC; similar challenges
 
 ---
 class: center, middle, inverse
@@ -315,9 +327,9 @@ class: center, middle, inverse
 ---
 #  General approach 
 
-- Fit spatiotemporal models to Dogfish catch weight or count with 'offset' for effort
+- Fit spatiotemporal models to Dogfish catch weight or count with "offset" for effort
 
-- Use delta-lognormal or negative binomial (NB2) observation error
+- Use delta-lognormal or negative binomial observation error
 
 - Predict on grid covering survey each year; sum density across grid
 
@@ -433,43 +445,31 @@ include_graphics("../figs/synoptic/syn_index.png")
 ---
 class: center, middle
 
-#  Outside hard bottom longline (HBLL) survey 
+#  Other surveys and commercial CPUE
 
 ---
-#  Outside HBLL CPUE 
+## Outside hard bottom longline (HBLL) survey 
 
 ```{r, out.width="60%"}
 include_graphics("../figs/hbll_out/cpue.png")
 ```
 
 ---
-class: center, middle
-#  International Pacific Halibut Commission (IPHC) setline survey 
-
----
-##  IPHC CPUE by set 
+####  International Pacific Halibut Commission (IPHC) survey 
 
 ```{r, out.width="56%"}
 include_graphics("../figs/iphc/cpue.png")
 ```
 
 ---
-class: center, middle
-#  Hecate Strait Multispecies Assemblage (HS MSA) Survey
-
----
-#  HS MSA set-level CPUE 
+####  Hecate Strait Multispecies Assemblage (HS MSA) Survey
 
 ```{r, out.width="53%"}
 include_graphics("../figs/msa/cpue-map.png")
 ```
 
 ---
-class: center, middle
-#  Commercial bottom trawl catch per unit effort (CPUE) 
-
----
-#  Model-predicted commercial trawl CPUE 
+####  Commercial bottom trawl catch per unit effort (CPUE) 
 
 ```{r, out.width="75%"}
 include_graphics("../figs/cpue/map-est.png")
@@ -485,7 +485,7 @@ include_graphics("../figs/ss3/index.png")
 ---
 class: center, middle, inverse
 
-#  Length composition data 
+#  Length composition data
 
 ---
 #  Synoptic trawl survey lengths
