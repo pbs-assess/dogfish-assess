@@ -290,7 +290,7 @@ include_graphics("assets/img/dogfish-problem.png")
 ```
 ---
 
-#  Assessment history: Wood et al. 1979
+##  Assessment history: Wood et al. 1979
 
 .small[
 - Estimated unfished vulnerable biomass (BC to Oregon) of 200,000 tonnes from Delury and Leslie depletion models
@@ -309,7 +309,7 @@ include_graphics("assets/img/dogfish-problem.png")
 
 ---
 
-#  Assessment history: Saunders 1980s
+##  Assessment history: Saunders 1980s
 
 .small[
 - Wood et al. 1979 model updated by Saunders in 1985, 1986, 1987, and 1989
@@ -326,7 +326,7 @@ include_graphics("assets/img/dogfish-problem.png")
 
 ---
 
-#  Assessment history: Gallucci et al. 2010
+##  Assessment history: Gallucci et al. 2010
 
 .small[
 - Surplus production model
