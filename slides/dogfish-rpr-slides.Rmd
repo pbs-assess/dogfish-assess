@@ -106,7 +106,7 @@ include_graphics("../figs/synoptic/depth_marginal.png")
 ]
 
 ---
-#  These bullets are releaved one by one
+#  These bullets are revealed one by one
 
 --
 
