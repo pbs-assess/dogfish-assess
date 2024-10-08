@@ -61,7 +61,7 @@ class: center, middle
 #  This is a sub-section break
 
 ---
-#  This is a regular slide with one figure at 80% width
+###  This is a regular slide with one figure at 80% width
 
 ```{r, out.width="80%"}
 include_graphics("../figs/reconstructed-catch-discards-outside-sar.png")
@@ -87,7 +87,7 @@ include_graphics("../figs/synoptic/depth_marginal.png")
 ]
 
 ---
-#  This is a 2-column slide with smaller bullets
+##  This is a 2-column slide with smaller bullets
 
 .xsmall[
 .pull-left[
@@ -206,7 +206,7 @@ include_graphics("../figs/reconstructed-catch-discards-outside-sar.png")
 ```
 
 ---
-#  Catch data (including commercial and recreational salmon) 
+#  Catch data<br>.tiny[(including commercial and recreational salmon)]
 
 ```{r}
 include_graphics("../figs/ss3/catch_fleet_discard_landings.png")
@@ -249,28 +249,28 @@ class: center, middle
 With a deeper dive into the methods than for other surveys
 
 ---
-#  Synoptic West Coast Haida Gwaii (SYN WCHG) 
+##  Synoptic West Coast Haida Gwaii (SYN WCHG) 
 
 ```{r, out.width="420px"}
 include_graphics("../figs/synoptic/sets-wchg.png")
 ```
 
 ---
-#  Synoptic Queen Charlotte Sound (SYN QCS) 
+##  Synoptic Queen Charlotte Sound (SYN QCS) 
 
 ```{r, out.width="100%"}
 include_graphics("../figs/synoptic/sets-qcs.png")
 ```
 
 ---
-#  Synoptic Hecate Strait (SYN HS) 
+##  Synoptic Hecate Strait (SYN HS) 
 
 ```{r, out.width="100%"}
 include_graphics("../figs/synoptic/sets-hs.png")
 ```
 
 ---
-#  Synoptic West Coast Vancouver Island (SYN WCVI) 
+###  Synoptic West Coast Vancouver Island (SYN WCVI) 
 
 ```{r, out.width="100%"}
 include_graphics("../figs/synoptic/sets-wcvi.png")
@@ -452,7 +452,7 @@ include_graphics("../figs/length-age-comparison.png")
 TODO
 
 ---
-#  BC + US samples vs. US-assessment estimated 
+##  BC + US samples vs. US-assessment estimated 
 
 ```{r, out.width="95%"}
 include_graphics("../figs/ss3/growth-compare.png")
@@ -608,7 +608,7 @@ TODO
 
 ---
 
-#  $S/S_0$: spawning output over unfished spawning output
+###  $S/S_0$: spawning output / unfished spawning output
 
 ```{r, out.width="100%"}
 include_graphics("../figs/ss3/refpts/depl-ref-ts.png")
@@ -719,7 +719,7 @@ Guidelines:
 ]
 
 ---
-#  Forecasts of $S/S_0$ under fixed catch scenarios 
+##  Forecasts of $S/S_0$ under fixed catch scenarios 
 
 ```{r, out.width="100%"}
 include_graphics("../figs/ss3/refpts/rebuild-facet-model.png")
@@ -742,18 +742,18 @@ class: center, middle, inverse
 
 
 ---
-#  Challenges fitting some population indices 
+##  Challenges fitting some population indices 
 
 
 ---
-#  Perception of depletion was relatively robust 
+##  Perception of depletion was relatively robust 
 
 - Estimated current status is inferred from the decline in indices in light of low catches relative to historical levels.
  
 - TODO
 
 ---
-#  Mortality on juvenile Dogfish in the trawl discards 
+###  Mortality on juvenile Dogfish in the trawl discards 
 
 
 
