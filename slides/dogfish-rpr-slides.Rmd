@@ -285,7 +285,11 @@ include_graphics("assets/img/miners-lamps.png")
 #  Commercial fishery history
 .small[
 - 1937–1950 Dogfish livers for Vitamin A fishery
-- 120 million pounds/year at peak in BC
+- a process that concentrated vitamin A from Dogfish and Tope liver oils was developed
+- initial use was for poultry supplementation but also for soldiers
+- the invasion of Norway (1940) cut off cod liver oil supplies lead to demand from alterative sources
+- Pregnant (large) females and marge males had the highest vitamin A concentrations
+- Peak catch in BC: 120 million pounds of Dogfish
 - Move to synthetic vitamin A + declines in abundance ended the fishery
 ]
 
@@ -301,6 +305,7 @@ include_graphics("assets/img/reconstructed-catch.png")
 - 1959 subsidy to kill dogfish in SOG
 - "Killer" trawl boats had trouble catching large amounts of Dogfish
 ]
+
 ```{r, out.width="40%"}
 include_graphics("assets/img/dogfish-problem.png")
 ```
