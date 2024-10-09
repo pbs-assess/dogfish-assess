@@ -141,6 +141,22 @@ class: center, middle, inverse
 #  End of demo!
 
 ---
+
+# Outline
+
+1. Life history, ecology, and stock structure
+1. Fishery and assessment history
+1. Input data sources (including index standardization)
+1. Parameters estimated externally to the assessment model
+1. Assessment model
+1. Assessment model results
+1. Reference points
+1. COSEWIC & rebuilding considerations
+1. Environmental considerations
+1. Discussion & future research
+1. Timeline to revisit assessment
+
+---
 class: center, middle, inverse
 
 #  Dogfish life history, ecology, and stock structure
@@ -196,18 +212,25 @@ class: center, middle, inverse
 
 #  Dogfish stock structure
 
-.small[
-- Tagging data suggest in northeast Pacific:
-
+.pull-two-thirds-left[
+.xsmall[
+- Tagging data suggest:
   - an offshore population from Baja California to Aleutian Islands and Bering Sea
   - a coastal population in the Strait of Georgia
   - a coastal population in Puget Sound
 
 - This assessment focuses on the offshore BC stock
 
-- Tagging data suggests low rates (< 5%) of exchange between US and Canadian waters
+- Tagging data suggest low rates (< 5%) of exchange between US and Canadian waters
 
 - Dogfish tagged off Washington and Vancouver Island tend to migrate south in winter and north in summer
+]
+]
+
+.pull-third-right[
+```{r, out.width="100%"}
+include_graphics("assets/img/map-sar.png")
+```
 ]
 
 ---
@@ -541,6 +564,17 @@ include_graphics("../figs/iphc/cpue.png")
 ```{r, out.width="53%"}
 include_graphics("../figs/msa/cpue-map.png")
 ```
+
+---
+####  Commercial bottom trawl catch per unit effort (CPUE) 
+
+- Similar model to trawl survey (depth + spatial + spatiotemporal effects)
+
+- Independent year effects
+
+- Also include month factor predictor and random intercept for vessel
+
+- Predict on synoptic survey grid
 
 ---
 ####  Commercial bottom trawl catch per unit effort (CPUE) 
