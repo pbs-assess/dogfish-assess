@@ -264,9 +264,15 @@ include_graphics("assets/img/dogfish-norman-tait.png")
 ]
 
 .tiny[
-(1) Bill Reid, Vancouver, B.C., (2) Norman Tait, Vancouver, B.C., and (3) Robert Davidson, Whonnock, B.C. 
+<!-- (1) Bill Reid, Vancouver, B.C.,  -->
+Credit: Norman Tait
+<!-- , and (3) Robert Davidson, Whonnock, B.C.  -->
 
-Ketchen,K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacific and a history of its utilization. Can. Spec. Publ. Fish. Aquat. Sci. 88:78 p.
+<br>
+<br>
+<br>
+<br>
+Ketchen, K.S. 1986. The spiny dogfish (*Squalus acanthias*) in the Northeast Pacific and a history of its utilization. Can. Spec. Publ. Fish. Aquat. Sci. 88:78 p.
 ]
 
 
@@ -315,7 +321,7 @@ Ketchen, K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacif
 - Move to synthetic vitamin A + declines in abundance ended the fishery
 ]
 
-```{r, out.width="30%"}
+```{r, out.width="34%"}
 include_graphics("assets/img/reconstructed-catch.png")
 ```
 
@@ -327,7 +333,7 @@ Ketchen, K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacif
 #  Commercial fishery history
 .pull-two-thirds-left[
 .xsmall[
-- 1951–1974 government subsidy programs, eradication.
+- 1951–1974 government subsidy programs, eradication
 
 - "The Pestilence Returns" (1958) leading to calls for eradication of Dogfish on WCVI, SOG, and in Washington
  
@@ -335,7 +341,7 @@ Ketchen, K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacif
 
 - "Killer" trawl boats had trouble catching large amounts of Dogfish
 
-- 1962 - 1966 unsuccessful attempts to develop a food fishery (discover of Mercury further hampered this)
+- 1962–1966 unsuccessful attempts to develop a food fishery (discovery of mercury further hampered this)
 ]
 ]
 
@@ -355,16 +361,15 @@ include_graphics("assets/img/dogfish-problem.png")
 
 - Dogfish meat sold to European markets, mostly fish and chips in UK and Norway
 
-- 1977 - 1982 decline in CPUE of 70% in SOG, declining size of females
+- 1977–1982 decline in CPUE of 70% in SOG, declining size of females
 
 - Marine Stewardship Council certification (2011)
 ]
-```{r, out.width="30%"}
-#include_graphics("assets/img/dogfish-problem.png")
-```
 
+<br>
+<br>
 .tiny[
-Ketchen, K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacific and a history of its utilization. Can. Spec. Publ. Fish. Aquat. Sci. 88:78 p.
+Ketchen, K.S. 1986. The spiny dogfish (*Squalus acanthias*) in the Northeast Pacific and a history of its utilization. Can. Spec. Publ. Fish. Aquat. Sci. 88:78 p.
 
 Ketchen, K.S. 1969. A review of the Dogfish problem off the West Coast of Canada. Fish. Res. Board. 29 p.
 ]
@@ -439,8 +444,7 @@ Ketchen, K.S. 1969. A review of the Dogfish problem off the West Coast of Canada
 
 - Similar vitamin A fishery history
 
-- Not targeted since vitamin A fishery, but sometimes landed
-- Not targeted since vitamin A fishery, but landed as part of a food fishery since 1973 
+- Not targeted since vitamin A fishery, but sometimes landed as part of a food fishery since 1973 
 
 - Estimated at 34% of unfished spawning output (above overfished threshold of 25% but below target of 40%)
 
