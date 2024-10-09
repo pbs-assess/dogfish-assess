@@ -1225,7 +1225,7 @@ class: center, middle, inverse
 
 # COSEWIC criteria
 
-COSEWIC Metric A measures the probability that the stock has declined by 70%, 50% or 30% "over the last 10 years or 3 generations, whichever is longer", but is also interpreted as a decline over the longest time series available. 
+COSEWIC Metric A measures the probability that the stock has declined by 70%, 50%, or 30% "over the last 10 years or 3 generations, whichever is longer", but is also interpreted as a decline over the longest time series available. 
 
 --
 
@@ -1310,7 +1310,7 @@ class: center, middle, inverse
 
 - Surplus production model → age-structured model
 
-- An age-structured model lets us evaluate population trajectories consistent with understanding of Dogfish growth, maturity, fecundity, and stock-recruit productivity while also fitting the length composition and index data.
+- An age-structured model lets us evaluate population trajectories consistent with understanding of Dogfish growth, maturity, fecundity, and stock-recruit productivity consistent with length composition and index data.
 
 - Age-structured models can incorporate lags in the population response due to late maturity and low fecundity.
 
@@ -1335,7 +1335,7 @@ class: center, middle, inverse
 #  Environmental Considerations 
 
 ---
-#  Environmental conditions not explicitly modeled 
+### Environmental conditions not explicitly modeled 
 
 - But modelled time-varying natural mortality
 
