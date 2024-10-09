@@ -791,15 +791,6 @@ include_graphics("../figs/ss3/set_a_mat/fecundity.png")
 ```
 
 ---
-#  Natural mortality 
-
-- Estimated as 0.064 based on Hamel and Cope (2022) and BC max age of 85: M = 5.4/85
-
-- Nearly identical to Smith et al. (1998) and US West Coast assessment M = 0.065
-
-- Proceed with sex-invariant 0.065 (similar longevity)
-
----
 #  Unfished replacement line
 
 ```{r, out.width="70%"}
