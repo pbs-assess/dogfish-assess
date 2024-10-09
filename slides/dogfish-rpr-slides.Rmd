@@ -27,6 +27,8 @@ xaringanthemer::style_mono_accent(
   title_slide_background_position = "50% 90%",
   base_font_size = "20px",
   header_h1_font_size = "2.0rem",
+  header_h2_font_size = "1.8rem",
+  header_h3_font_size = "1.6rem",
   text_font_size = "1.4rem",
   code_font_size = "1.1rem",
   link_color = "#0047AB"
@@ -59,7 +61,7 @@ class: center, middle
 #  This is a sub-section break
 
 ---
-#  This is a regular slide with one figure at 80% width
+###  This is a regular slide with one figure at 80% width
 
 ```{r, out.width="80%"}
 include_graphics("../figs/reconstructed-catch-discards-outside-sar.png")
@@ -85,7 +87,7 @@ include_graphics("../figs/synoptic/depth_marginal.png")
 ]
 
 ---
-#  This is a 2-column slide with smaller bullets
+##  This is a 2-column slide with smaller bullets
 
 .xsmall[
 .pull-left[
@@ -104,7 +106,7 @@ include_graphics("../figs/synoptic/depth_marginal.png")
 ]
 
 ---
-#  These bullets are releaved one by one
+#  These bullets are revealed one by one
 
 --
 
@@ -132,25 +134,126 @@ Equation:
 $$
 y = x
 $$
+
 ---
 class: center, middle, inverse
 
 #  End of demo!
 
 ---
-class: center, middle, inverse
 
-#  Dogfish life history and ecology 
+# Outline
+
+1. Life history, ecology, and stock structure
+1. Fishery and assessment history
+1. Input data sources (including index standardization)
+1. Parameters estimated externally to the assessment model
+1. Assessment model
+1. Assessment model results
+1. Reference points
+1. COSEWIC & rebuilding considerations
+1. Environmental considerations
+1. Discussion & future research
+1. Timeline to revisit assessment
 
 ---
 class: center, middle, inverse
 
-#  Dogfish stock structure 
+#  Dogfish life history, ecology, and stock structure
+
+---
+
+# Dogfish life history
+
+.small[
+.pull-two-thirds-left[
+- Maximum age ~ 80–85 years
+
+- Maximum size ~ 160 cm
+
+- Late maturing: ~ 35 years (95 cm) for females; ~ 25 years (70 cm) for males
+
+- One of longest gestations among all animals (~ 2 years)
+
+- Low intrinsic population growth rate, even among sharks
+]]
+
+.pull-third-right[
+<img src="assets/img/spiny-dogfish-wiki.jpg" width="100%" style="display: block; margin: auto;">
+]
+
+---
+
+# Dogfish ecology
+
+.small[
+- Inhabit surface to ~1,000 m; older dogfish more likely on bottom; males generally shallower than females.
+]
+
+--
+
+.small[
+- Opportunistic feeders: invertebrates (squid, jellyfish, crabs, and euphausiids) and fish (Pacific herring, Pacific salmon, flatfish, and eulachon)
+]
+
+--
+
+.small[
+- Time between feeding as long as 16 days
+]
+
+--
+
+.small[
+- Predators include large fish such as Lingcod, other sharks such as Bluntnose Sixgill Shark, marine mammals such as offshore killer whales, and Steller and California sea lions
+]
+
+---
+
+#  Dogfish stock structure
+
+.pull-two-thirds-left[
+.xsmall[
+- Tagging data suggest:
+  - an offshore population from Baja California to Aleutian Islands and Bering Sea
+  - a coastal population in the Strait of Georgia
+  - a coastal population in Puget Sound
+
+- This assessment focuses on the offshore BC stock
+
+- Tagging data suggest low rates (< 5%) of exchange between US and Canadian waters
+
+- Dogfish tagged off Washington and Vancouver Island tend to migrate south in winter and north in summer
+]
+]
+
+.pull-third-right[
+```{r, out.width="100%"}
+include_graphics("assets/img/map-sar.png")
+```
+]
 
 ---
 class: center, middle, inverse
 
-#  Stock structure 
+#  Dogfish history of fishing and use on the BC coast
+
+---
+
+#  First Nations use
+.small[
+- Found in middens 
+- Oldest dated spine found in midden in Port Hardy
+- Uses include skin for sandpaper, liver for oil for tanning, potential starvation food
+- Dogfish Woman — most powerful supernatural being in Haida Nation, she derives her powers from Dogfish
+]
+
+```{r, out.width="50%"}
+include_graphics("assets/img/dogfish-norman-tait.png")
+#include_graphics("assets/img/dogfish-bill-reid.png")
+#include_graphics("assets/img/dogfish-woman-airport.png")
+#include_graphics("assets/img/dogfish-robert-davidson.png")
+```
 
 ---
 class: center, middle, inverse
@@ -159,29 +262,113 @@ class: center, middle, inverse
 
 ---
 
-#  Assessment history 
+#  Commercial fishery history
+.small[
+- 1870–1916 industrial lubrication, lighting purposes (mining and lighthouses), and fertilizer
+- More important than whaling industry
+]
 
-.xsmall[
-### Wood et al. 1979:
+```{r, out.width="50%"}
+include_graphics("assets/img/miners-lamps.png")
+```
 
+
+```{r, out.width="40%"}
+#include_graphics("assets/img/race-rocks-lighthouse.jpg")
+```
+
+---
+
+#  Commercial fishery history
+.small[
+- 1937–1950 Dogfish livers for Vitamin A fishery
+- 120 million pounds/year at peak in BC
+- Move to synthetic vitamin A + declines in abundance ended the fishery
+]
+
+```{r, out.width="70%"}
+include_graphics("assets/img/reconstructed-catch.png")
+```
+
+---
+#  Commercial fishery history
+.small[
+- 1951–1974 government subsidy programs, eradication (inside and outside).
+- Dogfish abundance up but no longer valuable
+- 1959 subsidy to kill dogfish in SOG
+- "Killer" trawl boats had trouble catching large amounts of Dogfish
+]
+```{r, out.width="40%"}
+include_graphics("assets/img/dogfish-problem.png")
+```
+---
+
+#  Commercial fishery history
+.small[
+- 1970–2011 food fishery for UK markets
+- Marine Stewardship Council certification
+]
+```{r, out.width="30%"}
+#include_graphics("assets/img/dogfish-problem.png")
+```
+---
+
+##  Assessment history: Wood et al. 1979
+
+.small[
 - Estimated unfished vulnerable biomass (BC to Oregon) of 200,000 tonnes from Delury and Leslie depletion models
-- Assumed pup survival and recruitment was density-independent. M = 0.094, solved from the maturity and fecundity schedule
-- MSY was estimated to be 9-11 thousand tonnes where MSY = FMSY * 200,000 and FMSY = 0.5 M
-- Natural mortality was proposed as the density-dependent mechanism for the yield curve. Alternative hypotheses of density-dependent growth and fecundity were biologically implausible to achieve the proposed MSY value.
+
+- Assumed pup survival and recruitment was density-independent
+
+- M = 0.094, solved from the maturity and fecundity schedule
+
+- MSY was estimated to be 9,000–11,000 t where MSY = FMSY $\times$ 200,000 and FMSY = 0.5 M
+
+- Natural mortality proposed as density-dependent mechanism for yield curve
+
+- Alternative hypotheses of density-dependent growth and fecundity deemed biologically implausible to achieve the proposed MSY value
+]
+
+
+---
+
+##  Assessment history: Saunders 1980s
+
+.small[
+- Wood et al. 1979 model updated by Saunders in 1985, 1986, 1987, and 1989
+
+- 1989 catch recommendations were for Alaska–California stock:
+  - 9,000 t = "low risk"
+  - 9,000–14,000 t = "high risk" (of declines)
+
+- Basis for current TAC
+
+- Saunders 1989 assumed BC was 1/2 to 2/3 of stock
+  - therefore, 4,500–9,333 t was "high risk"
 ]
 
 ---
 
-#  Assessment history 
+##  Assessment history: Gallucci et al. 2010
 
-.xsmall[
-### Gallucci et al. 2010:
-- Surplus production model, was not used for advice
+.small[
+- Surplus production model
+
+- Catch data from longline and trawl fisheries; commercial CPUE, IPHC, NMFS Triennial survey, HS MSA survey indices
+  
+- Synoptic trawl and HBLL surveys too short at the time
+
+- Challenges with parameter estimation
+
+- "no consensus reached on a scientifically valid approach on which to base yield recommendations"
+
+- Reduction in the size distribution, long generation time, low fecundity, uncertainty in population trends, vulnerability elsewhere resulted in COSEWIC "Special Concern" in 2011
 ]
 
 ---
-#  Nearby assessments 
+#  Nearby assessments: Gulf of Alaska
 
+<<<<<<< HEAD
 ### Gulf of Alaska
 
 - Data limited approach with survey and fishery catch (no population model)
@@ -189,6 +376,29 @@ class: center, middle, inverse
 ### US West Coast
 
 - Age-structured modeling approach similar to this Research Document (Gertseva et al. 2021)
+=======
+- Not targeted but frequently encountered and discarded
+
+- Demographic model and risk analysis (Tribuzio et al. 2022)
+
+- Overfishing limits set based on maximum historical catch
+
+- Last assessed as not overfished
+
+---
+#  Nearby assessments: US West Coast
+
+- Similar vitamin A fishery history
+
+- Not targeted since vitamin A fishery, but sometimes landed (but since the mid-1970s a food fish
+market developed for Dogfish)
+
+- Estimated at 34% of unfished spawning output (above overfished threshold of 25% but below target of 40%)
+
+- Overfishing estimated during vitamin A fishery and in 1980s–early 1990s
+
+- Similar data and SS3 model to what we will present here for BC; similar challenges
+>>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 
 ---
 class: center, middle, inverse
@@ -203,7 +413,7 @@ include_graphics("../figs/reconstructed-catch-discards-outside-sar.png")
 ```
 
 ---
-#  Catch data (including commercial and recreational salmon) 
+#  Catch data<br>.tiny[(including commercial and recreational salmon)]
 
 ```{r}
 include_graphics("../figs/ss3/catch_fleet_discard_landings.png")
@@ -230,8 +440,24 @@ class: center, middle, inverse
 ---
 #  General approach 
 
+<<<<<<< HEAD
 - Spatiotemporal modeling to estimate abundance over a spatial grid of the survey. Approach imputes abundance in missing time/area strata, e.g., for Synoptic survey
 - Depth as a fixed effect in standardization
+=======
+- Fit spatiotemporal models to Dogfish catch weight or count with "offset" for effort
+
+- Use delta-lognormal or negative binomial observation error
+
+- Predict on grid covering survey each year; sum density across grid
+
+- Calculate standard errors with generalized delta method
+
+.tiny[
+Thorson, J.T., Shelton, A.O., Ward, E.J., and Skaug, H.J. 2015. Geostatistical delta-generalized linear mixed models improve precision for estimated abundance indices for West Coast groundfishes. ICES J. Mar. Sci. 72(5): 1297–1310.
+
+Anderson, S.C., Ward, E.J., English, P.A., Barnett, L.A.K., and Thorson, J.T. 2024. sdmTMB: An R package for fast, flexible, and user-friendly generalized linear mixed effects models with spatial and spatiotemporal random fields. In press at J. Stat. Softw. doi:10.1101/2022.03.24.485545.
+]
+>>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 
 ---
 
@@ -241,46 +467,31 @@ class: center, middle
 With a deeper dive into the methods than for other surveys
 
 ---
-#  Synoptic West Coast Haida Gwaii (SYN WCHG) 
+##  Synoptic West Coast Haida Gwaii (SYN WCHG) 
 
 ```{r, out.width="420px"}
 include_graphics("../figs/synoptic/sets-wchg.png")
 ```
 
 ---
-#  Synoptic Queen Charlotte Sound (SYN QCS) 
+##  Synoptic Queen Charlotte Sound (SYN QCS) 
 
 ```{r, out.width="100%"}
 include_graphics("../figs/synoptic/sets-qcs.png")
 ```
 
 ---
-#  Synoptic Hecate Strait (SYN HS) 
+##  Synoptic Hecate Strait (SYN HS) 
 
 ```{r, out.width="100%"}
 include_graphics("../figs/synoptic/sets-hs.png")
 ```
 
 ---
-#  Synoptic West Coast Vancouver Island (SYN WCVI) 
+###  Synoptic West Coast Vancouver Island (SYN WCVI) 
 
 ```{r, out.width="100%"}
 include_graphics("../figs/synoptic/sets-wcvi.png")
-```
-
-
----
-# Quantile-quantile residual checks
-
-```{r, out.width="60%"}
-include_graphics("../figs/synoptic/qq-lg.png")
-```
-
----
-# Spatial correlation anisotropy
-
-```{r, out.width="70%"}
-include_graphics("../figs/synoptic/aniso-lg.png")
 ```
 
 ---
@@ -295,6 +506,20 @@ include_graphics("../figs/synoptic/prediction_grid_depth.png")
 
 ```{r, out.width="45%"}
 include_graphics("../figs/synoptic/depth_marginal.png")
+```
+
+---
+# Quantile-quantile residual checks
+
+```{r, out.width="60%"}
+include_graphics("../figs/synoptic/qq-lg.png")
+```
+
+---
+# Spatial correlation anisotropy
+
+```{r, out.width="70%"}
+include_graphics("../figs/synoptic/aniso-lg.png")
 ```
 
 ---
@@ -336,61 +561,60 @@ include_graphics("../figs/synoptic/syn_index.png")
 ```
 
 ---
-#  Design vs. spatiotemporal-model-based indexes 
-
-```{r, out.width="75%"}
-include_graphics("../figs/synoptic/syn_index_compare_design.png")
-```
-
----
 class: center, middle
 
-#  Outside hard bottom longline (HBLL) survey 
+#  Other surveys and commercial CPUE
 
 ---
-#  Outside HBLL CPUE 
+#### Outside hard bottom longline (HBLL) survey 
 
-```{r, out.width="60%"}
+```{r, out.width="55%"}
 include_graphics("../figs/hbll_out/cpue.png")
 ```
 
 ---
-class: center, middle
-#  International Pacific Halibut Commission (IPHC) setline survey 
+####  International Pacific Halibut Commission (IPHC) survey 
 
----
-#  IPHC CPUE by set 
-
-```{r, out.width="60%"}
+```{r, out.width="56%"}
 include_graphics("../figs/iphc/cpue.png")
 ```
 
 ---
-class: center, middle
-#  Hecate Strait Multispecies Assemblage (HS MSA) Survey
-
----
-#  HS MSA set-level CPUE 
+####  Hecate Strait Multispecies Assemblage (HS MSA) Survey
 
 ```{r, out.width="53%"}
 include_graphics("../figs/msa/cpue-map.png")
 ```
 
 ---
-class: center, middle
-#  Commercial bottom trawl catch per unit effort (CPUE) 
+####  Commercial bottom trawl catch per unit effort (CPUE) 
+
+- Similar model to trawl survey (depth + spatial + spatiotemporal effects)
+
+- Independent year effects
+
+- Also include month factor predictor and random intercept for vessel
+
+- Predict on synoptic survey grid
 
 ---
-#  Model-predicted commercial trawl CPUE 
+####  Commercial bottom trawl catch per unit effort (CPUE) 
 
 ```{r, out.width="75%"}
 include_graphics("../figs/cpue/map-est.png")
 ```
 
 ---
+#  Population indices 
+
+```{r, out.width="650px"}
+include_graphics("../figs/ss3/index.png")
+```
+
+---
 class: center, middle, inverse
 
-#  Length composition data 
+#  Length composition data
 
 ---
 #  Synoptic trawl survey lengths
@@ -451,6 +675,7 @@ include_graphics("../figs/length-age-comparison.png")
 ]
 
 ---
+<<<<<<< HEAD
 #  Natural mortality 
 
 - Estimated from maximum observed age and meta-analytic equation (Hamel and Cope 2022): $M = 5.4/A_\textrm{max} = 0.065$
@@ -460,6 +685,9 @@ include_graphics("../figs/length-age-comparison.png")
 
 ---
 #  BC + US samples vs. US-assessment estimated 
+=======
+##  BC + US samples vs. US-assessment estimated 
+>>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 
 ```{r, out.width="95%"}
 include_graphics("../figs/ss3/growth-compare.png")
@@ -486,7 +714,11 @@ include_graphics("../figs/maturity-outside-survey-compare.png")
 ---
 #  Possible maturity ogives
 
+<<<<<<< HEAD
 ```{r, out.width="70%"}
+=======
+```{r, out.width="90%"}
+>>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 include_graphics("../figs/ss3/mat-lit-with-synoptic.png")
 ```
 
@@ -514,6 +746,15 @@ include_graphics("../figs/ss3/set_a_mat/fecundity.png")
 ```
 
 ---
+#  Natural mortality 
+
+- Estimated as 0.064 based on Hamel and Cope (2022) and BC max age of 85: M = 5.4/85
+
+- Nearly identical to Smith et al. (1998) and US West Coast assessment M = 0.065
+
+- Proceed with sex-invariant 0.065 (similar longevity)
+
+---
 #  Unfished replacement line
 
 ```{r, out.width="70%"}
@@ -532,6 +773,7 @@ class: center, middle, inverse
 #  Population Dynamics Model
 
 ---
+<<<<<<< HEAD
 #  Overview 
 
 .small[
@@ -550,12 +792,31 @@ In essence, a production model informed by catch and indices, while size composi
 #  A need for a stock-recruit curve for Dogfish-like species 
 
 Low fecundity limits stock productivity. Example to illustrate:
+=======
+###  Why a stock-recruit curve for Dogfish-like species?
+
+--
+
+Imagine an unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups (B0).
+
+--
+>>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 
 - Unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups ($S_0$).
 - If density-dependent unfished pup survival is 0.6, then we get 600 recruits ($R_0$).
 - A population of N = 20 (0.2 $B_0$) produces 200 pups. If steepness were 1 in a closed population, we'd have to conjure 600 recruits from 200 pups.
 - Thus, in this example, steepness is capped at 0.33: 200 pups at 0.2 $B_0$ divided by 600 pups at $B_0$.
 
+<<<<<<< HEAD
+=======
+--
+
+A population of N = 20 (0.2 B0) produces 200 pups. If steepness were 1 in a closed population, we'd have to conjure 600 recruits from 200 pups.
+
+--
+
+Thus, in this example, steepness should be capped at 0.33: 200 pups at 0.2B0 divided by 600 pups when unfished.
+>>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 
 ---
 #  Dogfish stock recruit relationship
@@ -605,7 +866,7 @@ From base model **A0**, explored various uncertainties in the set of models (Wor
 
 
 ---
-#  Steller sea lion abundance 1971-2017 
+#  Steller sea lion abundance 1971–2017 
 
 .pull-left[
 
@@ -737,7 +998,11 @@ include_graphics("../figs/ss3/set_a_mat/sel_age_max1.png")
 
 ---
 
+<<<<<<< HEAD
 # Value of length composition
+=======
+#### Length composition are not informative about depletion
+>>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 
 .pull-left[
 .tiny[
@@ -843,19 +1108,41 @@ class: center, middle, inverse
 
 ---
 
-# Why work with spawning output over spawning biomass
+## Why spawning output over spawning biomass?
 
-TODO
+- Provides a more direct measure of stock productivity and we can better estimate it than for most teleost fish.
+
+--
+
+- For teleost fish, spawning biomass is typically used as a proxy for spawning output (egg production) since more direct information about fecundity is unavailable.
+
+--
+
+- Fecundity of Dogfish is comparatively well known (2–16 pups depending on size; Ketchen 1968).
+
+--
+
+- Therefore, spawning output (number of pups) is commonly used for reference points for long-lived low-fecundity species such as sharks.
+
 
 ---
 
-# Why work with depletion-based over MSY-based reference points
+# Why depletion-based reference points?
 
-TODO
+
+.pull-left[
+- Shape of yield curve with respect to depletion across values of stock-recruit $z_\mathrm{frac}$ and $\beta$ relatively constant
+
+- But height of curves (MSY) varies strongly
+]
+
+.pull-right[
+<img src="../figs/ss3/prof/zfrac_yield_curve.png" width="100%" style="display: block; margin: auto;">
+]
 
 ---
 
-#  $S/S_0$: spawning output over unfished spawning output
+###  $S/S_0$: spawning output / unfished spawning output
 
 ```{r, out.width="100%"}
 include_graphics("../figs/ss3/refpts/depl-ref-ts.png")
@@ -877,7 +1164,7 @@ include_graphics("../figs/ss3/refpts/f-ref-ts.png")
 ```
 
 ---
-#  Catch in 2024 at $F_\mathrm{0.4S0}$
+#  Dead catch in 2024 at $F_\mathrm{0.4S0}$
 
 ```{r, out.width="500px"}
 include_graphics("../figs/ss3/refpts/2024-yield-catch.png")
@@ -886,7 +1173,7 @@ include_graphics("../figs/ss3/refpts/2024-yield-catch.png")
 *Discard mortality rate must still be applied*
 
 ---
-#  Probability $S > 0.2S_0$ under fixed catches 
+##  Probability $S > 0.2S_0$ under fixed catches 
 
 <br>
 
@@ -895,7 +1182,7 @@ include_graphics("../figs/ss3/refpts/lrp-ref-pt-tigure.png")
 ```
   
 ---
-#  Probability $S > 0.4S_0$under fixed catches 
+#  Probability $S > 0.4S_0$ under fixed catches 
 
 <br>
 
@@ -904,7 +1191,7 @@ include_graphics("../figs/ss3/refpts/usr-ref-pt-tigure.png")
 ```
 
 ---
-#  Probability $F < F_\mathrm{0.4S0}$ under fixed catches 
+##  Probability $F < F_\mathrm{0.4S0}$ under fixed catches 
 
 <br>
 
@@ -922,9 +1209,17 @@ class: center, middle, inverse
 
 COSEWIC Metric A measures the probability that the stock has declined by 70%, 50% or 30% "over the last 10 years or 3 generations, whichever is longer", but is also interpreted as a decline over the longest time series available. 
 
-We define the generation time as 1/M + age at 50% maturity. I.e., 1/0.065 + 33.5 = ~50 years
+--
+
+We define the generation time as 1/M + age at 50% maturity. I.e., 1/0.065 + 33.5 = ~50 years.
+
+--
 
 Entire assessment (1937 = 2023, 86 years) = ~1.7 generations.
+
+--
+
+We can also look at just the population indices.
 
 ---
 #  Rates of decline 
@@ -970,7 +1265,7 @@ Guidelines:
 ]
 
 ---
-#  Forecasts of $S/S_0$ under fixed catch scenarios 
+##  Forecasts of $S/S_0$ under fixed catch scenarios 
 
 ```{r, out.width="100%"}
 include_graphics("../figs/ss3/refpts/rebuild-facet-model.png")
@@ -991,20 +1286,29 @@ class: center, middle, inverse
 ---
 #  Improvements over previous assessment 
 
+- Introduction of new population indices: HBLL + Synoptic trawl indices (~20 years) with strong trends that were not yet apparent
+
+--
+
+- Surplus production model → age-structured model
+
+- An age-structured model lets us evaluate population trajectories consistent with understanding of Dogfish growth, maturity, fecundity, and stock-recruit productivity while also fitting the length composition and index data.
+
+- Age-structured models can incorporate lags in the population response due to late maturity and low fecundity.
 
 ---
-#  Challenges fitting some population indices 
+##  Challenges fitting some population indices 
 
 
 ---
-#  Perception of depletion was relatively robust 
+##  Perception of depletion was relatively robust 
 
 - Estimated current status is inferred from the decline in indices in light of low catches relative to historical levels.
  
 - TODO
 
 ---
-#  Mortality on juvenile Dogfish in the trawl discards 
+###  Mortality on juvenile Dogfish in the trawl discards 
 
 
 
