@@ -236,7 +236,7 @@ include_graphics("assets/img/map-sar.png")
 ---
 class: center, middle, inverse
 
-#  Long history on the Coast
+#  Dogfish history of fishing and use on the BC coast
 
 ---
 
