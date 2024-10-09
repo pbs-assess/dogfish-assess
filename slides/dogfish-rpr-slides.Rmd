@@ -241,19 +241,34 @@ class: center, middle, inverse
 ---
 
 #  First Nations use
-.small[
+
+.pull-two-thirds-left[
+.xsmall[
 - Dogfish spines found in middens across BC 
+
 - Oldest dated spine was found in midden in Port Hardy
+
 - Uses of Dogfish include skin for sandpaper, liver for oil for tanning/burning, meat as a potential starvation food
+
 - Dogfish Woman — most powerful supernatural being in Haida Nation, she derives her powers from Dogfish
 ]
+]
 
-```{r, out.width="50%"}
+.pull-third-right[
+```{r, out.width="100%"}
 include_graphics("assets/img/dogfish-norman-tait.png")
 #include_graphics("assets/img/dogfish-bill-reid.png")
 #include_graphics("assets/img/dogfish-woman-airport.png")
 #include_graphics("assets/img/dogfish-robert-davidson.png")
 ```
+]
+
+.tiny[
+(1) Bill Reid, Vancouver, B.C., (2) Norman Tait, Vancouver, B.C., and (3) Robert Davidson, Whonnock, B.C. 
+
+Ketchen,K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacific and a history of its utilization. Can. Spec. Publ. Fish. Aquat. Sci. 88:78 p.
+]
+
 
 ---
 class: center, middle, inverse
@@ -263,18 +278,25 @@ class: center, middle, inverse
 ---
 
 #  Commercial fishery history
-.small[
+.xsmall[
 - 1870–1916 industrial lubrication and lighting 
+
 - Liver oil was burned to fuel Race Rock and Fraser River lighthouses
+
 - Large quantities wer eused for lubricating sawmills and lighting for coal mines and on steamers and sailing vessels
+
 - The decline of whaling lead to an increase in Dogfish catches for fertilizer and oil
+
 - 1916-1937 small food fishery and meal for cattle and poultry
 ]
 
-```{r, out.width="50%"}
+```{r, out.width="30%"}
 include_graphics("assets/img/miners-lamps.png")
 ```
 
+.tiny[
+Ketchen, K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacific and a history of its utilization. Can. Spec. Publ. Fish. Aquat. Sci. 88:78 p.
+]
 
 ```{r, out.width="40%"}
 #include_graphics("assets/img/race-rocks-lighthouse.jpg")
@@ -283,7 +305,7 @@ include_graphics("assets/img/miners-lamps.png")
 ---
 
 #  Commercial fishery history
-.small[
+.xsmall[
 - 1937–1950 Dogfish livers for Vitamin A fishery
 - A process that concentrated vitamin A from Dogfish and Tope liver oils was developed
 - Initial use was for poultry supplementation but also for soldiers
@@ -297,29 +319,56 @@ include_graphics("assets/img/miners-lamps.png")
 include_graphics("assets/img/reconstructed-catch.png")
 ```
 
----
-#  Commercial fishery history
-.small[
-- 1951–1974 government subsidy programs, eradication.
-- "The Pestilence Returns" (1958) leading to calls for eradication of Dogfish on WCVI, SOG, and in Washington
-- Federal subsidy to kill dogfish in SOG and other parts of the coast (1959)
-- "Killer" trawl boats had trouble catching large amounts of Dogfish
-- 1962 - 1966 unsuccessful attempts to develop a food fishery (discover of Mercury further hampered this)
+.tiny[
+Ketchen, K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacific and a history of its utilization. Can. Spec. Publ. Fish. Aquat. Sci. 88:78 p.
 ]
 
-```{r, out.width="40%"}
+---
+#  Commercial fishery history
+.pull-two-thirds-left[
+.xsmall[
+- 1951–1974 government subsidy programs, eradication.
+
+- "The Pestilence Returns" (1958) leading to calls for eradication of Dogfish on WCVI, SOG, and in Washington
+ 
+- Federal subsidy to kill dogfish in SOG and other parts of the coast (1959)
+
+- "Killer" trawl boats had trouble catching large amounts of Dogfish
+
+- 1962 - 1966 unsuccessful attempts to develop a food fishery (discover of Mercury further hampered this)
+]
+]
+
+.pull-third-right[
+```{r, out.width="100%"}
 include_graphics("assets/img/dogfish-problem.png")
 ```
+
+]
 ---
 
 #  Commercial fishery history
-.small[
-- 1970–2011 food fishery for UK markets
-- Marine Stewardship Council certification
+.xsmall[
+- 1970–2011 food fishery for European markets
+
+- Initially a government subsidized fishery
+
+- Dogfish meat sold to European markets, mostly fish and chips in UK and Norway
+
+- 1977 - 1982 decline in CPUE of 70% in SOG, declining size of females
+
+- Marine Stewardship Council certification (2011)
 ]
 ```{r, out.width="30%"}
 #include_graphics("assets/img/dogfish-problem.png")
 ```
+
+.tiny[
+Ketchen, K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacific and a history of its utilization. Can. Spec. Publ. Fish. Aquat. Sci. 88:78 p.
+
+Ketchen, K.S. 1969. A review of the Dogfish problem off the West Coast of Canada. Fish. Res. Board. 29 p.
+]
+
 ---
 
 ##  Assessment history: Wood et al. 1979
@@ -390,8 +439,8 @@ include_graphics("assets/img/dogfish-problem.png")
 
 - Similar vitamin A fishery history
 
-- Not targeted since vitamin A fishery, but sometimes landed (but since the mid-1970s a food fish
-market developed for Dogfish)
+- Not targeted since vitamin A fishery, but sometimes landed
+- Not targeted since vitamin A fishery, but landed as part of a food fishery since 1973 
 
 - Estimated at 34% of unfished spawning output (above overfished threshold of 25% but below target of 40%)
 
