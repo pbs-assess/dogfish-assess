@@ -800,7 +800,7 @@ include_graphics("../figs/ss3/M_bound_fec.png")
 .tiny[
 - Low fecundity implies an upper bound on natural mortality. Otherwise, a female cannot replace herself over her lifetime
 - Population cannot sustain itself if slope of replacement line > 1
-- Growth and fecundity implies maximum natural mortality between 0.08 - 0.10
+- Growth and fecundity implies maximum natural mortality between 0.08–0.10
 ]
 
 ---
@@ -820,11 +820,13 @@ Adjust maturity ogive for two year gestation period. On average, half of mature 
 
 No recruitment deviations (cohorts not observable from length data).
 
-In essence, a production model informed by catch and indices, while size composition informs selectivity. <br>Age-structure incorporates lags in stock response to exploitation pattern (selectivity and fishing mortality).
+In essence, a production model informed by catch and indices, while size composition informs selectivity.
+
+Age-structure incorporates lags in stock response to exploitation pattern (selectivity and fishing mortality).
 ]
 
 ---
-#  A need for a stock-recruit curve for Dogfish-like species 
+##  A stock-recruit curve for Dogfish-like species 
 
 Low fecundity limits stock productivity. Example to illustrate:
 
@@ -846,9 +848,9 @@ z_0 &= -\log(1/\phi_0)
 .xsmall[
 $S_y$ is the spawning output (number of pups). The exponent is the survival (density-dependent = survival increases as depletion $S_y/S_0$ is decreases).
 
-$z_\mathrm{frac}$ is the proportion of unfished density dependent mortality when stock → zero (0–1, higher = more productive stock)
+$z_\mathrm{frac}$ is the proportion of unfished density dependent mortality when stock&nbsp;→&nbsp;zero (0–1, higher = more productive stock)
 
-$\beta$ controls concavity in density dependent mortality as stock declines (1 = linear)
+$\beta$ controls concavity in density dependent mortality as stock declines (1&nbsp;=&nbsp;linear)
 ]
 
 .tiny[
@@ -871,14 +873,14 @@ include_graphics("../figs/ss3/prof/prof_zfrac_SR.png")
 ---
 #  Base and sensitivity models
 
-From base model **A0**, explored various uncertainties in the set of models (Working Paper p. 30-31):
+From base model **A0**, explored various uncertainties in the set of models (Working Paper p. 30–31):
 
-- Growth (**A2-A4**)
-- Natural mortality (**A9-A10**)
+- Growth (**A2–A4**)
+- Natural mortality (**A9–A10**)
 - Discard mortality rate (**A5**, **A14**)
 - Inclusion/exclusion and weighting of index from modern surveys (**A7**, **A8**, **A13**)
-- Stock-recruit productivity (**A11-A12**)
-- Cause of decline in modern indices (fishery vs. non-fishery causes) (**B1-B5**)
+- Stock-recruit productivity (**A11–A12**)
+- Cause of decline in modern indices (fishery vs. non-fishery causes) (**B1–B5**)
 
 
 ---
@@ -927,7 +929,7 @@ include_graphics("../figs/ss3/set_a_mat/N_age_A1.png")
 .tiny[
 Demonstration of the lagged effects on the age structure of the population. 
 
-Early Vitamin A fished out older animals (age 30+), population recovered from younger animals (20+) invulnerable to the fishery.
+Early Vitamin A fishery fished out older animals (age 30+), population recovered from younger animals (20+) invulnerable to the fishery.
 ]
 ]
 
@@ -958,7 +960,7 @@ Due to differences in selectivity & maturity: declines after vitamin A fishery, 
 
 # Spawning depletion<br>.tiny[Base model, sens. growth and discard mortality]
 
-```{r, out.width="60%"}
+```{r, out.width="50%"}
 include_graphics("../figs/ss3/set_a_mat/depletion_est.png")
 ```
 
@@ -1070,7 +1072,7 @@ include_graphics("../figs/ss3/prof/like_zfrac.png")
 
 .tiny[
 - Stock-recruit productivity parameter $z_\textrm{frac}$ hits lower bound, i.e., there are no MSY reference points
-- Presented results with $z_\textrm{frac} = 0.4$, following US assessment
+- Presented results with $z_\textrm{frac}$ = 0.4, following US assessment
 ]
 
 
@@ -1121,7 +1123,7 @@ class: center, middle, inverse
 
 ---
 
-## Why spawning output over spawning biomass?
+### Why spawning output instead of spawning biomass?
 
 - Provides a more direct measure of stock productivity and we can better estimate it than for most teleost fish.
 
@@ -1224,7 +1226,7 @@ COSEWIC Metric A measures the probability that the stock has declined by 70%, 50
 
 --
 
-We define the generation time as 1/M + age at 50% maturity. I.e., 1/0.065 + 33.5 = ~50 years.
+We define the generation time as 1/M + age at 50% maturity. I.e., about 50 years.
 
 --
 
@@ -1273,9 +1275,7 @@ Guidelines:
 
 --
 
-.small[
 *This assessment is not a rebuilding plan.*
-]
 
 ---
 ##  Forecasts of $S/S_0$ under fixed catch scenarios 
@@ -1294,7 +1294,7 @@ include_graphics("../figs/ss3/refpts/rebuild-timeframe-dots.png")
 ---
 class: center, middle, inverse
 
-#  Discussion 
+#  Discussion
 
 ---
 #  Improvements over previous assessment 
@@ -1395,9 +1395,9 @@ include_graphics("../figs/cpue/cpue-by-depth.png")
 ```
 
 ---
-#  Sablefish survey Dogfish index (deep) is not increasing 
+###  Sablefish survey Dogfish index is flat
 
-Trap survey, October-November, 200 m to 1000 m.
+Trap survey, October–November, 200 m to 1000 m<br>(i.e, deep).
 
 .pull-left[![](../figs/sablefish-map.jpg)]
 
@@ -1411,27 +1411,31 @@ Trap survey, October-November, 200 m to 1000 m.
 - But, commercial CPUE was year-round and trend was largely same across months...
 
 ---
-#  Standardized CPUE by month (fixed y-axis) 
+#  Standardized CPUE by month<br>.xsmall[(fixed y-axis)]
 
 ```{r, out.width="600px"}
 include_graphics("../figs/cpue/cpue-lines-by-month-facets-abs.png")
 ```
 
 ---
-#  Standardized CPUE by month (scaled to have geometric mean = 1) 
-
+#  Standardized CPUE by month<br>.xsmall[(scaled to have geometric mean = 1)]
 
 ```{r, out.width="600px"}
 include_graphics("../figs/cpue/cpue-lines-by-month-facets.png")
 ```
 
 ---
-#  Slopes of CPUE by month 
+#  Slopes of CPUE by month
 
 
-```{r, out.width="700px"}
+```{r, out.width="70%"}
 include_graphics("../figs/cpue/cpue-slopes-by-month.png")
 ```
+
+.xsmall[
+- May-June (Synoptic WCVI survey timing) typical
+- Fairly consistent but August steepest (HBLL timing) and October/November least steep
+]
 
 ---
 #  Environmentally driven movement? 
