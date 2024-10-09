@@ -936,7 +936,7 @@ include_graphics("../figs/ss3/set_a_mat/index_fit.png")
 # Fit to indices<br>.tiny[Jackknifing indices]
 
 ```{r, out.width="60%"}
-include_graphics("../figs/ss3/set_a_mat/index_fit.png")
+include_graphics("../figs/ss3/set_a_ind/index_fit.png")
 ```
 
 .tiny[
