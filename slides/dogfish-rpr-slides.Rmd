@@ -368,15 +368,6 @@ include_graphics("assets/img/dogfish-problem.png")
 ---
 #  Nearby assessments: Gulf of Alaska
 
-<<<<<<< HEAD
-### Gulf of Alaska
-
-- Data limited approach with survey and fishery catch (no population model)
-
-### US West Coast
-
-- Age-structured modeling approach similar to this Research Document (Gertseva et al. 2021)
-=======
 - Not targeted but frequently encountered and discarded
 
 - Demographic model and risk analysis (Tribuzio et al. 2022)
@@ -398,7 +389,6 @@ market developed for Dogfish)
 - Overfishing estimated during vitamin A fishery and in 1980s–early 1990s
 
 - Similar data and SS3 model to what we will present here for BC; similar challenges
->>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 
 ---
 class: center, middle, inverse
@@ -440,24 +430,25 @@ class: center, middle, inverse
 ---
 #  General approach 
 
-<<<<<<< HEAD
-- Spatiotemporal modeling to estimate abundance over a spatial grid of the survey. Approach imputes abundance in missing time/area strata, e.g., for Synoptic survey
-- Depth as a fixed effect in standardization
-=======
+.small[
+- Spatiotemporal modelling to estimate density over a spatial grid of the survey. Approach imputes abundance in missing time/area strata, e.g., for Synoptic survey
+
 - Fit spatiotemporal models to Dogfish catch weight or count with "offset" for effort
+
+- Depth as a quadratic fixed effect
 
 - Use delta-lognormal or negative binomial observation error
 
 - Predict on grid covering survey each year; sum density across grid
 
 - Calculate standard errors with generalized delta method
+]
 
 .tiny[
 Thorson, J.T., Shelton, A.O., Ward, E.J., and Skaug, H.J. 2015. Geostatistical delta-generalized linear mixed models improve precision for estimated abundance indices for West Coast groundfishes. ICES J. Mar. Sci. 72(5): 1297–1310.
 
 Anderson, S.C., Ward, E.J., English, P.A., Barnett, L.A.K., and Thorson, J.T. 2024. sdmTMB: An R package for fast, flexible, and user-friendly generalized linear mixed effects models with spatial and spatiotemporal random fields. In press at J. Stat. Softw. doi:10.1101/2022.03.24.485545.
 ]
->>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 
 ---
 
@@ -675,7 +666,6 @@ include_graphics("../figs/length-age-comparison.png")
 ]
 
 ---
-<<<<<<< HEAD
 #  Natural mortality 
 
 - Estimated from maximum observed age and meta-analytic equation (Hamel and Cope 2022): $M = 5.4/A_\textrm{max} = 0.065$
@@ -684,10 +674,7 @@ include_graphics("../figs/length-age-comparison.png")
 - Alternative values explored in population modeling (0.057, 0.074)
 
 ---
-#  BC + US samples vs. US-assessment estimated 
-=======
 ##  BC + US samples vs. US-assessment estimated 
->>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 
 ```{r, out.width="95%"}
 include_graphics("../figs/ss3/growth-compare.png")
@@ -714,11 +701,7 @@ include_graphics("../figs/maturity-outside-survey-compare.png")
 ---
 #  Possible maturity ogives
 
-<<<<<<< HEAD
 ```{r, out.width="70%"}
-=======
-```{r, out.width="90%"}
->>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 include_graphics("../figs/ss3/mat-lit-with-synoptic.png")
 ```
 
@@ -773,10 +756,9 @@ class: center, middle, inverse
 #  Population Dynamics Model
 
 ---
-<<<<<<< HEAD
 #  Overview 
 
-.small[
+.xsmall[
 Sex segregated age-structured population model (Stock Synthesis 3) fitted to fishery & survey catch, indices, and size composition. McAllister-Ianelli algorithm to downweight the sample sizes of size composition.
 
 Estimated selectivity, unfished recruitment, and stock-recruit productivity.
@@ -792,31 +774,12 @@ In essence, a production model informed by catch and indices, while size composi
 #  A need for a stock-recruit curve for Dogfish-like species 
 
 Low fecundity limits stock productivity. Example to illustrate:
-=======
-###  Why a stock-recruit curve for Dogfish-like species?
-
---
 
 Imagine an unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups (B0).
 
---
->>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
-
-- Unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups ($S_0$).
-- If density-dependent unfished pup survival is 0.6, then we get 600 recruits ($R_0$).
-- A population of N = 20 (0.2 $B_0$) produces 200 pups. If steepness were 1 in a closed population, we'd have to conjure 600 recruits from 200 pups.
-- Thus, in this example, steepness is capped at 0.33: 200 pups at 0.2 $B_0$ divided by 600 pups at $B_0$.
-
-<<<<<<< HEAD
-=======
---
-
 A population of N = 20 (0.2 B0) produces 200 pups. If steepness were 1 in a closed population, we'd have to conjure 600 recruits from 200 pups.
 
---
-
 Thus, in this example, steepness should be capped at 0.33: 200 pups at 0.2B0 divided by 600 pups when unfished.
->>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 
 ---
 #  Dogfish stock recruit relationship
@@ -998,11 +961,7 @@ include_graphics("../figs/ss3/set_a_mat/sel_age_max1.png")
 
 ---
 
-<<<<<<< HEAD
 # Value of length composition
-=======
-#### Length composition are not informative about depletion
->>>>>>> c0982e49998f75ddf93427ae70a9b85bdd7bab52
 
 .pull-left[
 .tiny[
@@ -1017,7 +976,7 @@ Length composition primarily informs us of vulnerability of immature/mature dogf
 ]
 
 .pull-right[
-```{r, out.width="100%"}
+```{r, out.width="80%"}
 include_graphics("../figs/ss3/set_a_mat/len_comp_1937_model1.png")
 ```
 ]
@@ -1078,7 +1037,7 @@ include_graphics("../figs/ss3/prof/prof_zfrac_index.png")
 
 #  Likelihood profile<br>.tiny[Base model, yield curve]
 
-```{r, out.width="60%"}
+```{r, out.width="50%"}
 include_graphics("../figs/ss3/prof/zfrac_yield_curve.png")
 ```
 
