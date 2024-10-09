@@ -182,9 +182,13 @@ class: center, middle, inverse
 ---
 #  Nearby assessments 
 
-Gulf of Alaska
+### Gulf of Alaska
 
-US West Coast
+- Data limited approach with survey and fishery catch (no population model)
+
+### US West Coast
+
+- Age-structured modeling approach similar to this Research Document (Gertseva et al. 2021)
 
 ---
 class: center, middle, inverse
@@ -205,12 +209,18 @@ include_graphics("../figs/reconstructed-catch-discards-outside-sar.png")
 include_graphics("../figs/ss3/catch_fleet_discard_landings.png")
 ```
 
+.tiny[
+- iREC and bycatch in units of thousand pieces. Commercial catch in units of tonnes.
+]
+
 ---
 #  Population indices 
 
-```{r, out.width="650px"}
+```{r, out.width="60%"}
 include_graphics("../figs/ss3/index.png")
 ```
+
+- Declining indices in all, but at different rates/trends
 
 ---
 class: center, middle, inverse
@@ -220,7 +230,8 @@ class: center, middle, inverse
 ---
 #  General approach 
 
-TODO
+- Spatiotemporal modeling to estimate abundance over a spatial grid of the survey. Approach imputes abundance in missing time/area strata, e.g., for Synoptic survey
+- Depth as a fixed effect in standardization
 
 ---
 
@@ -417,21 +428,35 @@ class: center, middle, inverse
 ---
 #  Length-weight relationship 
 
-```{r, out.width="100%"}
+```{r, out.width="80%"}
 include_graphics("../figs/length-weight-survey-outside.png")
 ```
+
+.tiny[
+- Biological samples from modern surveys (IPHC, SYN, HBLL)
+]
 
 ---
 #  Length-age relationship 
 
-```{r, out.width="100%"}
+```{r, out.width="80%"}
 include_graphics("../figs/length-age-comparison.png")
 ```
+
+.tiny[
+- Biological samples from various fisheries and surveys (1980 - 2007), none from modern surveys
+- 2010 US West Coast samples needed to estimate $a_0$ parameter well (predicts size of youngest dogfish; Models 2-4)
+- Model 2 chosen as the "best" growth curve
+- High variability in length-at-age relationship, but dogfish also difficult to age (Appendix C.1)
+]
 
 ---
 #  Natural mortality 
 
-TODO
+- Estimated from maximum observed age and meta-analytic equation (Hamel and Cope 2022): $M = 5.4/A_\textrm{max} = 0.065$
+- Maximum age of 85 years (observed in the 1980s, G. MacFarlane)
+- Sex-invariant natural mortality given similar longevity between females and males
+- Alternative values explored in population modeling (0.057, 0.074)
 
 ---
 #  BC + US samples vs. US-assessment estimated 
@@ -440,19 +465,35 @@ TODO
 include_graphics("../figs/ss3/growth-compare.png")
 ```
 
+.tiny[
+- Comparison between growth curves in the BC assessment model and 2021 US assessment
+- Explored both in the population modeling
+]
+
 ---
 #  Maturity ogives (55 vs. 77)
 
-```{r, out.width="100%"}
+```{r, out.width="80%"}
 include_graphics("../figs/maturity-outside-survey-compare.png")
 ```
+
+.tiny[
+- Code 55 represents females with mature gonads
+- Code 77 represents pregnant females
+- Latter is used to generate "maturity ogive" to calculate spawning output in population model
+]
 
 ---
 #  Possible maturity ogives
 
-```{r, out.width="100%"}
+```{r, out.width="70%"}
 include_graphics("../figs/ss3/mat-lit-with-synoptic.png")
 ```
+
+.tiny[
+- Comparison of maturity at age estimates from literature and Synoptic maturity (converted to age: red and purple) 
+- Used maturity at age ogives in model (yellow and blue) to explore sensitivity, independent of growth
+]
 
 ---
 #  Fecundity at length
@@ -475,11 +516,15 @@ include_graphics("../figs/ss3/set_a_mat/fecundity.png")
 ---
 #  Unfished replacement line
 
-```{r, out.width="90%"}
+```{r, out.width="70%"}
 include_graphics("../figs/ss3/M_bound_fec.png")
 ```
 
-Low fecundity implies an upper bound on natural mortality 
+.tiny[
+- Low fecundity implies an upper bound on natural mortality. Otherwise, a female cannot replace herself over her lifetime
+- Population cannot sustain itself if slope of replacement line > 1
+- Growth and fecundity implies maximum natural mortality between 0.08 - 0.10
+]
 
 ---
 class: center, middle, inverse
@@ -487,15 +532,30 @@ class: center, middle, inverse
 #  Population Dynamics Model
 
 ---
+#  Overview 
+
+.small[
+Sex segregated age-structured population model (Stock Synthesis 3) fitted to fishery & survey catch, indices, and size composition. McAllister-Ianelli algorithm to downweight the sample sizes of size composition.
+
+Estimated selectivity, unfished recruitment, and stock-recruit productivity.
+
+Adjust maturity ogive for two year gestation period. On average, half of mature females give birth annually.
+
+No recruitment deviations (cohorts not observable from length data).
+
+In essence, a production model informed by catch and indices, while size composition informs selectivity. <br>Age-structure incorporates lags in stock response to exploitation pattern (selectivity and fishing mortality).
+]
+
+---
 #  A need for a stock-recruit curve for Dogfish-like species 
 
-Unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups (B0).
+Low fecundity limits stock productivity. Example to illustrate:
 
-If density-dependent unfished pup survival is 0.6, then we get 600 recruits (R0).
+- Unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups ($S_0$).
+- If density-dependent unfished pup survival is 0.6, then we get 600 recruits ($R_0$).
+- A population of N = 20 (0.2 $B_0$) produces 200 pups. If steepness were 1 in a closed population, we'd have to conjure 600 recruits from 200 pups.
+- Thus, in this example, steepness is capped at 0.33: 200 pups at 0.2 $B_0$ divided by 600 pups at $B_0$.
 
-A population of N = 20 (0.2 B0) produces 200 pups. If steepness were 1 in a closed population, we'd have to conjure 600 recruits from 200 pups.
-
-Thus, in this example, steepness is capped at 0.33: 200 pups at 0.2B0 divided by 600 pups when unfished.
 
 ---
 #  Dogfish stock recruit relationship
@@ -506,9 +566,13 @@ z_\mathrm{min} &= z_0(1 - z_\mathrm{frac})\\
 z_0 &= -\log(1/\phi_0)
 \end{aligned}
 
+.xsmall[
+$S_y$ is the spawning output (number of pups). The exponent is the survival (density-dependent = survival increases as depletion $S_y/S_0$ is decreases).
+
 $z_\mathrm{frac}$ is the proportion of unfished density dependent mortality when stock → zero (0–1, higher = more productive stock)
 
 $\beta$ controls concavity in density dependent mortality as stock declines (1 = linear)
+]
 
 .tiny[
 Taylor, I.G., Gertseva, V., Methot, R.D., and Maunder, M.N. 2013. A stock–recruitment relationship based on pre-recruit survival, illustrated with application to spiny dogfish shark. Fisheries Research 142: 15–21.
@@ -517,16 +581,49 @@ Taylor, I.G., Gertseva, V., Methot, R.D., and Maunder, M.N. 2013. A stock–recr
 ---
 #  Stock recruit relationship: $z_\textrm{frac}$
 
-```{r, out.width="70%"}
+```{r, out.width="50%"}
 include_graphics("../figs/ss3/prof/prof_zfrac_SR.png")
 ```
+
+.tiny[
+- Curvature is indicative of productivity (high recruitment at low stock sizes)
+- Low fecundity mechanistically limits the maximum curvature
+]
+
+
+---
+#  Base and sensitivity models
+
+From base model **A0**, explored various uncertainties in the set of models (Working Paper p. 30-31):
+
+- Growth (**A2-A4**)
+- Natural mortality (**A9-A10**)
+- Discard mortality rate (**A5**, **A14**)
+- Inclusion/exclusion and weighting of index from modern surveys (**A7**, **A8**, **A13**)
+- Stock-recruit productivity (**A11-A12**)
+- Cause of decline in modern indices (fishery vs. non-fishery causes) (**B1-B5**)
+
 
 ---
 #  Steller sea lion abundance 1971-2017 
 
-```{r, out.width="70%"}
+.pull-left[
+
+```{r, out.width="160%"}
 include_graphics("assets/img/image44.png")
 ```
+
+]
+
+.pull-right[
+
+.xsmall[
+Recent increases in pinniped populations in BC. Hypothesized increase in predation mortality on Dogfish, but difficult to quantify the magnitude.
+
+Approach was to allow the model to estimate an increase in natural mortality after 1990, 2005, or 2010
+]
+
+]
 
 .tiny[
 DFO. 2021. Trends in Abundance and Distribution of Steller Sea Lions (*Eumetopias jubatus*) in
@@ -540,34 +637,202 @@ class: center, middle, inverse
 
 ---
 
-# Estimated numbers at age
+# Estimated numbers at age<br>.tiny[Base model]
 
-```{r, out.width="60%"}
+.pull-left[
+
+```{r, out.width="120%"}
 include_graphics("../figs/ss3/set_a_mat/N_age_A1.png")
 ```
+]
+
+.pull-right[
+.tiny[
+Demonstration of the lagged effects on the age structure of the population. 
+
+Early Vitamin A fished out older animals (age 30+), population recovered from younger animals (20+) invulnerable to the fishery.
+]
+]
+
+
+---
+
+# Biomass trends<br>.tiny[Base model, sens. growth and discard mortality]
+
+.pull-left[
+```{r, out.width="40%"}
+include_graphics("../figs/ss3/set_a_mat/biomass_est.png")
+```
+
+```{r, out.width="40%"}
+include_graphics("../figs/ss3/set_a_mat/spawning_est.png")
+```
+]
+
+.pull-right[
+.tiny[
+- Estimated steady decline in population biomass
+- Due to differences in selectivity & maturity: declines after vitamin A fishery, subsequent recovery, and another decline
+]
+]
+
+---
+
+# Spawning depletion<br>.tiny[Base model, sens. growth and discard mortality]
+
+```{r, out.width="60%"}
+include_graphics("../figs/ss3/set_a_mat/depletion_est.png")
+```
+
+.tiny[
+- Growth and discard mortality affect historical stock trajectory
+- Relative abundance higher in the mid 20th century with higher discard mortality (need more fish to explain higher removals), later maturity
+- Current depletion estimates very similar among set of models
+- More on status later
+]
+
+
+---
+
+# Fit to indices<br>.tiny[Base model, sens. growth and discard mortality]
+
+```{r, out.width="60%"}
+include_graphics("../figs/ss3/set_a_mat/index_fit.png")
+```
+
+.tiny[
+- Base model fits best to IPHC, and fishery CPUE
+- Residual pattern to HBLL and IPHC indices
+]
+
+
+---
+
+# Fit to indices<br>.tiny[Jackknifing indices]
+
+```{r, out.width="60%"}
+include_graphics("../figs/ss3/set_a_mat/index_fit.png")
+```
+
+.tiny[
+- Somewhat better fit to Synoptic index in A7 or A13 (exclude or downweight, respectively IPHC index), with larger stock decline compared to base model (Working paper Figure 47, p. 67)
+- Could not find plausible fit with HBLL index alone (stock goes to zero)
+]
+
+
 
 ---
 
 # Estimated selectivity at age
 
-```{r, out.width="94%"}
+```{r, out.width="70%"}
 include_graphics("../figs/ss3/set_a_mat/sel_age_max1.png")
 ```
 
+.tiny[
+- Selectivity estimated by size, converted to age. Compare with maturity ogive (dotted black line)
+- From size composition, landed catch is mostly female, discards have more even sex ratio
+- Immature females are caught incidentally, e.g., bottom trawl discards
+]
+
 ---
 
-# Length composition are not informative about depletion
+# Value of length composition
 
-```{r, out.width="43%"}
+.pull-left[
+.tiny[
+Comparison of predicted unfished (left column) and recent (left column) length composition in various fisheries and surveys
+
+Little change in the mean length (numbers) and shape of distribution
+
+Caused by high variability in length-at-age and low M/K ratio, leads to overlap of many cohorts in single size class
+
+Length composition primarily informs us of vulnerability of immature/mature dogfish to fishery
+]
+]
+
+.pull-right[
+```{r, out.width="100%"}
 include_graphics("../figs/ss3/set_a_mat/len_comp_1937_model1.png")
 ```
+]
 
 ---
 #  Time-varying natural mortality 
 
-```{r, out.width="100%"}
+```{r, out.width="80%"}
 include_graphics("../figs/ss3/set_b/M_year.png")
 ```
+
+.small[
+- Natural mortality roughly doubles in B-set of models
+]
+
+
+---
+#  Spawning depletion<br>.tiny[Base model, sens. M and M change] 
+
+```{r, out.width="60%"}
+include_graphics("../figs/ss3/set_b/depletion_est.png")
+```
+
+.tiny[
+- Not all models are plausible, i.e., exclude B1 and B4 from consideration
+- Increase in natural mortality must occur later (2005, 2010), otherwise early fishery has no effect on stock
+]
+
+
+---
+
+#  Likelihood profile<br>.tiny[Base model]
+
+```{r, out.width="60%"}
+include_graphics("../figs/ss3/prof/like_zfrac.png")
+```
+
+.tiny[
+- Stock-recruit productivity parameter $z_\textrm{frac}$ hits lower bound, i.e., there are no MSY reference points
+- Presented results with $z_\textrm{frac} = 0.4$, following US assessment
+]
+
+
+---
+
+#  Likelihood profile<br>.tiny[Base model, index fit]
+
+```{r, out.width="60%"}
+include_graphics("../figs/ss3/prof/prof_zfrac_index.png")
+```
+
+.tiny[
+- Steep profile with small standard error $\sigma \approx 0.05$ on the IPHC index, but doesn't appreciably change fit visually
+]
+
+
+---
+
+#  Likelihood profile<br>.tiny[Base model, yield curve]
+
+```{r, out.width="60%"}
+include_graphics("../figs/ss3/prof/zfrac_yield_curve.png")
+```
+
+.tiny[
+- Stock-recruit productivity parameter $z_\textrm{frac}$ determines height of the yield curve (2023 selectivity of discard)
+- Can provide upper bound on what is plausible
+]
+
+
+
+---
+
+# Retrospective pattern<br>.tiny[Base model]
+
+```{r, out.width="40%"}
+include_graphics("../figs/ss3/retro/ret_A0.png")
+```
+
+
 
 ---
 #  MCMC sampling 
@@ -669,6 +934,10 @@ Entire assessment (1937 = 2023, 86 years) = ~1.7 generations.
 ```{r, out.width="100%"}
 include_graphics("../figs/cosewic-decline-indexes.png")
 ```
+
+.tiny[
+Rates of decline calculated empirically from indices (Appendix E)
+]
 
 ---
 class: center, middle, inverse
