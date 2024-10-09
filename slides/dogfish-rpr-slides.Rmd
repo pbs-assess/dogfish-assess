@@ -883,20 +883,21 @@ Early Vitamin A fished out older animals (age 30+), population recovered from yo
 
 # Biomass trends<br>.tiny[Base model, sens. growth and discard mortality]
 
-.pull-left[
-```{r, out.width="40%"}
+.pull-two-thirds-left[
+```{r, out.width="70%"}
 include_graphics("../figs/ss3/set_a_mat/biomass_est.png")
 ```
 
-```{r, out.width="40%"}
+```{r, out.width="50%"}
 include_graphics("../figs/ss3/set_a_mat/spawning_est.png")
 ```
 ]
 
-.pull-right[
+.pull-third-right[
 .tiny[
-- Estimated steady decline in population biomass
-- Due to differences in selectivity & maturity: declines after vitamin A fishery, subsequent recovery, and another decline
+Estimated steady decline in population biomass
+
+Due to differences in selectivity & maturity: declines after vitamin A fishery, subsequent recovery, and another decline
 ]
 ]
 
