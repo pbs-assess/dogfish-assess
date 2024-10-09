@@ -242,9 +242,9 @@ class: center, middle, inverse
 
 #  First Nations use
 .small[
-- Found in middens 
-- Oldest dated spine found in midden in Port Hardy
-- Uses include skin for sandpaper, liver for oil for tanning, potential starvation food
+- Dogfish spines found in middens across BC 
+- Oldest dated spine was found in midden in Port Hardy
+- Uses of Dogfish include skin for sandpaper, liver for oil for tanning/burning, meat as a potential starvation food
 - Dogfish Woman — most powerful supernatural being in Haida Nation, she derives her powers from Dogfish
 ]
 
@@ -264,8 +264,11 @@ class: center, middle, inverse
 
 #  Commercial fishery history
 .small[
-- 1870–1916 industrial lubrication, lighting purposes (mining and lighthouses), and fertilizer
-- More important than whaling industry
+- 1870–1916 industrial lubrication and lighting 
+- Liver oil was burned to fuel Race Rock and Fraser River lighthouses
+- Large quantities wer eused for lubricating sawmills and lighting for coal mines and on steamers and sailing vessels
+- The decline of whaling lead to an increase in Dogfish catches for fertilizer and oil
+- 1916-1937 small food fishery and meal for cattle and poultry
 ]
 
 ```{r, out.width="50%"}
