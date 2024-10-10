@@ -1,4 +1,6 @@
 library(r4ss)
+library(ggplot2)
+library(dplyr)
 source("ss3/fit_ss3.R")
 
 system("cp -r ss3/A0 ss3/A0-dynamicB0")
@@ -7,7 +9,9 @@ d <- r4ss::SS_readdat("ss3/A0-dynamicB0/data.ss_new")
 d$catch <- d$catch |>
   mutate(catch = ifelse(year > 1950, 0, catch))
 
-ggplot(filter(d$catch, year > 0), aes(year, catch)) + geom_line() + facet_wrap(~fleet, scales = "free_y")
+ggplot(filter(d$catch, year > 0), aes(year, catch)) +
+  geom_line() +
+  facet_wrap(~fleet, scales = "free_y")
 
 r4ss::SS_writedat(d, "ss3/A0-dynamicB0/data.ss", overwrite = T)
 
@@ -40,9 +44,7 @@ dat <- bind_rows(
   mutate(dat_A0, type = "A0"),
   mutate(dat_A0_dyn, type = "A0 dynamic B0 post 1950")
 )
-
 row.names(dat) <- NULL
 
-library(ggplot2)
-library(dplyr)
-ggplot(dat, aes(year, Value, colour = type)) + geom_line()
+ggplot(dat, aes(year, Value, colour = type)) +
+  geom_line()
