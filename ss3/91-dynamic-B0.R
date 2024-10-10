@@ -22,7 +22,7 @@ s$init_values_src <- 1 # 1 = use ss.par
 
 r4ss::SS_writestarter(s, "ss3/A0-dynamicB0/", overwrite = T)
 
-fit_ss3(model_dir = "A0-dynamicB0")
+fit_ss3(model_dir = "A0-dynamicB0", hessian = FALSE, extra_args = "-maxI 0")
 
 dd <- SS_read_summary("ss3/A0-dynamicB0/ss_summary.sso")
 dd <- dd$derived_quants
