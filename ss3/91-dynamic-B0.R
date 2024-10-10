@@ -4,7 +4,7 @@ library(dplyr)
 source("ss3/fit_ss3.R")
 
 system("cp -r ss3/A0 ss3/A0-dynamicB0")
-d <- r4ss::SS_readdat("ss3/A0-dynamicB0/data.ss_new")
+d <- r4ss::SS_readdat("ss3/A0-dynamicB0/data_echo.ss_new")
 
 d$catch <- d$catch |>
   mutate(catch = ifelse(year > 1950, 0, catch))
