@@ -768,6 +768,7 @@ include_graphics("../figs/ss3/mat-lit-with-synoptic.png")
 ```
 
 .tiny[
+- Maturity at size from biological samples in the Synoptic survey
 - Comparison of maturity at age estimates from literature and Synoptic maturity (converted to age: red and purple) 
 - Used maturity at age ogives in model (yellow and blue) to explore sensitivity, independent of growth
 ]
