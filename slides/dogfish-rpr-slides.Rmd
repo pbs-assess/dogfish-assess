@@ -830,7 +830,7 @@ Age-structure incorporates lags in stock response to exploitation pattern (selec
 
 Low fecundity limits stock productivity. Example to illustrate:
 
-Imagine an unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups (B0).
+Imagine an unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups (B0). If pup survival to recruit life stage is 0.6, then we have 600 recruits (R0).
 
 A population of N = 20 (0.2 B0) produces 200 pups. If steepness were 1 in a closed population, we'd have to conjure 600 recruits from 200 pups.
 
@@ -927,9 +927,9 @@ include_graphics("../figs/ss3/set_a_mat/N_age_A1.png")
 
 .pull-right[
 .tiny[
-Demonstration of the lagged effects on the age structure of the population. 
+Oscillations in age classes demonstrate of the lagged effects in the population. 
 
-Early Vitamin A fishery fished out older animals (age 30+), population recovered from younger animals (20+) invulnerable to the fishery.
+Early Vitamin A fishery fished out older animals (age 30+), population recovered from younger cohorts invulnerable to the fishery.
 ]
 ]
 
@@ -952,7 +952,7 @@ include_graphics("../figs/ss3/set_a_mat/spawning_est.png")
 .tiny[
 Estimated steady decline in population biomass
 
-Due to differences in selectivity & maturity: declines after vitamin A fishery, subsequent recovery, and another decline
+Different trend in spawning output (due to differences in selectivity & maturity): declines after vitamin A fishery, subsequent recovery, and another decline
 ]
 ]
 
@@ -1098,7 +1098,7 @@ include_graphics("../figs/ss3/prof/zfrac_yield_curve.png")
 ```
 
 .tiny[
-- Stock-recruit productivity parameter $z_\textrm{frac}$ determines height of the yield curve (2023 selectivity of discard)
+- Stock-recruit productivity parameter $z_\textrm{frac}$ determines height of the yield curve (2023 selectivity, primarily discards)
 - Can provide upper bound on what is plausible
 ]
 
@@ -1112,10 +1112,6 @@ include_graphics("../figs/ss3/prof/zfrac_yield_curve.png")
 include_graphics("../figs/ss3/retro/ret_A0.png")
 ```
 
-
-
----
-#  MCMC sampling 
 
 ---
 class: center, middle, inverse
@@ -1312,12 +1308,17 @@ class: center, middle, inverse
 ---
 ##  Challenges fitting some population indices 
 
+- Not possible to simultaneously obtain a good fit to all three modern indices
+
+- Synoptic survey believed to target preferred Dogfish habitat (muddy bottom) but IPHC index is more precise (mixed substrates)
 
 ---
 ##  Perception of depletion was relatively robust 
 
 - Estimated current status is inferred from the decline in indices in light of low catches relative to historical levels.
- 
+
+- Low fecundity limits the range of potential historical population trajectories among the sensitivity scenarios
+
 - TODO
 
 ---
