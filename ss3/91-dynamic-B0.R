@@ -2,6 +2,7 @@ library(r4ss)
 library(ggplot2)
 library(dplyr)
 source("ss3/fit_ss3.R")
+theme_set(gfplot::theme_pbs())
 
 unlink("ss3/A0-dynamicB0", recursive = T, force = T)
 unlink("ss3/A3_high-dynamicB0", recursive = T, force = T)
@@ -98,7 +99,7 @@ dat_A3 <- dd[substring(dd[["Label"]], 1, 6) == "Bratio", ] |>
   mutate(year = as.numeric(year)) |>
   mutate(Label = gsub("_[0-9]+", "", Label))
 dat_A3 <- bind_rows(
-  mutate(dat_A3, type = "A0"),
+  mutate(dat_A3, type = "A3"),
   dat_A3_dyn1 # , dat_A3_dyn2
 )
 
