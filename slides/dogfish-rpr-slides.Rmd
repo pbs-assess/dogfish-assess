@@ -1062,6 +1062,8 @@ class: center, middle, inverse
 - Shape of yield curve with respect to depletion across values of stock-recruit $z_\mathrm{frac}$ and $\beta$ relatively constant
 
 - But height of curves (MSY) varies strongly
+
+- Propose 0.2B<sub>0</sub> as LRP, 0.4B<sub>0</sub> as candidate USR, and F<sub>0.4S0</sub> as removal reference rate
 ]
 
 .pull-right[
