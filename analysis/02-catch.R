@@ -2,6 +2,7 @@ library(dplyr)
 library(gfplot)
 library(ggplot2)
 source("analysis/utils.R")
+source("ss3/99-utils.R")
 dir.create("figs", showWarnings = FALSE)
 
 # modern catches ------------------------------------------------------
@@ -197,7 +198,7 @@ g <- d %>%
 g
 ggsave("figs/reconstructed-catch-discards-outside.png", g, width = 5, height = 5)
 
-g <- d %>%
+g1 <- d %>%
   filter(year <= 2023) |>
   filter(year >= 1980) |>
   filter(area != "4B") %>%
@@ -205,7 +206,7 @@ g <- d %>%
   mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
     value = value/1e6) %>%
   mutate(variable = factor(variable, levels = c("Landings (kt)", "Discards (kt)"))) |>
-  mutate(area = paste0(area, " (zoomed in to 1980-2023)")) |>
+  mutate(area = paste0(area, " (zoomed to 1980-2023)")) |>
   ggplot(aes(year, value, fill = gear)) +
   geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
   scale_x_continuous(expand = c(0, 0)) +
@@ -219,8 +220,11 @@ g <- d %>%
   theme(legend.position = "bottom",
     strip.placement = "outside") +
   guides(fill=guide_legend(nrow=2,byrow=TRUE))
-g
-ggsave("figs/reconstructed-catch-discards-outside-zoom.png", g, width = 5, height = 5)
+g1
+ggsave_optipng("figs/reconstructed-catch-discards-outside-zoom.png", width = 5, height = 5)
+
+gg <- patchwork::wrap_plots(list(g + theme(axis.title.x = element_blank()), g1 + guides(fill = "none") + theme(axis.title.x = element_blank())), widths = c(1.7, 1))
+ggsave_optipng("figs/reconstructed-catch-discards-outside-sar.png", width = 8, height = 5)
 
 d %>%
   filter(year <= 2023) |>
@@ -248,7 +252,7 @@ d %>%
   #   "rect", xmin = 1978, xmax = 2023,
   #   ymin = 4.5, ymax = 9.333, alpha = 0.15, fill = "black"
   # ) +
-  ylab("Catch (t) (discards + landings)")
+  ylab("Catch (kt) (discards + landings)")
 source("ss3/99-utils.R")
 ggsave_optipng("figs/reconstructed-catch-discards-outside-zoom-high-risk-band.png", width = 5, height = 4)
 
