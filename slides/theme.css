@@ -88,6 +88,14 @@
   color: #1e81b0 !important;
 }
 
+.grey {
+  color: #CCCCCC !important;
+}
+
+.blue {
+  color: #1e81b0 !important;
+}
+
 div.footer {
     content: "";
     position: absolute;

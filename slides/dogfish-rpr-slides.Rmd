@@ -51,97 +51,6 @@ knitr_opts <- list(
 do.call(knitr::opts_chunk$set, knitr_opts)
 ```
 
-class: center, middle, inverse
-
-#  This is a section break as a demo
-
----
-class: center, middle
-
-#  This is a sub-section break
-
----
-###  This is a regular slide with one figure at 80% width
-
-```{r, out.width="80%"}
-include_graphics("../figs/reconstructed-catch-discards-outside-sar.png")
-```
-
-.xsmall[And some extra small text (see theme.css for other sizes).]
-
----
-#  This is a 2-column slide
-
-.pull-left[
-Point one
-
-Point two
-
-Point three
-]
-
-.pull-right[
-```{r, out.width="90%"}
-include_graphics("../figs/synoptic/depth_marginal.png")
-```
-]
-
----
-##  This is a 2-column slide with smaller bullets
-
-.xsmall[
-.pull-left[
-- Point one
-
-- Point two
-
-- Point three
-]
-]
-
-.pull-right[
-```{r, out.width="85%"}
-include_graphics("../figs/synoptic/depth_marginal.png")
-```
-]
-
----
-#  These bullets are revealed one by one
-
---
-
-- Point one
-
---
-
-- Point two
-
---
-
-- Point three
-
----
-# Dropping in some external image
-
-I've been putting them in `assets/img` and git force adding:
-
-```{r, out.width="50%"}
-include_graphics("assets/img/image37.png")
-```
-
-Equation:
-
-$$
-y = x
-$$
-
----
-class: center, middle, inverse
-
-#  End of demo!
-
----
-
 # Outline
 
 1. Life history, ecology, and stock structure
@@ -246,11 +155,9 @@ class: center, middle, inverse
 .xsmall[
 - Dogfish spines found in middens across BC 
 
-- Oldest dated spine was found in midden in Port Hardy
-
 - Uses of Dogfish include skin for sandpaper, liver for oil for tanning/burning, meat as a potential starvation food
 
-- Dogfish Woman — most powerful supernatural being in Haida Nation, she derives her powers from Dogfish
+- Dogfish Woman: most powerful supernatural being in Haida Nation, she derives her powers from Dogfish
 ]
 ]
 
@@ -275,25 +182,18 @@ Credit: Norman Tait
 Ketchen, K.S. 1986. The spiny dogfish (*Squalus acanthias*) in the Northeast Pacific and a history of its utilization. Can. Spec. Publ. Fish. Aquat. Sci. 88:78 p.
 ]
 
-
 ---
-class: center, middle, inverse
-
-#  Commercial fishery history 
-
----
-
 #  Commercial fishery history
 .xsmall[
-- 1870–1916 industrial lubrication and lighting 
+- 1870–1916: livers and body oil for industrial lubrication and lighting
 
-- Liver oil was burned to fuel Race Rock and Fraser River lighthouses
+- Dogfish oil was burned for lighting in lighthouses, coal mines, steamers, and sailing vessels; used for lubricating sawmills
 
-- Large quantities wer eused for lubricating sawmills and lighting for coal mines and on steamers and sailing vessels
+- Decline of whaling lead to increase in Dogfish catches
 
-- The decline of whaling lead to an increase in Dogfish catches for fertilizer and oil
+- 2nd only to canned salmon in value in BC
 
-- 1916-1937 small food fishery and meal for cattle and poultry
+- 1917–1937 no outside BC fishery
 ]
 
 ```{r, out.width="30%"}
@@ -309,14 +209,12 @@ Ketchen, K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacif
 ```
 
 ---
-
-#  Commercial fishery history
+#  Commercial fishery history (1937–1950)
 .xsmall[
-- 1937–1950 Dogfish livers for Vitamin A fishery
-- A process that concentrated vitamin A from Dogfish and Tope liver oils was developed
-- Initial use was for poultry supplementation but also for soldiers
-- The invasion of Norway (1940) cut off cod liver oil supplies lead to demand from alterative sources
-- Pregnant (large) females and marge males had the highest vitamin A concentrations
+- 1937–1950 Dogfish livers for Vitamin A
+- Rising demand for soldiers during war
+- The invasion of Norway (1940) cut off cod liver oil supplies leading to demand from alternative sources
+- Pregnant (large) females and large males had the highest vitamin A concentrations
 - Peak catch in BC: 120 million pounds of Dogfish
 - Move to synthetic vitamin A + declines in abundance ended the fishery
 ]
@@ -330,7 +228,7 @@ Ketchen, K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacif
 ]
 
 ---
-#  Commercial fishery history
+#  Commercial fishery history (1951–1974)
 .pull-two-thirds-left[
 .xsmall[
 - 1951–1974 government subsidy programs, eradication
@@ -349,37 +247,56 @@ Ketchen, K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacif
 ```{r, out.width="100%"}
 include_graphics("assets/img/dogfish-problem.png")
 ```
-
-]
----
-
-#  Commercial fishery history
-.xsmall[
-- 1970–2011 food fishery for European markets
-
-- Initially a government subsidized fishery
-
-- Dogfish meat sold to European markets, mostly fish and chips in UK and Norway
-
-- 1977–1982 decline in CPUE of 70% in SOG, declining size of females
-
-- Marine Stewardship Council certification (2011)
 ]
 
-<br>
-<br>
 .tiny[
-Ketchen, K.S. 1986. The spiny dogfish (*Squalus acanthias*) in the Northeast Pacific and a history of its utilization. Can. Spec. Publ. Fish. Aquat. Sci. 88:78 p.
-
 Ketchen, K.S. 1969. A review of the Dogfish problem off the West Coast of Canada. Fish. Res. Board. 29 p.
 ]
+
+---
+# Commercial fishery history (1975–2005)
+
+- Food fishery developed
+
+- Mostly in Strait of Georgia initially
+
+- Shifted to outside BC waters
+
+- Initially mainly trawl eventually transitioned to longline gear
+
+```{r, out.width="40%"}
+include_graphics("../figs/reconstructed-catch-discards-outside-zoom-high-risk-band.png")
+```
+
+---
+##  Commercial fishery history (2006–present)
+
+.xsmall[
+- Severe restrictions on rockfish in Strait of Georgia and Individual Vessel Quota system led to decline in Dogfish fishing
+
+- Marine Stewardship Council certification (2011)
+
+- 9 active vessels in 2012, none since 2017 (one license in 2019)
+
+- Now: no targeted fishing, regularly caught and discarded, mostly in midwater and bottom trawl fleets
+
+- TAC 12,000t: 8,160 t for Dogfish sector; 3,840 t for trawl sector
+]
+
+```{r, out.width="40%"}
+include_graphics("../figs/reconstructed-catch-discards-outside-zoom-high-risk-band.png")
+```
+
+???
+
+TAC is double the height of y-axis upper limit
 
 ---
 
 ##  Assessment history: Wood et al. 1979
 
-.small[
-- Estimated unfished vulnerable biomass (BC to Oregon) of 200,000 tonnes from Delury and Leslie depletion models
+.xsmall[
+- Estimated unfished vulnerable biomass (BC to Oregon) of 200,000 t from Delury and Leslie depletion models
 
 - Assumed pup survival and recruitment was density-independent
 
@@ -392,7 +309,6 @@ Ketchen, K.S. 1969. A review of the Dogfish problem off the West Coast of Canada
 - Alternative hypotheses of density-dependent growth and fecundity deemed biologically implausible to achieve the proposed MSY value
 ]
 
-
 ---
 
 ##  Assessment history: Saunders 1980s
@@ -404,7 +320,7 @@ Ketchen, K.S. 1969. A review of the Dogfish problem off the West Coast of Canada
   - 9,000 t = "low risk"
   - 9,000–14,000 t = "high risk" (of declines)
 
-- Basis for current TAC
+- Basis for current TAC with some adjustments
 
 - Saunders 1989 assumed BC was 1/2 to 2/3 of stock
   - therefore, 4,500–9,333 t was "high risk"
@@ -423,7 +339,7 @@ Ketchen, K.S. 1969. A review of the Dogfish problem off the West Coast of Canada
 
 - Challenges with parameter estimation
 
-- "no consensus reached on a scientifically valid approach on which to base yield recommendations"
+- "No consensus reached on a scientifically valid approach on which to base yield recommendations"
 
 - Reduction in the size distribution, long generation time, low fecundity, uncertainty in population trends, vulnerability elsewhere resulted in COSEWIC "Special Concern" in 2011
 ]
@@ -492,7 +408,7 @@ class: center, middle, inverse
 ---
 #  General approach 
 
-.small[
+.xsmall[
 - Spatiotemporal modelling to estimate density over a spatial grid of the survey. Approach imputes abundance in missing time/area strata, e.g., for Synoptic survey
 
 - Fit spatiotemporal models to Dogfish catch weight or count with "offset" for effort
@@ -501,7 +417,7 @@ class: center, middle, inverse
 
 - Use delta-lognormal or negative binomial observation error
 
-- Predict on grid covering survey each year; sum density across grid
+- Predict on grid covering survey each year; sum density
 
 - Calculate standard errors with generalized delta method
 ]
@@ -721,7 +637,7 @@ include_graphics("../figs/length-age-comparison.png")
 ```
 
 .tiny[
-- Biological samples from various fisheries and surveys (1980 - 2007), none from modern surveys
+- Biological samples from various fisheries and surveys (1980–2007), none from modern surveys
 - 2010 US West Coast samples needed to estimate $a_0$ parameter well (predicts size of youngest dogfish; Models 2-4)
 - Model 2 chosen as the "best" growth curve
 - High variability in length-at-age relationship, but dogfish also difficult to age (Appendix C.1)
@@ -1296,36 +1212,131 @@ class: center, middle, inverse
 ---
 #  Improvements over previous assessment 
 
-- Introduction of new population indices: HBLL + Synoptic trawl indices (~20 years) with strong trends that were not yet apparent
+Introduction of new population indices: HBLL + Synoptic trawl indices (~20 years) with strong trends that were not yet apparent
 
 --
 
-- Surplus production model → age-structured model
+Surplus production model → age-structured model
 
-- An age-structured model lets us evaluate population trajectories consistent with understanding of Dogfish growth, maturity, fecundity, and stock-recruit productivity consistent with length composition and index data.
+- Lets us evaluate population trajectories consistent with understanding of Dogfish growth, maturity, fecundity, and stock-recruit productivity that are also consistent with length composition and index data.
 
-- Age-structured models can incorporate lags in the population response due to late maturity and low fecundity.
+- Can incorporate lags in the population response to fishing due to late maturity and low fecundity.
 
 ---
-##  Challenges fitting some population indices 
+# Key challenges and resolutions
 
+.small[
+Some length composition data highly variable; survey lengths not informative about depletion.
+
+.blue[Will never be able to fit some of these data; lengths inform selectivity.]
+]
+
+--
+
+.small[
+Unable to address all major sources of uncertainty in one model.
+
+.blue[Fit ~20 alternative models to encompass a wide range of possibilities.]
+]
+
+--
+
+.small[
+A lack of index data early in the time series during major fishery.
+
+.blue[Unfortunately, we're never going to have these data.]
+]
+
+---
+# Key challenges continued
+
+--
+
+.small[
+Inability to estimate level of density-dependence in the stock-recruit curve.
+
+.blue[Bounded a range of values; same problem and approach as US West Coast assessment. Depletion fairly insensitive.]
+]
+
+--
+
+.small[
+Uncertainty about discard mortality rates.
+
+.blue[Bounded a range of values.]
+]
+
+--
+
+.small[
+Differing rates of decline in three major survey indices
+
+.blue[We can't reconcile this, but some thoughts next...]
+]
+
+---
+##  Challenge: can't fit all indices simultaneously
+
+.xsmall[
 - Not possible to simultaneously obtain a good fit to all three modern indices
-
 - Synoptic survey believed to target preferred Dogfish habitat (muddy bottom) but IPHC index is more precise (mixed substrates)
+- Commercial CPUE and IPHC index less steep
+- HBLL index steep before 2010; Synoptic trawl index steep 2010–2020
+- HBLL shallower, in rocky habitat, in August?
+- No explanation for Synoptic trawl index
+]
+
+<img src="../figs/ss3/set_a_ind/index_fit.png" width="60%" style="display: block; margin: auto;">
 
 ---
 ##  Perception of depletion was relatively robust 
 
 - Estimated current status is inferred from the decline in indices in light of low catches relative to historical levels.
 
-- Low fecundity limits the range of potential historical population trajectories among the sensitivity scenarios
+- Low fecundity, late maturity, 2-year gestation limits the range of potential historical population trajectories among the sensitivity scenarios
 
-- TODO
+```{r, out.width="52%"}
+include_graphics("../figs/ss3/refpts/depl-ref-ts.png")
+```
 
 ---
-###  Mortality on juvenile Dogfish in the trawl discards 
+###  Legacy fishing impacts from the 1940s
 
+.small[
+- Replay population with zero catches after 1950
+- Rapid recovery from 1950–1970 due to unfished juvenile cohort that matured
+- Expected recovery stalls from 1970–1990 when fishing restarted...
+]
 
+```{r, out.width="70%"}
+include_graphics("../figs/dynamic-B0-A0.png")
+# include_graphics("../figs/bubble.png")
+```
+
+---
+###  Legacy fishing impacts from the 1940s
+
+.small[
+- Pulse of low recruitment around 1950 travels through population
+- Rapid recovery due to wave of unfished juveniles
+]
+
+```{r, out.width="100%"}
+include_graphics("../figs/dynamic-bubble-A0.png")
+```
+
+---
+###  Legacy fishing impacts from the 1940s
+
+.small[
+- Steeper maturity ogive (model A3) predicts oscillations: low points every 50-years (1 generation)
+- Expected drop in spawning output coincides with resuming fishing
+- May explain some of decline up to 2020; does not explain recent declines 
+]
+
+```{r, out.width="60%"}
+include_graphics("../figs/dynamic-B0-A3.png")
+```
 
 ---
 class: center, middle, inverse
@@ -1334,20 +1345,22 @@ class: center, middle, inverse
 ---
 ### Environmental conditions not explicitly modeled 
 
-- But modelled time-varying natural mortality
+But modelled time-varying natural mortality, e.g. from changes to predation
 
-- Dogfish "integrate" over many years of environmental condition (Taylor and Galluci 2009)
+Unclear how plausible these modelled changes in natural mortality are
 
-- English et al. (2021) did not find any strong patterns in changes to outside BC Dogfish distribution correlated with local changes to bottom temperature or dissolved oxygen
+Dogfish "integrate" over many years of environmental condition (Taylor and Galluci 2009)
 
 ---
 #  Environmentally driven movement? 
 
-- Movement north?
+.xlarge[
+1. Movement north?
 
-- Movement offshore?
+2. Movement offshore?
 
-- Movement seasonally?
+3. Movement seasonally?
+]
 
 ---
 #  Movement north? 
@@ -1360,39 +1373,24 @@ class: center, middle, inverse
 
 --
 
-- Dogfish have a wide thermal tolerance already.
+- Dogfish have a wide thermal tolerance.
 
 --
 
-- Most importantly, Dogfish have declined in the Gulf of Alaska over the last 20 years as well...
-
----
-#  Trawl survey declines are coastwide 
-
-```{r, out.width="600px", eval=FALSE}
-include_graphics("assets/img/image58.png")
-```
-
-.xsmall[Davidson et al. In prep.]
+- Most importantly, Dogfish have declined in the Gulf of Alaska over the last 20 years as well.
 
 ---
 #  Movement offshore? 
 
-- If stock moved offshore outside of survey domains, could cause decline in indices.
+- If stock moved offshore outside of survey domains, could cause index declines.
 
 --
-
-- But, the trawl survey (and commercial CPUE) already extend deeper than Dogfish are typically found and we don't see evidence of increases further offshore.
+- But, the trawl survey (and commercial CPUE) already extend deeper than Dogfish are typically found.
 
 --
-
-- Although there *is* evidence of steeper declines in shallow waters...
-
----
-#  Steeper commercial CPUE declines in shallow areas, but still declining in deeper waters 
-
-
-```{r, out.width="800px"}
+- We don't see increases further offshore; however, there *is* evidence of less steep declines in deeper waters...
+--
+```{r, out.width="95%"}
 include_graphics("../figs/cpue/cpue-by-depth.png")
 ```
 
@@ -1408,21 +1406,27 @@ Trap survey, October–November, 200 m to 1000 m<br>(i.e, deep).
 ---
 #  Movement seasonally? 
 
+--
+
 - Changes to seasonal migration could cause trends in survey catchability.
+
+--
 
 - But, commercial CPUE was year-round and trend was largely same across months...
 
 ---
 #  Standardized CPUE by month<br>.xsmall[(fixed y-axis)]
+.small[CPUE highest May–October]
 
-```{r, out.width="600px"}
+```{r, out.width="580px"}
 include_graphics("../figs/cpue/cpue-lines-by-month-facets-abs.png")
 ```
 
 ---
 #  Standardized CPUE by month<br>.xsmall[(scaled to have geometric mean = 1)]
+.small[But slopes are relatively constant]
 
-```{r, out.width="600px"}
+```{r, out.width="580px"}
 include_graphics("../figs/cpue/cpue-lines-by-month-facets.png")
 ```
 
@@ -1435,27 +1439,27 @@ include_graphics("../figs/cpue/cpue-slopes-by-month.png")
 ```
 
 .xsmall[
-- May-June (Synoptic WCVI survey timing) typical
+- May-June (Synoptic WCVI survey timing) is a typical trend
 - Fairly consistent but August steepest (HBLL timing) and October/November least steep
 ]
 
 ---
-#  Environmentally driven movement? 
+# Conclusions
 
-* Taken together, we do not observe compelling evidence of northward, offshore, or seasonal shifts in distribution that would explain the majority of the declines in the indices of Dogfish biomass or abundance.
+Taken together, we do not observe compelling evidence of northward, offshore, or seasonal shifts in distribution that would explain the majority of the declines in the indices of Dogfish biomass or abundance.
 
 --
 
-* Regardless of cause, there are fewer Dogfish in BC outside waters than there were 20 years ago when surveys began.
+Regardless of the cause (recent fishing, legacy fishing effect, increase in natural mortality, movement), there are considerably fewer Dogfish in BC outside waters than there were 20 years ago when surveys began.
 
 ---
-class: center, middle, inverse
-#  Conclusions
+# Conclusions
 
----
-#  Conclusions
+The stock is estimated to be around 0.1 B<sub>0</sub> and below an LRP of 0.2 B<sub>0</sub>.
 
-TODO
+--
+
+It's unclear which model is most plausible in terms of how catch will affect the stock, but even the most optimistic scenarios suggest catches would need to be much lower than the current TAC.
 
 ---
 class: center, middle, inverse
@@ -1464,38 +1468,38 @@ class: center, middle, inverse
 ---
 #  Research recommendations 
 
-* Current data streams (although important) are unlikely to substantially improve our understanding of BC Dogfish in the near future
+Current data streams (although important) are unlikely to substantially improve our understanding of BC Dogfish in the near future
 
 --
 
-* Develop coastwide picture of changes in Dogfish abundance and distribution
+Develop coastwide picture of changes in Dogfish abundance and distribution
 
 --
 
-* Examine Steller and California sea lion diet
+Examine Steller and California sea lion diet
 
 --
 
-* Aging of modern samples
+Aging of modern samples
 
 --
 
-* Close-kin mark-recapture?
+Close-kin mark-recapture?
 
 ---
 #  Timeline to revisit assessment 
 
-* Recommended around 5 years
+Recommended around 5 years
 
-* Stock is assessed below LRP
+Stock is assessed below LRP
 
-* But slow life history—unlikely to rapidly change
+But slow life history—unlikely to rapidly change
 
-* Increase in small dogfish in SYN WCVI survey?
+Increase in small dogfish in SYN WCVI survey?
 
-* May behave in unexpected ways given we were unable to fit full decline for 2 surveys
+May behave in unexpected ways given we were unable to fit full decline for 2 surveys
 
-* Monitor in groundfish data synopsis report
+Monitor in groundfish data synopsis report
 
 ---
 #  Thank you
@@ -1523,18 +1527,16 @@ D.L. Courtney and S.A. Pardo for providing constructive reviews.
 ---
 class: center, middle, inverse
 
-#  Extra Slides 
+<!-- Extra Slides  -->
 
----
+<!-- - if fish hard during low point - will accentuate wave -->
 
-- if fish hard during low point - will accentuate wave
+<!-- - sea lions hitting while down -->
 
-- sea lions hitting while down
+<!-- - when a pest species becomes a choke species... -->
 
-- when a pest species becomes a choke species...
+<!-- - historical stuff before env. considerations -->
 
-- historical stuff before env. considerations
+<!-- - but can't explain all and recent index declines... -->
 
-- but can't explain all and recent index declines...
-
-- other factors... movement, ...
+<!-- - other factors... movement, ... -->
