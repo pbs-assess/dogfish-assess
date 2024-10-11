@@ -1305,10 +1305,11 @@ include_graphics("../figs/ss3/refpts/depl-ref-ts.png")
 .small[
 - Replay population with zero catches after 1950
 - Rapid recovery from 1950–1970 due to unfished juvenile cohort that matured
-- Expected recovery stalls from 1970–1990 when fishing restarted...
+- Will not see that rate of recovery again
+- Expected recovery stalls at the same time that fishing restarted...
 ]
 
-```{r, out.width="70%"}
+```{r, out.width="60%"}
 include_graphics("../figs/dynamic-B0-A0.png")
 # include_graphics("../figs/bubble.png")
 ```
@@ -1318,7 +1319,7 @@ include_graphics("../figs/dynamic-B0-A0.png")
 
 .small[
 - Pulse of low recruitment around 1950 travels through population
-- Rapid recovery due to wave of unfished juveniles
+- Rapid recovery due to wave of unfished juveniles maturing
 ]
 
 ```{r, out.width="100%"}
