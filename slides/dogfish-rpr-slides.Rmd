@@ -1500,9 +1500,9 @@ Stock is assessed below LRP
 
 But slow life history—unlikely to rapidly change
 
-Increase in small dogfish in SYN WCVI survey?
+Minor increase in small dogfish in SYN WCVI survey?
 
-May behave in unexpected ways given we were unable to fit full decline for 2 surveys
+Stock may behave in unexpected ways given we were unable to fit full decline for 2 surveys
 
 Monitor in groundfish data synopsis report
 
@@ -1525,14 +1525,72 @@ B. Turris.
 
 G.A. McFarlane for advice on maximum Dogfish age.
 
-**<u>I.G. Taylor</u>** and **<u>S.A. Pardo</u>** for providing constructive reviews.
+**<u>D.L Courtney</u>** and **<u>S.A. Pardo</u>** for providing constructive reviews.
+
+**<u>I.G. Taylor</u>** for heroically agreeing to review the document on 1-day's notice (😱).
 
 .huge[🙏]
 
 ---
 class: center, middle, inverse
 
-<!-- Extra Slides  -->
+# Extra Slides
+
+---
+
+# HBLL Inside Dogfish
+
+Hardbottom longline survey for inside waters also declines, although less steeply than outside waters and mostly in shallower waters.
+
+.pull-left[
+```{r, out.width="80%"}
+include_graphics("assets/img/hbll-ins-n-s-figure.jpg")
+```
+]
+
+.pull-right[
+```{r, out.width="100%"}
+include_graphics("assets/img/depth-bin-figure.jpg")
+```
+]
+
+---
+
+# Growth curves
+
+```{r, out.width="60%"}
+include_graphics("../figs/length-age-vb-dfo-nwfsc-ex-large-female.png")
+```
+
+```{r, out.width="60%"}
+include_graphics("../figs/length-age-vb-dfo-nwfsc.png")
+```
+
+---
+
+## Delayed effect of 1940s fishery (model A3)
+
+```{r, out.width="80%"}
+include_graphics("../figs/dynamic-bubble-A3.png")
+```
+
+```{r, out.width="50%"}
+include_graphics("../figs/dynamic-B0-A3.png")
+```
+
+---
+
+## Delayed effect of 1940s (model A0)
+
+```{r, out.width="80%"}
+include_graphics("../figs/dynamic-bubble-A0.png")
+```
+
+```{r, out.width="50%"}
+include_graphics("../figs/dynamic-B0-A0.png")
+```
+
+
 
 <!-- - if fish hard during low point - will accentuate wave -->
 
