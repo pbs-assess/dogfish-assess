@@ -1350,7 +1350,7 @@ But modelled time-varying natural mortality, e.g. from changes to predation
 
 Unclear how plausible these modelled changes in natural mortality are
 
-Dogfish "integrate" over many years of environmental condition (Taylor and Galluci 2009)
+Old Dogfish have lived through ("integrate over") many years of environmental conditions (Taylor and Galluci 2009) 
 
 ---
 #  Environmentally driven movement? 
