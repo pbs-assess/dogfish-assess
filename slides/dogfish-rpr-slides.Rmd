@@ -642,14 +642,6 @@ include_graphics("../figs/length-age-comparison.png")
 ]
 
 ---
-#  Natural mortality 
-
-- Estimated from maximum observed age and meta-analytic equation (Hamel and Cope 2022): $M = 5.4/A_\textrm{max} = 0.065$
-- Maximum age of 85 years (observed in the 1980s, G. MacFarlane)
-- Sex-invariant natural mortality given similar longevity between females and males
-- Alternative values explored in population modeling (0.057, 0.074)
-
----
 ##  BC + US samples vs. US-assessment estimated 
 
 ```{r, out.width="95%"}
@@ -706,6 +698,14 @@ include_graphics("../figs/ss3/set_a_mat/fecundity.png")
 ```
 
 ---
+#  Natural mortality 
+
+- Estimated from maximum observed age and meta-analytic equation (Hamel and Cope 2022): $M = 5.4/A_\textrm{max} = 0.065$
+- Maximum age of 85 years (observed in the 1980s, G. MacFarlane)
+- Sex-invariant natural mortality given similar longevity between females and males
+- Alternative values explored in population modeling (0.057, 0.074)
+
+---
 #  Unfished replacement line
 
 ```{r, out.width="70%"}
@@ -729,11 +729,11 @@ class: center, middle, inverse
 .xsmall[
 Sex segregated age-structured population model (Stock Synthesis 3) fitted to fishery & survey catch, indices, and size composition. McAllister-Ianelli algorithm to downweight the sample sizes of size composition.
 
-Estimated selectivity, unfished recruitment, and stock-recruit productivity.
-
-Adjust maturity ogive for two year gestation period. On average, half of mature females give birth annually.
+Estimated selectivity, unfished recruitment, and stock-recruit productivity parameter.
 
 No recruitment deviations (cohorts not observable from length data).
+
+Adjust maturity ogive for two year gestation period. On average, half of mature females give birth annually.
 
 In essence, a production model informed by catch and indices, while size composition informs selectivity.
 
@@ -743,11 +743,11 @@ Age-structure incorporates lags in stock response to exploitation pattern (selec
 ---
 ##  A stock-recruit curve for Dogfish-like species 
 
-Low fecundity limits stock productivity. Example to illustrate:
+Low fecundity limits productivity of closed populations. Example to illustrate:
 
-Imagine an unfished population N = 100 adults, which produce 10 pups/adult, that's 1,000 pups (B0). If pup survival to recruit life stage is 0.6, then we have 600 recruits (R0).
+Unfished population N = 100 adults, each produce 10 pups = 1,000 pups (B0). If pup survival to recruit life stage is 0.6, then we have 600 recruits (R0).
 
-A population of N = 20 (0.2 B0) produces 200 pups. If steepness were 1 in a closed population, we'd have to conjure 600 recruits from 200 pups.
+A population of N = 20 (0.2 B0) produces 200 pups. If steepness were 1, we'd have to conjure 600 recruits from 200 pups (proof by contradiction).
 
 Thus, in this example, steepness should be capped at 0.33: 200 pups at 0.2B0 divided by 600 pups when unfished.
 
@@ -793,7 +793,7 @@ From base model **A0**, explored various uncertainties in the set of models (Wor
 - Growth (**A2–A4**)
 - Natural mortality (**A9–A10**)
 - Discard mortality rate (**A5**, **A14**)
-- Inclusion/exclusion and weighting of index from modern surveys (**A7**, **A8**, **A13**)
+- Inclusion/exclusion, weighting of index from modern surveys (**A7**, **A8**, **A13**)
 - Stock-recruit productivity (**A11–A12**)
 - Cause of decline in modern indices (fishery vs. non-fishery causes) (**B1–B5**)
 
@@ -844,7 +844,7 @@ include_graphics("../figs/ss3/set_a_mat/N_age_A1.png")
 .tiny[
 Oscillations in age classes demonstrate of the lagged effects in the population. 
 
-Early Vitamin A fishery fished out older animals (age 30+), population recovered from younger cohorts invulnerable to the fishery.
+Early Vitamin A fishery fished out older females (age 30+), population recovered from younger cohorts invulnerable to the fishery.
 ]
 ]
 
@@ -865,9 +865,9 @@ include_graphics("../figs/ss3/set_a_mat/spawning_est.png")
 
 .pull-third-right[
 .tiny[
-Estimated steady decline in population biomass
+Top: Estimated steady decline in population biomass
 
-Different trend in spawning output (due to differences in selectivity & maturity): declines after vitamin A fishery, subsequent recovery, and another decline
+Bottom: Different trend in spawning output (due to differences in selectivity & maturity): declines after vitamin A fishery, subsequent recovery, and another decline
 ]
 ]
 
@@ -926,7 +926,7 @@ include_graphics("../figs/ss3/set_a_mat/sel_age_max1.png")
 
 .tiny[
 - Selectivity estimated by size, converted to age. Compare with maturity ogive (dotted black line)
-- From size composition, landed catch is mostly female, discards have more even sex ratio
+- From size composition, landed catch is mostly female, discards have more equal sex ratio
 - Immature females are caught incidentally, e.g., bottom trawl discards
 ]
 
@@ -960,7 +960,7 @@ include_graphics("../figs/ss3/set_b/M_year.png")
 ```
 
 .small[
-- Natural mortality roughly doubles in B-set of models
+- Natural mortality roughly doubles in B-set of models (above replacement value)
 ]
 
 
@@ -987,7 +987,7 @@ include_graphics("../figs/ss3/prof/like_zfrac.png")
 
 .tiny[
 - Stock-recruit productivity parameter $z_\textrm{frac}$ hits lower bound, i.e., there are no MSY reference points
-- Presented results with $z_\textrm{frac}$ = 0.4, following US assessment
+- Fixed $z_\textrm{frac}$ = 0.4 for most models, following US assessment
 ]
 
 
