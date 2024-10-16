@@ -189,7 +189,7 @@ Ketchen, K.S. 1986. The spiny dogfish (*Squalus acanthias*) in the Northeast Pac
 
 - Dogfish oil was burned for lighting in lighthouses, coal mines, steamers, and sailing vessels; used for lubricating sawmills
 
-- Decline of whaling lead to increase in Dogfish catches
+- Decline of whaling led to increase in Dogfish catches
 
 - 2nd only to canned salmon in value in BC
 
@@ -230,16 +230,14 @@ Ketchen, K.S. 1986. The spiny dogfish (Squalus acanthias) in the Northeast Pacif
 ---
 #  Commercial fishery history (1951–1974)
 .pull-two-thirds-left[
-.xsmall[
-- 1951–1974 government subsidy programs, eradication
-
-- "The Pestilence Returns" (1958) leading to calls for eradication of Dogfish on WCVI, SOG, and in Washington
- 
-- Federal subsidy to kill dogfish in SOG and other parts of the coast (1959)
+.small[
+- Government eradication programs in late 1950s
 
 - "Killer" trawl boats had trouble catching large amounts of Dogfish
 
-- 1962–1966 unsuccessful attempts to develop a food fishery (discovery of mercury further hampered this)
+- Switched to subsidies to promote food fishery by 1962
+
+- Largely unsuccessful until Dogfish declines in Europe and Japan opened up markets
 ]
 ]
 
@@ -272,9 +270,9 @@ include_graphics("../figs/reconstructed-catch-discards-outside-zoom-high-risk-ba
 ##  Commercial fishery history (2006–present)
 
 .xsmall[
-- Severe restrictions on rockfish in Strait of Georgia and Individual Vessel Quota system led to decline in Dogfish fishing
+- Restrictions on rockfish in Strait of Georgia and Individual Vessel Quota system led to decline in Dogfish fishing
 
-- Marine Stewardship Council certification (2011)
+- Marine Stewardship Council certification (2011); first dogfish fishery; later voluntarily withdrawn
 
 - 9 active vessels in 2012, none since 2017 (one license in 2019)
 
@@ -283,7 +281,7 @@ include_graphics("../figs/reconstructed-catch-discards-outside-zoom-high-risk-ba
 - TAC 12,000t: 8,160 t for Dogfish sector; 3,840 t for trawl sector
 ]
 
-```{r, out.width="40%"}
+```{r, out.width="35%"}
 include_graphics("../figs/reconstructed-catch-discards-outside-zoom-high-risk-band.png")
 ```
 
@@ -556,7 +554,7 @@ include_graphics("../figs/msa/cpue-map.png")
 ```
 
 ---
-####  Commercial bottom trawl catch per unit effort (CPUE) 
+#  Commercial bottom trawl catch per unit effort (CPUE) 
 
 - Similar model to trawl survey (depth + spatial + spatiotemporal effects)
 
@@ -1161,7 +1159,7 @@ include_graphics("../figs/cosewic-decline-indexes.png")
 ```
 
 .tiny[
-Rates of decline calculated empirically from indices (Appendix E)
+Rates of decline calculated empirically from spawning biomass estimates or indices (Appendix E)
 ]
 
 ---
@@ -1458,11 +1456,15 @@ Regardless of the cause (recent fishing, legacy fishing effect, increase in natu
 ---
 # Conclusions
 
+All population indices have declined over the last 20 years. The steepest declined at 59–71% per decade.
+
+--
+
 The stock is estimated to be around 0.1 B<sub>0</sub> and below an LRP of 0.2 B<sub>0</sub>.
 
 --
 
-It's unclear which model is most plausible in terms of how catch will affect the stock, but even the most optimistic scenarios suggest catches would need to be much lower than the current TAC.
+It is unclear which model is most plausible in terms of how catch will affect the stock, but even the most optimistic scenarios suggest catches would need to be much lower than the current TAC to obtain stock growth.
 
 ---
 class: center, middle, inverse
@@ -1523,9 +1525,9 @@ B. Turris.
 
 G.A. McFarlane for advice on maximum Dogfish age.
 
-I.G. Taylor for advice on the Dogfish stock-recruit function.
+**<u>I.G. Taylor</u>** and **<u>S.A. Pardo</u>** for providing constructive reviews.
 
-D.L. Courtney and S.A. Pardo for providing constructive reviews.
+.huge[🙏]
 
 ---
 class: center, middle, inverse
