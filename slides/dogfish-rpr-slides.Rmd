@@ -1283,7 +1283,7 @@ Differing rates of decline in three major survey indices
 - Commercial CPUE and IPHC index less steep
 - HBLL index steep before 2010; Synoptic trawl index steep 2010–2020
 - HBLL shallower, in rocky habitat, in August?
-- No explanation for Synoptic trawl index
+- No explanation for challenges fitting Synoptic trawl index
 ]
 
 <img src="../figs/ss3/set_a_ind/index_fit.png" width="60%" style="display: block; margin: auto;">
@@ -1540,7 +1540,7 @@ class: center, middle, inverse
 
 # HBLL Inside Dogfish
 
-Hardbottom longline survey for inside waters also declines, although less steeply than outside waters and mostly in shallower waters.
+Hardbottom longline survey index for inside waters also declines, although less steeply than outside waters and mostly in shallower waters.
 
 .pull-left[
 ```{r, out.width="80%"}
@@ -1553,18 +1553,6 @@ include_graphics("assets/img/hbll-ins-n-s-figure.jpg")
 include_graphics("assets/img/depth-bin-figure.jpg")
 ```
 ]
-
----
-
-# Growth curves
-
-```{r, out.width="60%"}
-include_graphics("../figs/length-age-vb-dfo-nwfsc-ex-large-female.png")
-```
-
-```{r, out.width="60%"}
-include_graphics("../figs/length-age-vb-dfo-nwfsc.png")
-```
 
 ---
 
