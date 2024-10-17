@@ -1159,7 +1159,7 @@ include_graphics("../figs/cosewic-decline-indexes.png")
 ```
 
 .tiny[
-Rates of decline calculated empirically from spawning biomass estimates or indices (Appendix E)
+Rates of decline calculated empirically from population indices (Appendix E)
 ]
 
 ---
