@@ -36,7 +36,7 @@ tidy_catch_dogfish <- function(
       `UNKNOWN TRAWL` = "Unknown/trawl"
     )
   ) %>%
-    select(year, area, species_common_name, gear, landed_kg, discarded_kg)
+    select(year, area, species_common_name, gear, landed_kg, discarded_kg, discarded_pcs)
 
   # cm <- reshape2::melt(catches,
   #   id.vars = c("year", "species_common_name", "area", "gear")
@@ -46,6 +46,7 @@ tidy_catch_dogfish <- function(
     summarise(
       landed_kg = sum(landed_kg, na.rm = TRUE),
       discarded_kg = sum(discarded_kg, na.rm = TRUE),
+      discarded_pcs = sum(discarded_pcs, na.rm = TRUE),
       .groups = "drop")
 
   all_catch
