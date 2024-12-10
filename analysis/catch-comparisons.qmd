@@ -1,0 +1,418 @@
+---
+title: "Dogfish catch comparisons"
+execute:
+  echo: false
+  message: false
+  warning: false
+  results: 'hide'
+  fig.asp: 1.618
+format: 
+  html:
+    self-contained: true
+---
+
+```{r}
+#| echo: false
+```
+
+```{r setup}
+library(dplyr)
+library(ggplot2)
+library(readxl)
+theme_set(theme_bw())
+library(gfplot)
+library(here)
+```
+
+# Trawl data
+
+Plot of raw data as sent by data unit:
+
+```{r, fig.asp=0.5}
+d <- read_xlsx(here("data/raw/FD5046 dogfish trawl catch 1996-2024.xlsx"), sheet = 1L)
+names(d) <- tolower(names(d))
+dsum <- group_by(d, gear_subtype, calendar_year) |>
+  summarise(landed = sum(landed_round_kg)/1000, released = sum(total_released_round_kg)/1000)
+
+dsum |> tidyr::pivot_longer(cols = c(landed, released), names_to = "type") |>
+  ggplot(aes(calendar_year, value, fill = type)) + geom_col() +
+  facet_wrap(~gear_subtype) +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+  ylab("Catch (t)") + xlab("Calendar year")
+```
+
+```{r}
+catch <- readRDS(here("data/generated/catch.rds")) %>%
+  filter(area != "4B", year <= 2023) %>%
+  group_by(year, gear) %>%
+  summarise(landing = 1e-3 * sum(landed_kg),
+    discard = 1e-3 * sum(discarded_kg), .groups = "drop") %>%
+  ungroup()
+bottom_trawl_gear <- c("Trawl + hook and line", "Trawl", "Bottom trawl", "Unknown/trawl")
+f1 <- catch %>%
+  filter(gear %in% bottom_trawl_gear) %>%
+  select(year, landing, discard) %>%
+  summarise(value = sum(landing), landing = sum(landing), discard = sum(discard), .by = year) %>%
+  mutate(fleet = 1, type = "landings", fleet_name = "Bottom trawl")
+f2 <- catch %>%
+  filter(gear %in% bottom_trawl_gear) %>%
+  select(year, landing, discard) %>%
+  summarise(value = sum(discard), landing = sum(landing), discard = sum(discard), .by = year) %>%
+  mutate(fleet = 2, type = "discards", fleet_name = "Bottom trawl")
+# Due to initial fleet set-up, discards + landings were combined for midwater trawl
+# Incorporate alternative discard mortality values into the total catch series
+# For all other fleets, incorporate the discard mortality in the SS3 control file
+# disc_mort <- midwater_discard_rate
+disc_mort <- 1
+f3 <- catch %>%
+  filter(gear == "Midwater trawl") %>%
+  select(year, landing, discard) %>%
+  summarise(value = sum(landing), landing = sum(landing), discard = sum(discard), .by = year) %>%
+  mutate(fleet = 3, type = "landings", fleet_name = "Midwater trawl")
+f4 <- catch %>%
+  filter(gear == "Midwater trawl") %>%
+  select(year, landing, discard) %>%
+  summarise(value = sum(discard), landing = sum(landing), discard = sum(discard), .by = year) %>%
+  mutate(fleet = 3, type = "discards", fleet_name = "Midwater trawl")
+out <- rbind(f1, f2, f3, f4) %>%
+  mutate(value = round(value, 4)) %>%
+  # mutate(se = 0.01,
+  #   season = 1) %>%
+  filter(value > 0) |>
+  select(year, fleet_name, type, value) %>%
+  arrange(fleet_name, year) |>
+  mutate(source = "RPR meeting")
+
+out2 <- dsum |> mutate(source = "Data unit")
+out2$gear_subtype[out2$gear_subtype == "BOTTOM TRAWL"] <- "Bottom trawl"
+out2$gear_subtype[out2$gear_subtype == "UNSPECIFIED"] <- "Bottom trawl"
+out2$gear_subtype[out2$gear_subtype == "MIDWATER TRAWL"] <- "Midwater trawl"
+out2 <- group_by(out2, calendar_year, source, gear_subtype) |>
+  summarise(landed = sum(landed), released = sum(released), .groups = "drop")
+out2 <- rename(out2, year = calendar_year, fleet_name = gear_subtype, discards = released, landings = landed)
+out2 <- out2 |> tidyr::pivot_longer(cols = c(landings, discards), names_to = "type")
+combined <- bind_rows(out, out2)
+```
+
+Comparison between data unit and RPR trawl data:
+
+```{r}
+combined |>
+  filter(year >= 1996, year <= 2023) |>
+  mutate(type = forcats::fct_rev(type)) |>
+  ggplot(aes(year, value, fill = type)) + geom_col() +
+  facet_grid(source~fleet_name) +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+  ylab("Catch (t)") + xlab("Calendar year") +
+  scale_fill_brewer(palette = "Set2") + labs(fill = "Catch type") +
+  scale_x_continuous(breaks = seq(2000, 2025, 5))
+```
+
+Bottom trawl look nearly identical. Confirm that:
+
+```{r, fig.asp=0.6}
+d <- readRDS(here("data/raw/catch-2024-12-09.rds"))
+d <- filter(d, year >= 1996, year <= 2023)
+d <- filter(d, gear %in% c("BOTTOM TRAWL", "UNKNOWN TRAWL"))
+d$area <- gfplot::assign_areas(d$major_stat_area_name, c("5[ABCDE]+", "3[CD]+"))
+dd <- group_by(d, year) |> 
+  summarise(landings = sum(landed_kg/1000, na.rm = TRUE), discards = sum(discarded_kg/1000))
+dd2 <- tidyr::pivot_longer(dd, c("landings", "discards"), names_to = "type") |> 
+  mutate(source = "MERGED_CATCH")
+
+bind_rows(
+  select(dd2, year, value, source, type),
+  select(filter(out2, fleet_name == "Bottom trawl"), year, value, source, type)) |> 
+  filter(year >= 1996, year <= 2023) -> combined2
+
+combined2 |> 
+  ggplot(aes(year, value, colour = source)) + geom_line() +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+  ylab("Landings (t)") + ggtitle("Bottom trawl") + xlab("Year") +
+  facet_wrap(~type)
+```
+
+Midwater trawl landings look different pre 2007. Make a simpler data pipeline from the merged_catch table for comparison:
+
+```{r, fig.asp=0.6}
+d <- readRDS(here("data/raw/catch-2024-12-09.rds"))
+d <- filter(d, year >= 1996, year <= 2023)
+d <- filter(d, gear %in% c("MIDWATER TRAWL"))
+d$area <- gfplot::assign_areas(d$major_stat_area_name, c("5[ABCDE]+", "3[CD]+"))
+dd <- group_by(d, year) |> 
+  summarise(landings = sum(landed_kg/1000, na.rm = TRUE), discards = sum(discarded_kg/1000))
+dd2 <- tidyr::pivot_longer(dd, c("landings", "discards"), names_to = "type") |> 
+  mutate(source = "MERGED_CATCH")
+
+bind_rows(
+  select(dd2, year, value, source, type),
+  select(filter(out2, fleet_name == "Midwater trawl"), year, value, source, type)) |> 
+  filter(year >= 1996, year <= 2023) -> combined2
+
+combined2 |> 
+  ggplot(aes(year, value, colour = source)) + geom_line() +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+  ylab("Landings (t)") + ggtitle("Midwater trawl") + xlab("Year") +
+  facet_wrap(~type)
+```
+
+Try again but this time add in the GFBio midwater trawl 'total_kg' since it's not split into landings/discards:
+
+```{r}
+d <- read_xlsx(here("data/raw/FD5046 dogfish trawl catch 1996-2024.xlsx"), sheet = 1L)
+names(d) <- tolower(names(d))
+
+d <- mutate(d, landed_round_kg = if_else(database_name == "GFBio" & gear_subtype == "MIDWATER TRAWL" & total_kg > 0 & landed_round_kg == 0 & total_released_round_kg == 0, total_kg, landed_round_kg))
+dsum <- group_by(d, gear_subtype, calendar_year) |>
+  summarise(landed = sum(landed_round_kg)/1000, released = sum(total_released_round_kg)/1000)
+out3 <- dsum |> mutate(source = "Data unit")
+out3$gear_subtype[out3$gear_subtype == "BOTTOM TRAWL"] <- "Bottom trawl"
+out3$gear_subtype[out3$gear_subtype == "UNSPECIFIED"] <- "Bottom trawl"
+out3$gear_subtype[out3$gear_subtype == "MIDWATER TRAWL"] <- "Midwater trawl"
+out3 <- group_by(out3, calendar_year, source, gear_subtype) |>
+  summarise(landed = sum(landed), released = sum(released), .groups = "drop")
+out3 <- rename(out3, year = calendar_year, fleet_name = gear_subtype, discards = released, landings = landed)
+out3 <- out3 |> tidyr::pivot_longer(cols = c(landings, discards), names_to = "type")
+
+bind_rows(
+  select(dd2, year, value, source, type),
+  select(filter(out3, fleet_name == "Midwater trawl"), year, value, source, type)) |> 
+  filter(year >= 1996, year <= 2023) -> combined3
+
+combined3 |> 
+  ggplot(aes(year, value, colour = source)) + geom_line() +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+  ylab("Landings (t)") + ggtitle("Midwater trawl") + xlab("Year") +
+  facet_wrap(~type)
+```
+
+# Longline data
+
+```{r}
+d1 <- read_xlsx(here("data/raw/FD5046 dogfish line catch 2001-2024.xlsx"), sheet = 1L, na = "NULL")
+names(d1) <- tolower(names(d1))
+
+catch <- readRDS(here("data/generated/catch.rds")) %>%
+  filter(area != "4B", year <= 2023) %>%
+  group_by(year, gear) %>%
+  summarise(landing = 1e-3 * sum(landed_kg),
+    discard = 1e-3 * sum(discarded_kg), .groups = "drop") %>%
+  ungroup()
+f4 <- catch %>%
+  filter(gear == "Hook and line") %>%
+  select(year, landing, discard) %>%
+  summarise(value = sum(landing), landing = sum(landing), discard = sum(discard), .by = year) %>%
+  mutate(fleet = 4, type = "landings", fleet_name = "Hook and line")
+f5 <- catch %>%
+  filter(gear == "Hook and line") %>%
+  select(year, landing, discard) %>%
+  summarise(value = sum(discard), landing = sum(landing), discard = sum(discard), .by = year) %>%
+  mutate(fleet = 5, type = "discards", fleet_name = "Hook and line")
+
+out <- rbind(f4, f5) %>%
+  mutate(value = round(value, 4)) %>%
+  # mutate(se = 0.01,
+  #   season = 1) %>%
+  filter(value > 0) |>
+  select(year, fleet_name, type, value) %>%
+  arrange(fleet_name, year) |>
+  mutate(source = "RPR meeting") |> filter(type != "discards")
+
+out2 <- group_by(d1, calendar_year) |>
+  summarize(landings = sum(landed_round_kg, na.rm = TRUE) / 1000,
+    discards_count = sum(total_released_count, na.rm = TRUE)) |>
+  mutate(source = "Data unit") |> rename(year = calendar_year)
+
+out2 <- out2 |> tidyr::pivot_longer(cols = c(landings, discards_count), names_to = "type") |>
+  mutate(fleet_name = "Hook and line")
+
+combined <- bind_rows(out, out2)
+```
+
+Compare data unit and RPR longline catch weight data:
+
+```{r}
+combined |>
+  filter(year >= 2001) |>
+  filter(type == "landings") |>
+  # mutate(type = forcats::fct_rev(type)) |>
+  ggplot(aes(year, value, fill = type)) + geom_col() +
+  facet_grid(source~fleet_name) +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+  ylab("Catch (t)") + xlab("Calendar year") +
+  scale_fill_brewer(palette = "Set2") + labs(fill = "Catch type") +
+  scale_x_continuous(breaks = seq(2000, 2025, 5))
+```
+
+Looks the same.
+
+Here are the discard counts from the data unit:
+
+```{r}
+combined |>
+  filter(year >= 2006, year <= 2023) |>
+  filter(type != "landings") |>
+  # mutate(type = forcats::fct_rev(type)) |>
+  ggplot(aes(year, value/1000, fill = type)) + geom_col() +
+  facet_grid(source~fleet_name) +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+  ylab("Released (1000 dogfish)") + xlab("Calendar year") +
+  scale_fill_brewer(palette = "Set2") + labs(fill = "Catch type")
+```
+
+Divided by sector:
+
+```{r}
+group_by(d1, calendar_year, fishery_sector) |>
+  summarise(total_released_count = sum(total_released_count, na.rm = TRUE), .groups = "drop") |>
+  filter(!is.na(total_released_count)) |>
+  filter(calendar_year >= 2006, calendar_year <= 2023) |>
+  ggplot(aes(calendar_year, total_released_count/1000, fill = fishery_sector)) + geom_col() +
+  scale_fill_brewer(palette = "Set2") + labs(fill = "Sector") +
+  ylab("Released (1000 dogfish)") + xlab("Calendar year") +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05)))
+```
+
+Try multiplying each fish by 9 lbs:
+
+```{r}
+group_by(d1, calendar_year, fishery_sector) |>
+  summarise(total_released_count = sum(total_released_count, na.rm = TRUE), .groups = "drop") |>
+  filter(!is.na(total_released_count)) |>
+  filter(calendar_year >= 2006, calendar_year <= 2023) |>
+  ggplot(aes(calendar_year, total_released_count*4.08233/1000, fill = fishery_sector)) + geom_col() +
+  scale_fill_brewer(palette = "Set2") + labs(fill = "Sector") +
+  ylab("Released (t)") + xlab("Calendar year") +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05)))
+```
+
+What is the avg. kg/fish from available released data?
+
+```{r, fig.asp=0.6}
+filter(d1, total_released_count > 0, total_released_round_kg > 0) |>
+  mutate(kg_per_fish = total_released_round_kg / total_released_count) |>
+  ggplot(aes(calendar_year, kg_per_fish, colour = gear)) + geom_line() +
+  facet_wrap(~fishery_sector)
+```
+
+Now compare with the RPR release data. First, there was a bug in MERGED_CATCH, so check how this affected things:
+
+```{r, fig.asp=0.6}
+d_4b5abcde3cd <- readRDS(here("data/generated/catch-4B5ABCDE3CD-summarized.rds"))
+d_4b5abcde3cd$gear[d_4b5abcde3cd$gear == "Trap"] <- "Hook and line" # FIXME?
+drpr <- filter(d_4b5abcde3cd, year >= 2006, year <= 2023) |>
+  mutate(
+    discarded_kg =
+      ifelse(
+        gear != "Hook and line",
+        discarded_kg,
+        4.08233 * discarded_pcs # assuming 9 lbs avg. per discarded dogfish
+      )
+  ) |>
+  group_by(year, gear) |>
+  summarise(total_released_count = sum(discarded_pcs), landed_t = sum(landed_kg/1000), discards_t = sum(discarded_kg/1000), .groups = "drop") |>
+  ungroup() |>
+  group_by(year) |>
+  arrange(gear) |>
+  filter(!gear %in% c("Unknown/trawl", "Midwater trawl", "Bottom trawl")) |> ungroup() |>
+  rename(calendar_year = year) |> mutate(source = "RPR")
+  # mutate(landed_t = round(landed_t, 1), discards_t = round(discards_t, 1))
+  # readr::write_csv("~/Downloads/catch-oct18.csv")
+
+gdu <- group_by(d1, calendar_year) |>
+  summarise(total_released_count = sum(total_released_count, na.rm = TRUE), .groups = "drop") |>
+  mutate(landed_t = total_released_count * 4.08233 / 1000) |>
+  mutate(source = "Data unit")
+
+dd <- bind_rows(
+  select(drpr, calendar_year, total_released_count, source),
+  select(gdu, calendar_year, total_released_count, source)
+)
+
+# dd |> filter(calendar_year >= 2006) |>
+#   ggplot(aes(calendar_year, total_released_count)) + geom_col() +
+#   facet_wrap(~source)
+
+# with updated merged-catch table!
+d <- readRDS(here("data/raw/catch-2024-12-09.rds"))
+source(here("analysis/utils.R"))
+d_4b5abcde3cd <- tidy_catch_dogfish(d, areas = c("5[ABCDE]+", "3[CD]+", "4B"))
+d_4b5abcde3cd$area[d_4b5abcde3cd$area == "3CD"] <- "5ABCDE3CD"
+d_4b5abcde3cd$area[d_4b5abcde3cd$area == "5ABCDE"] <- "5ABCDE3CD"
+d_4b5abcde3cd$gear[d_4b5abcde3cd$gear == "Trap"] <- "Hook and line"
+d_4b5abcde3cd <- group_by(d_4b5abcde3cd, year, species_common_name, area, gear) |>
+  summarise(
+    landed_kg = sum(landed_kg),
+    discarded_kg = sum(discarded_kg),
+    discarded_pcs = sum(discarded_pcs), .groups = "drop"
+  )
+drpr2 <- filter(d_4b5abcde3cd, year >= 2006, year <= 2023) |>
+  mutate(
+    discarded_kg =
+      ifelse(
+        gear != "Hook and line",
+        discarded_kg,
+        4.08233 * discarded_pcs # assuming 9 lbs avg. per discarded dogfish
+      )
+  ) |>
+  group_by(year, gear) |>
+  summarise(total_released_count = sum(discarded_pcs), landed_t = sum(landed_kg/1000), discards_t = sum(discarded_kg/1000)) |>
+  ungroup() |>
+  group_by(year) |>
+  arrange(gear) |>
+  filter(!gear %in% c("Unknown/trawl", "Midwater trawl", "Bottom trawl")) |> ungroup() |>
+  rename(calendar_year = year) |> mutate(source = "RPR with updated MERGED_CATCH table")
+
+dd <- bind_rows(
+  select(drpr, calendar_year, total_released_count, source),
+  select(drpr2, calendar_year, total_released_count, source)
+)
+
+dd |> filter(calendar_year >= 2006) |>
+  ggplot(aes(calendar_year, total_released_count, colour = source, group = source)) + geom_line()
+```
+
+Looks very similar; a slightly decrease.
+
+Now, compare data unit with RPR merged catch (with corrected MERGED_CATCH table):
+
+```{r}
+dd <- bind_rows(
+  select(drpr2, calendar_year, total_released_count, source),
+  select(gdu, calendar_year, total_released_count, source)
+)
+dd |> filter(calendar_year >= 2006, calendar_year <= 2023) |>
+  ggplot(aes(calendar_year, total_released_count)) + geom_col() +
+  facet_wrap(~source) +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05)))
+```
+
+Make a simpler data pipline to compare merged catch with the latest data unit version:
+
+```{r, fig.asp=0.6}
+d <- readRDS(here("data/raw/catch-2024-12-09.rds"))
+d <- filter(d, year >= 2006, year <= 2023)
+d <- filter(d, gear %in% c("HOOK AND LINE", "TRAP"))
+d$area <- gfplot::assign_areas(d$major_stat_area_name, c("5[ABCDE]+", "3[CD]+"))
+dd <- group_by(d, year) |> 
+  summarise(total_released_count = sum(discarded_pcs, na.rm = TRUE)) |> 
+  mutate(source = "MERGED_CATCH") |> 
+  rename(calendar_year = year)
+
+bind_rows(
+  select(dd, calendar_year, total_released_count, source),
+  select(gdu, calendar_year, total_released_count, source)) |> 
+  filter(calendar_year >= 2006, calendar_year <= 2023) |> 
+  ggplot(aes(calendar_year, total_released_count/1000)) + geom_col() +
+  facet_wrap(~source) +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05)))
+
+bind_rows(
+  select(dd, calendar_year, total_released_count, source),
+  select(gdu, calendar_year, total_released_count, source)) |> 
+  filter(calendar_year >= 2006, calendar_year <= 2023) |> 
+  ggplot(aes(calendar_year, total_released_count/1000, colour = source)) + geom_line() +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+  ggtitle("Longline + trap")
+```
+
