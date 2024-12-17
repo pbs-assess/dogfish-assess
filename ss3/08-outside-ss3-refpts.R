@@ -118,11 +118,19 @@ write_tex(ci, "BaseDeplCI", "ref-pts.tex")
 
 mround(mean(x$est), 2) |>
   write_tex("EnsDeplMean", "ref-pts.tex")
+
+mround(median(x$est), 2) |>
+  write_tex("EnsDeplMedian", "ref-pts.tex")
+
 paste0(mround(min(x$lwr), 2), "--", mround(max(x$upr), 2)) |>
   write_tex("EnsDeplCI", "ref-pts.tex")
 
 paste0(mround(100 - mean(x$est) * 100, 0), "\\%") |>
   write_tex("InvEnsDeplMean", "ref-pts.tex")
+
+paste0(mround(100 - median(x$est) * 100, 0), "\\%") |>
+  write_tex("InvEnsDeplMedian", "ref-pts.tex")
+
 paste0(paste0(mround(100 - max(x$upr) * 100, 0), "\\%"), "--", paste0(mround(100 - min(x$lwr) * 100, 0)), "\\%") |>
   write_tex("InvEnsDeplCI", "ref-pts.tex")
 
@@ -156,7 +164,7 @@ out_Ftarg <- seq_along(multi_rep) |>
 ftarg_plot <- function(dat) {
   dat |>
     mutate(scen = forcats::fct_rev(scen)) |>
-    ggplot(aes(year, est_ratio, ymin = lwr_ratio, ymax = upr_ratio, colour = scen, fill = scen)) +
+    ggplot(aes(year, est_ratio, ymin = lwr_ratio, ymax = upr_ratio, colour = scen)) +
     geom_ribbon(alpha = 0.4, colour = NA) +
     geom_line() +
     geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
@@ -165,15 +173,15 @@ ftarg_plot <- function(dat) {
     coord_cartesian(xlim = c(1936, 2023), ylim = c(0, 20), expand = FALSE) +
     labs(colour = "Scenario", fill = "Scenario") +
     scale_y_continuous(trans = "sqrt", breaks = c(0, 0.2, 0.5, 1, 2, 5, 10, 15, 20)) +
-    scale_colour_manual(values = cols, guide = guide_legend(reverse = TRUE)) +
-    scale_fill_manual(values = cols, guide = guide_legend(reverse = TRUE)) +
+    # scale_colour_manual(values = cols, guide = guide_legend(reverse = TRUE)) +
+    # scale_fill_manual(values = cols, guide = guide_legend(reverse = TRUE))
     theme(
-      axis.title.y = element_markdown()
+      axis.title.y = ggtext::element_markdown()
     )
 }
 
 out_Ftarg |> filter(!grepl("^\\(B", scen)) |> ftarg_plot()
-ggsave("figs/ss3/refpts/f-ref-ts.png", width = 7, height = 4)
+ggsave("figs/ss3/refpts/f-ref-ts-99.png", width = 7, height = 4)
 
 out_Ftarg |> filter(grepl("A0", scen) | grepl("^\\(B", scen)) |> ftarg_plot() +
   ggtitle("**With M set at its historical value when calculating reference points**") +
@@ -195,12 +203,20 @@ write_tex(ci, "BaseFratioCI", "ref-pts.tex")
 
 mround(mean(x$est_ratio), 1) |>
   write_tex("EnsFratioMean", "ref-pts.tex")
+
+mround(median(x$est_ratio), 1) |>
+  write_tex("EnsFratioMedian", "ref-pts.tex")
+
 paste0(mround(min(x$lwr_ratio), 1), "--", mround(max(x$upr_ratio), 1)) |>
   write_tex("EnsFratioCI", "ref-pts.tex")
 
 x <- filter(x, !grepl("Low prod", scen))
 mround(mean(x$est_ratio), 1) |>
   write_tex("EnsFratioMeanNoLow", "ref-pts.tex")
+
+mround(median(x$est_ratio), 1) |>
+  write_tex("EnsFratioMedianNoLow", "ref-pts.tex")
+
 paste0(mround(min(x$lwr_ratio), 1), "--", mround(max(x$upr_ratio), 1)) |>
   write_tex("EnsFratioCINoLow", "ref-pts.tex")
 
@@ -377,6 +393,11 @@ write_tex(ci, "BaseNextYrYieldCI", "ref-pts.tex")
 xx <- filter(out_catch, !grepl("^\\(B", scen))
 mround(mean(xx$est), 0) |>
   write_tex("EnsNextYrYield", "ref-pts.tex")
+
+xx <- filter(out_catch, !grepl("^\\(B", scen))
+mround(median(xx$est), 0) |>
+  write_tex("EnsNextYrYieldMedian", "ref-pts.tex")
+
 paste0(mround(min(xx$lwr), 0), "--", mround(max(xx$upr), 0))|>
   write_tex("EnsNextYrYieldCI", "ref-pts.tex")
 
