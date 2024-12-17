@@ -1283,7 +1283,7 @@ Differing rates of decline in three major survey indices
 - Commercial CPUE and IPHC index less steep
 - HBLL index steep before 2010; Synoptic trawl index steep 2010–2020
 - HBLL shallower, in rocky habitat, in August?
-- No explanation for challenges fitting Synoptic trawl index
+- No obvious explanation for challenges fitting Synoptic trawl index
 ]
 
 <img src="../figs/ss3/set_a_ind/index_fit.png" width="60%" style="display: block; margin: auto;">
@@ -1578,6 +1578,39 @@ include_graphics("../figs/dynamic-bubble-A0.png")
 include_graphics("../figs/dynamic-B0-A0.png")
 ```
 
+---
+
+## CPUE from last assessment
+
+```{r, out.width="80%"}
+include_graphics("~/Downloads/Screenshot of Zotero at Oct 17, 2024 at 10_35_40 AM.jpg")
+```
+
+---
+
+## Longline discards
+
+```{r, out.width="80%"}
+include_graphics("~/Downloads/Screenshot of RStudio at Oct 17, 2024 at 2_42_56 PM.jpg")
+```
+
+---
+
+## Revised depletion time series (A0)
+
+```{r, out.width="80%"}
+include_graphics("~/Downloads/Screenshot of RStudio at Oct 17, 2024 at 2_39_11 PM.jpg")
+```
+
+---
+
+## Revised F/F0.4S0 time series (A0)
+
+```{r, out.width="80%"}
+include_graphics("~/Downloads/Screenshot of RStudio at Oct 17, 2024 at 2_38_32 PM.jpg")
+```
+
+---
 
 
 <!-- - if fish hard during low point - will accentuate wave -->
