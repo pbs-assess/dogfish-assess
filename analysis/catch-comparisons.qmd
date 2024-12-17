@@ -42,8 +42,7 @@ dsum |> tidyr::pivot_longer(cols = c(landed, released), names_to = "type") |>
 ```
 
 ```{r}
-catch <- readRDS(here("data/generated/catch.rds")) %>%
-  filter(area != "4B", year <= 2023) %>%
+catch <- readRDS(here("data/generated/catch-dec2024.rds")) %>%
   group_by(year, gear) %>%
   summarise(landing = 1e-3 * sum(landed_kg),
     discard = 1e-3 * sum(discarded_kg), .groups = "drop") %>%
@@ -111,14 +110,15 @@ combined |>
 Bottom trawl look nearly identical. Confirm that:
 
 ```{r, fig.asp=0.6}
-d <- readRDS(here("data/raw/catch-2024-12-09.rds"))
+d <- readRDS(here("data/generated/catch-dec2024.rds"))
 d <- filter(d, year >= 1996, year <= 2023)
-d <- filter(d, gear %in% c("BOTTOM TRAWL", "UNKNOWN TRAWL"))
-d$area <- gfplot::assign_areas(d$major_stat_area_name, c("5[ABCDE]+", "3[CD]+"))
+d <- filter(d, gear %in% c("Bottom trawl"))
+
+# d$area <- gfplot::assign_areas(d$major_stat_area_name, c("5[ABCDE]+", "3[CD]+"))
 dd <- group_by(d, year) |> 
   summarise(landings = sum(landed_kg/1000, na.rm = TRUE), discards = sum(discarded_kg/1000))
 dd2 <- tidyr::pivot_longer(dd, c("landings", "discards"), names_to = "type") |> 
-  mutate(source = "MERGED_CATCH")
+  mutate(source = "RPR")
 
 bind_rows(
   select(dd2, year, value, source, type),
@@ -128,21 +128,49 @@ bind_rows(
 combined2 |> 
   ggplot(aes(year, value, colour = source)) + geom_line() +
   scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
-  ylab("Landings (t)") + ggtitle("Bottom trawl") + xlab("Year") +
-  facet_wrap(~type)
+  ylab("Catch (t)") + ggtitle("Bottom trawl") + xlab("Year") +
+  facet_wrap(~type) + labs(colour = "Source")
+ggsave(here("figs/bottom-trawl-gdu.png"), width = 7, height = 4)
+```
+
+```{r, fig.asp=0.6}
+d <- readRDS(here("data/raw/catch-2024-12-09.rds"))
+d <- filter(d, year >= 1996, year <= 2023)
+d <- filter(d, !grepl("^4B", major_stat_area_name))
+d <- filter(d, gear %in% c("BOTTOM TRAWL", "UNKNOWN TRAWL"))
+
+# d$area <- gfplot::assign_areas(d$major_stat_area_name, c("5[ABCDE]+", "3[CD]+"))
+dd <- group_by(d, year) |> 
+  summarise(landings = sum(landed_kg/1000, na.rm = TRUE), discards = sum(discarded_kg/1000))
+dd2 <- tidyr::pivot_longer(dd, c("landings", "discards"), names_to = "type") |> 
+  mutate(source = "RPR + all non-4B")
+
+bind_rows(
+  select(dd2, year, value, source, type),
+  select(filter(out2, fleet_name == "Bottom trawl"), year, value, source, type)) |> 
+  filter(year >= 1996, year <= 2023) -> combined2
+
+combined2 |> 
+  ggplot(aes(year, value, colour = source)) + geom_line() +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+  ylab("Catch (t)") + ggtitle("Bottom trawl") + xlab("Year") +
+  facet_wrap(~type) + labs(colour = "Source")
+ggsave(here("figs/bottom-trawl-gdu2.png"), width = 7, height = 4)
 ```
 
 Midwater trawl landings look different pre 2007. Make a simpler data pipeline from the merged_catch table for comparison:
 
 ```{r, fig.asp=0.6}
 d <- readRDS(here("data/raw/catch-2024-12-09.rds"))
+d <- filter(d, !grepl("^4B", major_stat_area_name))
 d <- filter(d, year >= 1996, year <= 2023)
 d <- filter(d, gear %in% c("MIDWATER TRAWL"))
+d <- filter(d, dfo_stat_area_code != 12)
 d$area <- gfplot::assign_areas(d$major_stat_area_name, c("5[ABCDE]+", "3[CD]+"))
 dd <- group_by(d, year) |> 
   summarise(landings = sum(landed_kg/1000, na.rm = TRUE), discards = sum(discarded_kg/1000))
 dd2 <- tidyr::pivot_longer(dd, c("landings", "discards"), names_to = "type") |> 
-  mutate(source = "MERGED_CATCH")
+  mutate(source = "RPR + all non-4B")
 
 bind_rows(
   select(dd2, year, value, source, type),
@@ -183,13 +211,16 @@ combined3 |>
   ggplot(aes(year, value, colour = source)) + geom_line() +
   scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
   ylab("Landings (t)") + ggtitle("Midwater trawl") + xlab("Year") +
-  facet_wrap(~type)
+  facet_wrap(~type) + labs(colour = "Source")
+ggsave(here("figs/mid-trawl-gdu2.png"), width = 7, height = 4)
 ```
 
 # Longline data
 
 ```{r}
-d1 <- read_xlsx(here("data/raw/FD5046 dogfish line catch 2001-2024.xlsx"), sheet = 1L, na = "NULL")
+# d1 <- read_xlsx(here("data/raw/FD5046 dogfish line catch 2001-2024.xlsx"), sheet = 1L, na = "NULL")
+d1 <- readRDS("~/Downloads/dogfish-ll-with-12.rds")
+# names(d1) <- tolower(names(d1))
 names(d1) <- tolower(names(d1))
 
 catch <- readRDS(here("data/generated/catch.rds")) %>%
@@ -271,6 +302,7 @@ group_by(d1, calendar_year, fishery_sector) |>
   scale_fill_brewer(palette = "Set2") + labs(fill = "Sector") +
   ylab("Released (1000 dogfish)") + xlab("Calendar year") +
   scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05)))
+ggsave(here("figs/sector-discard-counts.png"), width = 8, height = 5)
 ```
 
 Try multiplying each fish by 9 lbs:
@@ -300,7 +332,9 @@ Now compare with the RPR release data. First, there was a bug in MERGED_CATCH, s
 ```{r, fig.asp=0.6}
 d_4b5abcde3cd <- readRDS(here("data/generated/catch-4B5ABCDE3CD-summarized.rds"))
 d_4b5abcde3cd$gear[d_4b5abcde3cd$gear == "Trap"] <- "Hook and line" # FIXME?
-drpr <- filter(d_4b5abcde3cd, year >= 2006, year <= 2023) |>
+
+drpr <- filter(d_4b5abcde3cd, year >= 2000, year <= 2023) |>
+  filter(area != "4B") |> 
   mutate(
     discarded_kg =
       ifelse(
@@ -335,8 +369,12 @@ dd <- bind_rows(
 
 # with updated merged-catch table!
 d <- readRDS(here("data/raw/catch-2024-12-09.rds"))
+nrow(d)
+d <- filter(d, !grepl("^4B", major_stat_area_name))
+d <- filter(d, dfo_stat_area_code != 12)
+nrow(d)
 source(here("analysis/utils.R"))
-d_4b5abcde3cd <- tidy_catch_dogfish(d, areas = c("5[ABCDE]+", "3[CD]+", "4B"))
+d_4b5abcde3cd <- tidy_catch_dogfish(d, areas = c("5[ABCDE]+", "3[CD]+"))
 d_4b5abcde3cd$area[d_4b5abcde3cd$area == "3CD"] <- "5ABCDE3CD"
 d_4b5abcde3cd$area[d_4b5abcde3cd$area == "5ABCDE"] <- "5ABCDE3CD"
 d_4b5abcde3cd$gear[d_4b5abcde3cd$gear == "Trap"] <- "Hook and line"
@@ -346,7 +384,7 @@ d_4b5abcde3cd <- group_by(d_4b5abcde3cd, year, species_common_name, area, gear) 
     discarded_kg = sum(discarded_kg),
     discarded_pcs = sum(discarded_pcs), .groups = "drop"
   )
-drpr2 <- filter(d_4b5abcde3cd, year >= 2006, year <= 2023) |>
+drpr2 <- filter(d_4b5abcde3cd, year >= 2000, year <= 2023) |>
   mutate(
     discarded_kg =
       ifelse(
@@ -368,11 +406,11 @@ dd <- bind_rows(
   select(drpr2, calendar_year, total_released_count, source)
 )
 
-dd |> filter(calendar_year >= 2006) |>
+dd |> filter(calendar_year >= 2000) |>
   ggplot(aes(calendar_year, total_released_count, colour = source, group = source)) + geom_line()
 ```
 
-Looks very similar; a slightly decrease.
+Looks very similar; a slight decrease.
 
 Now, compare data unit with RPR merged catch (with corrected MERGED_CATCH table):
 
@@ -391,8 +429,10 @@ Make a simpler data pipline to compare merged catch with the latest data unit ve
 
 ```{r, fig.asp=0.6}
 d <- readRDS(here("data/raw/catch-2024-12-09.rds"))
-d <- filter(d, year >= 2006, year <= 2023)
-d <- filter(d, gear %in% c("HOOK AND LINE", "TRAP"))
+d <- filter(d, fishery_sector != "ROCKFISH INSIDE")
+d <- filter(d, !grepl("^4B", major_stat_area_name))
+d <- filter(d, year >= 2000, year <= 2023)
+d <- filter(d, gear %in% c("HOOK AND LINE", "TRAP", "LONGLINE"))
 d$area <- gfplot::assign_areas(d$major_stat_area_name, c("5[ABCDE]+", "3[CD]+"))
 dd <- group_by(d, year) |> 
   summarise(total_released_count = sum(discarded_pcs, na.rm = TRUE)) |> 
@@ -402,7 +442,7 @@ dd <- group_by(d, year) |>
 bind_rows(
   select(dd, calendar_year, total_released_count, source),
   select(gdu, calendar_year, total_released_count, source)) |> 
-  filter(calendar_year >= 2006, calendar_year <= 2023) |> 
+  filter(calendar_year >= 2007, calendar_year <= 2023) |> 
   ggplot(aes(calendar_year, total_released_count/1000)) + geom_col() +
   facet_wrap(~source) +
   scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05)))
@@ -410,9 +450,188 @@ bind_rows(
 bind_rows(
   select(dd, calendar_year, total_released_count, source),
   select(gdu, calendar_year, total_released_count, source)) |> 
-  filter(calendar_year >= 2006, calendar_year <= 2023) |> 
+  filter(calendar_year >= 2005, calendar_year <= 2023) |> 
   ggplot(aes(calendar_year, total_released_count/1000, colour = source)) + geom_line() +
   scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
   ggtitle("Longline + trap")
+```
+
+# What about by sector for longline?
+
+```{r}
+d1 <- read_xlsx(here("data/raw/FD5046 dogfish line catch 2001-2024.xlsx"), sheet = 1L, na = "NULL")
+d1 <- readRDS("~/Downloads/dogfish-ll-with-12.rds")
+# names(d1) <- tolower(names(d1))
+names(d1) <- tolower(names(d1))
+
+dd_ll <- d |> 
+  filter(gear %in% "HOOK AND LINE") |> 
+  filter(!grepl("^4B", major_stat_area_name)) |> 
+  group_by(year, fishery_sector) |>
+  summarise(total_released_count = sum(discarded_pcs, na.rm = TRUE)) |> 
+  mutate(source = "MERGED_CATCH") |> 
+  rename(calendar_year = year)
+
+gdu_ll <- d1 |> 
+  filter(grepl("LINE", gear)) |> 
+  group_by(calendar_year, fishery_sector) |>
+  summarise(total_released_count = sum(total_released_count, na.rm = TRUE), .groups = "drop") |>
+  mutate(source = "Data unit")
+
+bind_rows(
+  select(dd_ll, calendar_year, total_released_count, source, fishery_sector),
+  select(gdu_ll, calendar_year, total_released_count, source, fishery_sector)) |> 
+  filter(calendar_year >= 2000, calendar_year <= 2023) |> 
+  ggplot(aes(calendar_year, total_released_count/1000, colour = source)) + geom_line() +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+  ggtitle("Longline + hook and line") +
+  facet_wrap(~fishery_sector, scales = "free_y") +
+  ylab("Total dogfish released (1000s)")
+  # geom_vline(xintercept = 2007)
+ggsave(here("figs/longline-gdu-sector.png"), width = 10, height = 6)
+```
+
+So, the problem is spiny dogfish sector longline discards.
+
+# The major issue: what is a good average weight for longline discards?
+
+```{r}
+ds <- readRDS(here("data/raw/commercial-samples.rds"))
+table(ds$gear_desc)
+
+dsll <- filter(ds, gear_desc == "LONGLINE")
+
+filter(ds) |> 
+  filter(!is.na(length)) |> 
+  filter(!gear_desc %in% c("SHRIMP TRAWL", "UNKNOWN", "UNKNOWN TRAWL")) |> 
+  ggplot(aes(factor(year), length)) + 
+# geom_point() +
+  facet_wrap(~gear_desc) +
+  geom_boxplot() +
+  scale_x_discrete(breaks = seq(1900, 2024, 5))
+```
+
+Convert lengths to weights:
+
+```{r}
+# > mm$pars
+# $log_a
+# [1] -12.32762
+# $b
+# [1] 2.96391
+# > mf$pars
+# $log_a
+# [1] -13.18455
+# $b
+# [1] 3.182569
+# lm(log(weight) ~ log(length))
+
+x <- filter(ds) |> 
+  filter(!is.na(length)) |> 
+  filter(sex %in% c(1, 2)) |> 
+  filter(!gear_desc %in% c("SHRIMP TRAWL", "UNKNOWN", "UNKNOWN TRAWL")) |> 
+  mutate(predicted_weight = 
+    ifelse(
+      sex == 1, exp(-12.32762 + log(length) * 2.96391),
+      exp(-13.18455 + log(length) * 3.182569))) |> 
+  select(length, weight, predicted_weight, sex, gear_desc, year, sampling_desc)
+
+plot(x$weight/1000, x$predicted_weight, ylim = c(0, 3), xlim = c(0, 3));abline(0, 1)
+
+x |> 
+  ggplot(aes(factor(year), predicted_weight)) + 
+# geom_point() +
+  facet_wrap(~gear_desc) +
+  geom_boxplot() +
+  scale_x_discrete(breaks = seq(1900, 2024, 5))
+
+x |> 
+  ggplot(aes(year, predicted_weight)) + 
+  geom_point(alpha = 0.01) +
+  facet_grid(sampling_desc~gear_desc)
+
+xx <- filter(x, gear_desc == "LONGLINE", sampling_desc %in% c("KEEPERS", "UNSORTED"))
+
+xx |> 
+  filter(year > 2000) |> 
+  mutate(sex = ifelse(sex ==1, "Male", "Female")) |> 
+  ggplot(aes(year, predicted_weight)) + 
+  geom_point(alpha = 0.01) +
+  facet_grid(sampling_desc~sex) +
+  geom_smooth(se = FALSE, method = "lm") +
+  # geom_vline(xintercept = c(2009), lty = 2) +
+  xlab("Year") + ylab("Weight (kg)") +
+  scale_x_continuous(breaks = seq(2000, 2022, 2))
+ggsave(here("figs/weight-longline-keepers-unsorted.png"), width = 7, height = 5)
+
+xx |> filter(year %in% c(2009)) |> 
+  group_by(sex, sampling_desc) |> summarise(mean = mean(predicted_weight)) |> 
+  saveRDS("figs/keepers-unsorted-avg-weight-male-female.rds")
+```
+
+The unsorteds are recent and presumably discarded after
+
+```{r}
+xx |> filter(sampling_desc == "UNSORTED", year > 2000) |>
+  group_by(sex) |> 
+  summarise(mean_weight = mean(predicted_weight)) |> 
+  mutate(mean_weight_lbs = mean_weight * 2.20462)
+
+o <- xx |> filter(sampling_desc == "UNSORTED", year > 2000) |>
+  # group_by(sex) |> 
+  summarise(mean_weight = mean(predicted_weight), median_weight = median(predicted_weight)) |> 
+  mutate(mean_weight_lbs = mean_weight * 2.20462, median_weight_lbs = median_weight * 2.20462)
+saveRDS(o, "figs/keepers-unsorted-avg-median-weight-male-female.rds")
+
+xx |> filter(sampling_desc == "UNSORTED", year > 2000) |> 
+  mutate(sex_label = ifelse(sex == 1, "Male", "Female")) |> 
+  ggplot(aes(factor(year), predicted_weight, colour = sex_label)) + 
+  geom_violin(alpha = 0.3) +
+  geom_point(alpha = 0.1, position = position_jitter(height = 0, width = 0.1)) +
+  # facet_wrap(~sex_label) +
+  labs(y = "Weight (kg)", x = "Year", colour = "Sex") +
+geom_hline(yintercept = o$mean_weight, lty = 2)
+ggsave(here("figs/longline-unsorted-weight.png"), width = 5, height = 3.4)
+
+xx |> filter(sampling_desc == "UNSORTED", year > 2000) |>
+  group_by(sex) |> 
+  summarise(mean_weight = mean(predicted_weight)) |> 
+  mutate(mean_weight_lbs = mean_weight * 2.20462)
+
+xx |> filter(sampling_desc == "UNSORTED", year > 2000) |>
+  # group_by(sex) |> 
+  summarise(mean_weight = mean(predicted_weight), median_weight = median(predicted_weight)) |> 
+  mutate(mean_weight_lbs = mean_weight * 2.20462, median_weight_lbs = median_weight * 2.20462)
+```
+
+## Survey weights:
+
+```{r}
+ds <- readRDS(here("data/raw/survey-samples.rds")) |> 
+  filter(!is.na(survey_abbrev))
+
+means <- group_by(ds, survey_abbrev) |> 
+  summarise(median_weight = median(weight/1000, na.rm = T), mean_weight = mean(weight/1000, na.rm = TRUE)) |> 
+  filter(!grepl("INS ", survey_abbrev)) |> 
+  filter(!grepl(" MSA", survey_abbrev)) |> 
+  filter(survey_abbrev != "SYN WCHG")
+
+filter(ds) |> 
+  filter(!grepl("INS ", survey_abbrev)) |> 
+  filter(!grepl(" MSA", survey_abbrev)) |> 
+  filter(survey_abbrev != "SYN WCHG") |> 
+  filter(!is.na(weight)) |> 
+  ggplot(aes(factor(year), weight/1000)) + 
+  facet_wrap(~survey_abbrev) +
+  geom_boxplot() +
+  geom_hline(yintercept = 4.08233, lty = 3) +
+  geom_hline(aes(yintercept = mean_weight), data = means, col = "red") +
+  geom_hline(aes(yintercept = median_weight), data = means, col = "blue") +
+  scale_x_discrete(breaks = seq(1900, 2024, 2))
+  # geom_point(alpha = 0.005)
+
+means |> 
+  filter(survey_abbrev != "SYN WCHG") |> 
+  mutate(median_weight_lbs = median_weight * 2.20462, mean_weight_lbs = mean_weight * 2.20462)
 ```
 
