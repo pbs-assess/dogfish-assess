@@ -1,0 +1,113 @@
+---
+title: Pacific Spiny Dogfish catch data updates
+author: Sean Anderson on behalf of the outside Dogfish Working Paper author team
+date: 2024-12-13
+output: pdf_document
+---
+
+```{r setup, echo=FALSE, cache=FALSE, message=FALSE, results='hide', warning=FALSE}
+library(knitr)
+if (is_latex_output()) {
+  knitr_figs_dir <- "knitr-figs-pdf/"
+  knitr_cache_dir <- "knitr-cache-pdf/"
+  fig_out_type <- "png"
+} else {
+  knitr_figs_dir <- "knitr-figs-docx/"
+  knitr_cache_dir <- "knitr-cache-docx/"
+  fig_out_type <- "png"
+}
+fig_asp <- 0.618
+fig_width <- 7
+fig_out_width <- "6in"
+fig_dpi <- 180
+fig_align <- "center"
+fig_pos <- "htb"
+opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  comment = "#>",
+  fig.path = knitr_figs_dir,
+  cache.path = knitr_cache_dir,
+  fig.asp = fig_asp,
+  fig.width = fig_width,
+  out.width = fig_out_width,
+  echo = FALSE,
+  #  autodep = TRUE,
+  #  cache = TRUE,
+  cache.comments = FALSE,
+  dev = fig_out_type,
+  dpi = fig_dpi,
+  fig.align = fig_align,
+  fig.pos = fig_pos
+)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+theme_set(theme_bw())
+library(here)
+```
+
+I compared the catch data as presented at the Dogfish Regional Peer Review (RPR) meeting from 1996--2023 for trawl and 2006--2023 for longline and trap gear against a separate SQL query built by Maria Cornthwaite (Program Head, Groundfish Data Unit, Pacific DFO) drawing data from `PacHarHL`, `PacHarvSable`, and `GFFOS` databases (`Official_Catch` tables). The original RPR data came from the `GF_MERGED_CATCH` table in the `GFFOS` database. Comparisons are not shown here because the Groundfish Data Unit data are identical to the original data query presented at the RPR meeting after the following modifications:
+
+- Hook and line, longline, and trap discarded counts have been used instead of weight. This issue was identified at the RPR meeting.
+- [DFO Statistical Area 12](https://www.pac.dfo-mpo.gc.ca/fm-gp/maps-cartes/areas-secteurs/12-eng.html) (Northern Johnstone Strait) has been removed such that 3CD5ABCDE corresponds to the Pacific Fisheries Management Area (PFMA) areas rather than the Pacific States Marine Fisheries Commission (PSMFC) areas with the same name. This has a very minor effect on catches.
+- Discard weights from the midwater trawl fleet have been added from 1996 to 2006. These had been excluded in the original SQL code. These discards are a small portion of the overall catch as can be seen in the data below.
+- An average weight of 3.07 kg (6.77 lbs) was calculated from unsorted longline samples of Dogfish in 2009, 2010, 2012, and 2013. This is used below for illustrative purposes only to help compare scale across gear types; we will include Dogfish longline and trap discards as *counts* during model fitting.
+
+Data from before 1996 are not shown here. These earlier data are the same data as used in the last assessment; they are visualized in the Working Paper.
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+d <- readr::read_csv(here::here("figs/dogfish-catch-weight.csv"))
+d <- d |> mutate(gear = factor(gear, levels = c("Bottom trawl", "Midwater trawl", "Hook and line/longline", "Trap"))) |> 
+  arrange(gear, year)
+  
+options(knitr.kable.NA = '')
+d |> 
+  mutate(year = as.character(year)) |> 
+  knitr::kable(digits = 2, col.names = c("Year", "Gear", "Landed (t)", "Released (t)", "Released (count)", "Released (t)*"), format.args = list(big.mark = ","), caption = "Landings and release data for Dogfish in PFMA 3CD5ABCDE from 1996 to 2023. Longline and trap (combined) discards will be entered in the model as counts. The final discard weight column with an * is shown for illustrative purposes at this meeting with an average dogfish weight of 3.07 kg (6.77 lbs); it will not be used in model fitting. Years are calendar years.")
+```
+
+```{r landed, echo=FALSE, fig.cap="Dogfish landings by gear type. Years are calendar years."}
+g <- d |> 
+  ggplot(aes(year, landed_t)) + geom_col() + facet_wrap(~gear) + ylab("Landed (t)") + xlab("Year") + scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05)))
+g
+```
+
+```{r landed-free, echo=FALSE, fig.cap="Same as previous figure with independent y-axis limits."}
+g + facet_wrap(~gear, scales = "free_y")
+```
+
+```{r landed-stacked, echo=FALSE, fig.cap="Same as previous two figures but gear types are stacked in one panel."}
+d |> 
+  ggplot(aes(year, landed_t, fill = gear)) + geom_col() + ylab("Landed (t)") + xlab("Year") + scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) + scale_fill_brewer(palette = "Set2") +
+  labs(fill = "Gear")
+```
+
+```{r discard-weights, echo=FALSE, fig.cap="Dogfish discard/release weights for bottom and midwater trawl gear."}
+g <- d |> 
+  filter(!gear %in% c("Hook and line/longline", "Trap")) |> 
+  ggplot(aes(year, discarded_t)) + geom_col() + facet_wrap(~gear) + ylab("Released (t)") + xlab("Year") + scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05)))
+g
+```
+
+```{r discard-counts, echo=FALSE, fig.cap="Dogfish discard/release \\emph{counts} for longline and trap gear. These are combined into one fleet in the model."}
+g <- d |> 
+  filter(gear %in% c("Hook and line/longline", "Trap")) |> 
+  ggplot(aes(year, discarded_count/1000)) + geom_col() + facet_wrap(~gear) + ylab("Released (1,000 fish)") + xlab("Year") + scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05)))
+g
+```
+
+```{r discard-counts-ind, echo=FALSE, fig.cap="Same as previous figure with independent y-axis limits."}
+g + facet_wrap(~gear, scales = "free_y")
+```
+
+```{r, echo=FALSE, fig.cap="Illustration of total release/discard weights \\emph{if} longline and trap counts are converted to weight assuming an average Dogfish weight of 3.07 kg (6.77 lbs) calculated from unsorted longline samples in 2009, 2010, 2012, and 2013. This is included for illustrative purposes only."}
+d |> 
+  mutate(discards = ifelse(gear %in% c("Hook and line/longline", "Trap"), discarded_t_avg_dogfish, discarded_t)) |> 
+  ggplot(aes(year, discards, fill = gear)) + geom_col() + ylab("Released (t)") + xlab("Year") + scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) + scale_fill_brewer(palette = "Set2") +
+  labs(fill = "Gear")
+```
+

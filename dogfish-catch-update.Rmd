@@ -1,0 +1,184 @@
+---
+title: "Pacific Spiny Dogfish Catch Update"
+author: "Sean C. Anderson^1^, Quang C. Huynh^2^, Lindsay N.K. Davidson^1^, Jacquelynne R. King^1^"
+institute: "^1^Pacific Biological Station, Fisheries and Oceans Canada, ^2^Blue Matter Science"
+date: "Dec. 17, 2024"
+output:
+  xaringan::moon_reader:
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: "4:3"
+---
+
+```{r preamble, include=FALSE, cache=FALSE}
+## Build me with live updates with:
+## xaringan::inf_mr()
+library(knitr)
+xaringanthemer::style_mono_accent(
+  base_color = "#202020",
+  header_font_google = xaringanthemer::google_font("Raleway"),
+  text_font_google = xaringanthemer::google_font("Open Sans"),
+  code_font_google = xaringanthemer::google_font("Fira Mono"),
+  title_slide_background_size = "14%",
+  title_slide_background_position = "50% 90%",
+  base_font_size = "20px",
+  header_h1_font_size = "2.0rem",
+  header_h2_font_size = "1.8rem",
+  header_h3_font_size = "1.6rem",
+  text_font_size = "1.4rem",
+  code_font_size = "1.1rem",
+  link_color = "#0047AB"
+)
+knitr_opts <- list(
+  message = FALSE,
+  warning = FALSE,
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  dpi = 300,
+  out.width = "100%",
+  fig.asp = 1 / 1.618,
+  cache = TRUE,
+  autodep = TRUE,
+  cache.comments = TRUE,
+  fig.align = "center",
+  echo = FALSE
+)
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+# Objectives
+
+1. Summarize changes to the catch data since the RPR meeting
+
+1. Communicate plan for handling longline/trap discard count data
+
+1. Answer questions / discuss any issues with the catch data
+
+1. Gain consensus on catch data for Working Paper / SAR revisions
+
+---
+
+# Data comparison
+
+- I compared the catch data as presented at the RPR meeting from 1996-2023 for trawl and 2006--023 for longline and trap gear against a separate SQL query built by Maria Cornthwaite
+
+- Maria's query pulled from `PacHarHL`, `PacHarvSable`, and `GFFOS` databases (`Official_Catch` tables)
+
+- Original RPR data came from `GF_MERGED_CATCH` table in `GFFOS` database
+
+- Data are identical after some minor changes to original data...
+
+---
+
+# Data changes
+
+- Hook and line, longline, and trap discarded counts have been used instead of weight. This issue was identified at the RPR meeting.
+
+---
+
+# Data changes
+
+- Discard weights from the midwater trawl fleet have been added from 1996 to 2006
+
+```{r, out.width="100%"}
+include_graphics(here::here("figs/mid-trawl-gdu2.png"))
+```
+
+---
+
+# Data changes
+
+- DFO Statistical Area 12 so 3CD5ABCDE catch reflects Pacific Fisheries Management Area (PFMA) areas rather than the Pacific States Marine Fisheries Commission (PSMFC) areas
+- Has a very minor effect on catches.
+
+```{r, out.width="80%"}
+include_graphics(here::here("figs/area-12-screen.jpg"))
+```
+
+---
+
+#  Landings
+
+```{r, out.width="100%"}
+include_graphics(here::here("analysis/knitr-figs-pdf/landed-1.png"))
+```
+
+---
+
+#  Landings
+
+```{r, out.width="100%"}
+include_graphics(here::here("analysis/knitr-figs-pdf/landed-free-1.png"))
+```
+
+---
+
+#  Landings
+
+```{r, out.width="100%"}
+include_graphics(here::here("analysis/knitr-figs-pdf/landed-stacked-1.png"))
+```
+
+---
+
+#  Discard weights
+
+```{r, out.width="100%"}
+include_graphics(here::here("analysis/knitr-figs-pdf/discard-weights-1.png"))
+```
+
+---
+
+#  Discard counts
+
+```{r, out.width="100%"}
+include_graphics(here::here("analysis/knitr-figs-pdf/discard-counts-1.png"))
+```
+
+---
+
+#  Discard counts
+
+```{r, out.width="100%"}
+include_graphics(here::here("analysis/knitr-figs-pdf/discard-counts-ind-1.png"))
+```
+
+---
+
+#  Average dogfish weight: unsorted commercial longline samples
+
+```{r, out.width="90%"}
+include_graphics(here::here("figs/longline-unsorted-weight.png"))
+```
+
+---
+
+#  Summed discard weights (illustrative only)
+
+- *If* released dogfish weigh 3.07 kg (6.77 lbs) (average)
+- Based on unsorted longline samples in 2009, 2010, 2012, 2013
+- Include in SAR/Res Doc figs or show counts only?
+
+```{r, out.width="75%"}
+include_graphics(here::here("analysis/knitr-figs-pdf/unnamed-chunk-3-1.png"))
+```
+
+---
+
+# Plan
+
+- Update catch data files
+
+- Model longline and trap discards as counts
+
+- Use average "dead dogfish" weight ratios in final 5 years to set "dead dogfish" ratios for projections
+
+- Rerun models and finish revisions
+
+- Include brief summary of what was shown here in Res Doc
+
+- Include catch table at least for 1996 onwards (trawl) and 2006 onwards (longline/trap)
