@@ -119,8 +119,7 @@ g
 ggsave("figs/indices-all.png", width = 6, height = 6, dpi = 200)
 
 g + theme(axis.title.x = element_blank())
-ggsave("figs/indices-all-sar.png", width = 5, height = 5, dpi = 250)
-
+ggsave_optipng("figs/indices-all-sar.png", width = 5, height = 5, dpi = 300)
 # COSEWIC ---------------------
 
 
