@@ -1,22 +1,29 @@
 library(dplyr)
 library(gfplot)
 library(ggplot2)
+library(readxl)
 source("analysis/utils.R")
 source("ss3/99-utils.R")
+library(here)
 dir.create("figs", showWarnings = FALSE)
 
 # modern catches ------------------------------------------------------
 
 if (Sys.info()[["user"]] == "seananderson") {
-  d <- readRDS("data/raw/catch.rds")
+  d <- readRDS("data/raw/catch-2024-12-09.rds")
   # d_4b5abcde3cd <- tidy_catch_dogfish(d, areas = c("5[CDE]+", "5[AB]+", "4B"))
+
+  # remove stat area 12 such that we have PFMA/GMU 3CD5ABCD rather than PSMFC
+  # (Science older GMU) 3CD5ABCD
+  d <- filter(d, dfo_stat_area_code != 12)
   d_4b5abcde3cd <- tidy_catch_dogfish(d, areas = c("5[ABCDE]+", "3[CD]+", "4B"))
   d_4b5abcde3cd$area[d_4b5abcde3cd$area == "3CD"] <- "5ABCDE3CD"
   d_4b5abcde3cd$area[d_4b5abcde3cd$area == "5ABCDE"] <- "5ABCDE3CD"
   d_4b5abcde3cd <- group_by(d_4b5abcde3cd, year, species_common_name, area, gear) |>
     summarise(
       landed_kg = sum(landed_kg),
-      discarded_kg = sum(discarded_kg)
+      discarded_kg = sum(discarded_kg),
+      discarded_pcs = sum(discarded_pcs)
     )
   saveRDS(d_4b5abcde3cd, file = "data/generated/catch-4B5ABCDE3CD-summarized.rds")
 }
@@ -28,14 +35,82 @@ if (Sys.info()[["user"]] == "seananderson") {
 d_4b5abcde3cd <- readRDS("data/generated/catch-4B5ABCDE3CD-summarized.rds")
 # plot_catch(d_4b5abcde3cd)
 
+
+filter(d_4b5abcde3cd, year >= 2010, year <= 2023) |>
+  filter(area != "4B") |>
+  mutate(
+    discarded_kg =
+      ifelse(
+        gear != "Hook and line",
+        discarded_kg,
+        3.07 * discarded_pcs # assuming 3.07 kg avg. per discarded dogfish based on unsorted samples
+      )
+  ) |>
+  group_by(year, gear) |>
+  summarise(landed_t = sum(landed_kg/1000), discards_t = sum(discarded_kg/1000)) |>
+  ungroup() |>
+  group_by(year) |>
+  arrange(gear) |>
+  filter(!gear %in% c("Trap", "Unknown/trawl")) |>
+  mutate(landed_t = round(landed_t, 1), discards_t = round(discards_t, 1)) |>
+  readr::write_csv("~/Downloads/catch-oct18.csv")
+  # knitr::kable(digits = 0)
+
+dd <- filter(d_4b5abcde3cd, gear == "Hook and line", area != "4B") |>
+  ungroup() |>
+  select(year, discarded_pcs) |>
+  mutate(discarded_pcs = discarded_pcs, weight_t = round(4.08233 * discarded_pcs / 1000, 3)) |>
+  filter(year > 2004, year < 2024)
+
+g1 <- ggplot(dd, aes(year, discarded_pcs/1000)) + geom_line() + scale_x_continuous() + theme_bw() + geom_point() + scale_x_continuous(breaks = 2005:2023)
+g2 <- ggplot(dd, aes(year, weight_t)) + geom_line() + scale_x_continuous() + theme_bw() + geom_point() + scale_x_continuous(breaks = 2005:2023)
+cowplot::plot_grid(g1, g2, nrow = 2)
+
+readr::write_csv(dd, "~/Downloads/discards.csv")
+
+ggplot(dd, aes(year, discarded_pcs/1000)) + geom_line()
+
+d_4b5abcde3cd <- d_4b5abcde3cd |>
+  mutate(
+    discarded_kg =
+      ifelse(
+        !gear %in% c("Hook and line", "Trap"),
+        discarded_kg,
+        3.07 * discarded_pcs # assuming 3.07 kg avg. per discarded dogfish based on unsorted samples in longline - visualization and projections only; use numbers in model
+      )) |>
+  mutate(
+    discarded_pcs =
+      ifelse(
+        gear %in% c("Hook and line", "Trap"),
+        discarded_pcs,
+        0 # zero out; not using
+      ))
+
 # Trust trawl >= 1996
 # Trust longline >= 2007
-
+# Take rest from last assessment
 d_4b5abcde3cd_trawl <- d_4b5abcde3cd |>
-  filter(year >= 1996 & gear %in% c("Bottom trawl", "Midwater trawl"))
+  filter(year >= 1996 & gear %in% c("Bottom trawl", "Midwater trawl", "Unknown/trawl"))
 
+# add on the outside midwater trawl from Maria for before 2006
+gdu <- read_xlsx(here("data/raw/FD5046 dogfish trawl catch 1996-2024.xlsx"), sheet = 1L)
+names(gdu) <- tolower(names(gdu))
+gdu_sum <- group_by(gdu, gear_subtype, calendar_year) |>
+  summarise(landed_kg = sum(landed_round_kg), discarded_kg = sum(total_released_round_kg)) |>
+  filter(gear_subtype == "MIDWATER TRAWL", calendar_year < 2006) |>
+  select(discarded_kg, year = calendar_year)
+
+# check:
+d_4b5abcde3cd_trawl[d_4b5abcde3cd_trawl$gear %in% "Midwater trawl" & d_4b5abcde3cd_trawl$year %in% 1996:2005 & d_4b5abcde3cd_trawl$area != "4B",]
+
+d_4b5abcde3cd_trawl$discarded_kg[d_4b5abcde3cd_trawl$gear %in% "Midwater trawl" & d_4b5abcde3cd_trawl$year %in% 1996:2005 & d_4b5abcde3cd_trawl$area != "4B"] <- gdu_sum$discarded_kg
+
+# check:
+d_4b5abcde3cd_trawl[d_4b5abcde3cd_trawl$gear %in% "Midwater trawl" & d_4b5abcde3cd_trawl$year %in% 1996:2005 & d_4b5abcde3cd_trawl$area != "4B",]
+
+# take 2006 and beforee from last assessment:
 d_4b5abcde3cd_ll <- d_4b5abcde3cd |>
-  filter(year >= 2007 & gear %in% c("Hook and line", "Trap", "Unknown/trawl", "Discarded"))
+  filter(year >= 2007 & gear %in% c("Hook and line", "Trap"))
 
 d_catch_modern <- bind_rows(d_4b5abcde3cd_trawl, d_4b5abcde3cd_ll)
 
@@ -118,7 +193,6 @@ ggplot(old_landings, aes(x = year, y = landed_kg, colour = gear, fill = gear)) +
 old_dat <- full_join(old_landings, disc)
 old_dat <- make_NAs_zero(old_dat)
 
-
 d <- bind_rows(d_catch_modern, old_dat)
 
 catch_plot <- function(x, column) {
@@ -165,7 +239,6 @@ g <- d %>% group_by(year, area) %>%
   labs(x = "Year", y = "Proportion discards")
 ggsave("figs/proportion-discards.png", g, width = 5, height = 2.5)
 
-
 g <- catch + facet_wrap(~area, ncol = 1) +
   ylab("Reconstructed catch (t)") +
   labs(fill = "Gear") + xlab("") +
@@ -173,7 +246,6 @@ g <- catch + facet_wrap(~area, ncol = 1) +
 ggsave("figs/reconstructed-catch.png", g, width = 6.4, height = 5.5)
 
 saveRDS(d, file = "data/generated/catch.rds")
-
 
 ## Outside only ----
 g <- d %>%
@@ -202,7 +274,9 @@ g1 <- d %>%
   filter(year <= 2023) |>
   filter(year >= 1980) |>
   filter(area != "4B") %>%
-  reshape2::melt(id.vars = c("year", "gear", "species_common_name", "area")) %>%
+  ungroup() |>
+  select(year, area, gear, landed_kg, discarded_kg) |>
+  reshape2::melt(id.vars = c("year", "gear", "area")) %>%
   mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
     value = value/1e6) %>%
   mutate(variable = factor(variable, levels = c("Landings (kt)", "Discards (kt)"))) |>
@@ -256,6 +330,33 @@ d %>%
 source("ss3/99-utils.R")
 ggsave_optipng("figs/reconstructed-catch-discards-outside-zoom-high-risk-band.png", width = 5, height = 4)
 
+# table to share:
+out <- d |>
+  ungroup() |>
+  filter(year <= 2023) |>
+  filter(area != "4B") |>
+  mutate(gear = ifelse(gear == "Unknown/trawl", "Bottom trawl", gear)) |>
+  select(-species_common_name, -area) |>
+  group_by(year, gear) |>
+  summarise(landed_kg = sum(landed_kg), discarded_kg = sum(discarded_kg), discarded_pcs = sum(discarded_pcs)) |>
+  ungroup() |>
+  mutate(discarded_pcs = ifelse(gear %in% c("Hook and line", "Trap"), discarded_pcs, NA)) |>
+  mutate(discarded_kg = ifelse(!gear %in% c("Hook and line", "Trap"), discarded_kg, NA)) |>
+  arrange(gear, year) |>
+  mutate(discarded_t_avg_dogfish = ifelse(gear %in% c("Hook and line", "Trap"), discarded_pcs * 3.07/1000, NA))
+
+out |> readr::write_rds("data/generated/catch-dec2024.rds")
+
+out |>
+  filter(year >= 1996) |>
+  mutate(landed_t = landed_kg / 1000, discarded_t = discarded_kg / 1000) |>
+  select(-landed_kg, -discarded_kg) |>
+  mutate(gear = ifelse(gear == "Hook and line", "Hook and line/longline", gear)) |>
+  mutate(landed_t = round(landed_t, 2), discarded_t = round(discarded_t, 2), discarded_t_avg_dogfish = round(discarded_t_avg_dogfish, 2)) |>
+  mutate(gear = factor(gear, levels = c("Bottom trawl", "Midwater trawl", "Hook and line/longline", "Trap"))) |>
+  arrange(gear, year) |>
+  select(year, gear, landed_t, discarded_t, discarded_count = discarded_pcs, discarded_t_avg_dogfish) |>
+  readr::write_excel_csv("figs/dogfish-catch-weight.csv", na = "")
 
 g <- d %>%
   filter(area != "4B") %>%
