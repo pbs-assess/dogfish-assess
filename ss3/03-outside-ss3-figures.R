@@ -23,9 +23,34 @@ dir.create("figs/ss3/set_b", showWarnings = FALSE)
 dir.create("figs/ss3/set_a_mat", showWarnings = FALSE)
 dir.create("figs/ss3/set_a_zfrac", showWarnings = FALSE)
 dir.create("figs/ss3/set_a_ind", showWarnings = FALSE)
+dir.create("figs/ss3/catch-update", showWarnings = FALSE)
 
 # Specify which set of plots to generate here
 # set_to_plot <- c("growth", "index", "M")[3]
+
+# # RPR update comparison catch:
+# mods <- c("A0", "A0-RPR")
+# model_name <- c("(A0) Update", "(A0) RPR")
+# fig_dir <- "figs/ss3/catch-update"
+# multi_rep <- lapply(mods, function(x) {
+#   r4ss::SS_output(file.path(ss_home, x),
+#     verbose = FALSE,
+#     printstats = FALSE,
+#     hidewarn = TRUE)
+# })
+#
+# # Plot SR
+# g <- SS3_B(multi_rep, model_name) +
+#   guides(linetype = 'none') +
+#   labs(y = "Spawning output") +
+#   coord_cartesian(expand = FALSE) +
+#   guides(colour = guide_legend(ncol = 2))
+# # .ggsave("spawning_est.png", g, height = 5, width = 6)
+# g
+# ggsave("figs/catch-rpr-update.png", width = 5, height = 4)
+
+##########################
+
 
 for (set_to_plot in c("growth", "index", "M", "zfrac")) {
 
