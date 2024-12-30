@@ -29,7 +29,7 @@
  1 -1 1 1 1 Bottom_Trawl_Discards  # 2
  1 -1 1 1 1 MidwaterTrawl  # 3
  1 -1 1 1 1 HookLine_Landings  # 4
- 1 -1 1 1 1 HookLine_Discards  # 5
+ 1 -1 1 2 1 HookLine_Discards  # 5
  1 -1 1 1 1 IPHC  # 6
  1 -1 1 1 1 HBLL  # 7
  1 -1 1 1 1 SYN  # 8

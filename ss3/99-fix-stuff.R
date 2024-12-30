@@ -64,3 +64,27 @@ if (FALSE) {
     writeLines(out, paste0("ss3/", mods[i], "/data.ss"))
   }
 }
+
+if (FALSE) {
+  mods <- c(
+    "A1",
+    # A0 removed - it's the reference
+    "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_highdiscard",
+    "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM", "A10_highM",
+    "A11_low_zfrac", "A12_high_zfrac", "A13_extraSD", "A14_lowdiscard",
+    "A15_100discard",
+    "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
+
+  for (i in seq_along(mods)) {
+
+    ref <- readLines(paste0("ss3/", "A0", "/data.ss"))
+    x1 <- grep("HookLine_Discards  # 5", ref)
+    ref_dat <- ref[x1]
+
+    f <- readLines(paste0("ss3/", mods[i], "/data.ss"))
+    x1 <- grep("HookLine_Discards  # 5", f)
+    f[x1] <- ref_dat
+
+    writeLines(f, paste0("ss3/", mods[i], "/data.ss"))
+  }
+}
