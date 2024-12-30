@@ -64,3 +64,10 @@ slides/dogfish-rpr-slides_cache/html/__packages
 slides/libs/header-attrs-2.28/header-attrs.js
 dogfish-catch-update_cache
 ss3/A0-RPR/
+analysis/rpr-catch-comparison.R
+analysis/02b-catch-data-unit-ll.R
+analysis/02a-catch-data-unit.R
+analysis/02a-catch-data-unit-trawl.R
+*.b05
+*.p05
+*.r05
