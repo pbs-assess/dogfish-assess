@@ -34,3 +34,33 @@ if (FALSE) {
     writeLines(f, paste0("ss3/", mods[i], "/control.ss"))
   }
 }
+
+if (FALSE) {
+  mods <- c(
+    "A1",
+    # A0 removed - it's the reference
+    "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_highdiscard",
+    "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM", "A10_highM",
+    "A11_low_zfrac", "A12_high_zfrac", "A13_extraSD", "A14_lowdiscard",
+    "A15_100discard",
+    "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
+
+  for (i in seq_along(mods)) {
+
+    ref <- readLines(paste0("ss3/", "A0", "/data.ss"))
+    x1 <- grep("-999 1 10 0 0.01", ref)
+    x2 <- grep(" #_CPUE_and_surveyabundance_observations", ref)
+    ref_dat <- ref[(x1+1):(x2-3)]
+
+    f <- readLines(paste0("ss3/", mods[i], "/data.ss"))
+    x1 <- grep("-999 1 10 0 0.01", f)
+    x2 <- grep(" #_CPUE_and_surveyabundance_observations", f)
+    if (x2-x1 == 325) {
+      out <- c(f[1:x1], ref_dat, f[(x2-2):length(f)])
+    } else {
+      print("Skipping")
+      mods[i]
+    }
+    writeLines(out, paste0("ss3/", mods[i], "/data.ss"))
+  }
+}
