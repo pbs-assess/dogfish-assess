@@ -21,11 +21,12 @@ fleet_factor <- paste(fleet_index, "-", names(fleet_index))
 
 ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
 
-  catch <- readRDS("data/generated/catch.rds") %>%
-    filter(area != "4B", year <= 2023) %>%
+  catch <- readRDS("data/generated/catch-dec2024.rds") %>%
+    # filter(area != "4B", year <= 2023) %>%
     group_by(year, gear) %>%
     summarise(landing = 1e-3 * sum(landed_kg),
-              discard = 1e-3 * sum(discarded_kg)) %>%
+              discard = 1e-3 * sum(discarded_kg),
+              discard_count = sum(discarded_pcs)) %>%
     ungroup()
 
   bottom_trawl_gear <- c("Trawl + hook and line", "Trawl", "Bottom trawl", "Unknown/trawl")
@@ -59,14 +60,14 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
 
   f4 <- catch %>%
     filter(gear == "Hook and line") %>%
-    select(year, landing, discard) %>%
-    summarise(value = sum(landing), landing = sum(landing), discard = sum(discard), .by = year) %>%
+    select(year, landing, discard_count) %>%
+    summarise(value = sum(landing), landing = sum(landing), discard = sum(discard_count)/1000, .by = year) %>%
     mutate(fleet = 4)
 
   f5 <- catch %>%
     filter(gear == "Hook and line") %>%
-    select(year, landing, discard) %>%
-    summarise(value = sum(discard), landing = sum(landing), discard = sum(discard), .by = year) %>%
+    select(year, landing, discard_count) %>%
+    summarise(value = sum(discard_count)/1000, landing = sum(landing), discard = sum(discard_count)/1000, .by = year) %>%
     mutate(fleet = 5)
 
   # IPHC
@@ -158,7 +159,7 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
   }
 
   if (csv) {
-    write.csv(out, file = paste0("data/ss3/ss3-catch-", midwater_discard_rate, ".csv"), row.names = FALSE)
+    write.csv(out, file = paste0("data/ss3/ss3-catch-", midwater_discard_rate, "-updated.csv"), row.names = FALSE)
   }
   invisible(out)
 }
