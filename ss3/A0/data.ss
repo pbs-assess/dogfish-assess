@@ -18,9 +18,9 @@
 70 #_Nages=accumulator age, first age is always age 0
 1 #_Nareas
 12 #_Nfleets (including surveys)
-#_fleet_type: 1=catch fleet; 2=bycatch only fleet; 3=survey; 4=predator(M2) 
+#_fleet_type: 1=catch fleet; 2=bycatch only fleet; 3=survey; 4=predator(M2)
 #_sample_timing: -1 for fishing fleet to use season-long catch-at-age for observations, or 1 to use observation month;  (always 1 for surveys)
-#_fleet_area:  area the fleet/survey operates in 
+#_fleet_area:  area the fleet/survey operates in
 #_units of catch:  1=bio; 2=num (ignored for surveys; their units read later)
 #_catch_mult: 0=no; 1=yes
 #_rows are fleets
@@ -29,7 +29,7 @@
  1 -1 1 1 1 Bottom_Trawl_Discards  # 2
  1 -1 1 1 1 MidwaterTrawl  # 3
  1 -1 1 1 1 HookLine_Landings  # 4
- 1 -1 1 1 1 HookLine_Discards  # 5
+ 1 -1 1 2 1 HookLine_Discards  # 5
  1 -1 1 1 1 IPHC  # 6
  1 -1 1 1 1 HBLL  # 7
  1 -1 1 1 1 SYN  # 8
@@ -44,7 +44,7 @@
 #d:  F or first year of range
 #e:  last year of range
 #f:  not used
-# a   b   c   d   e   f 
+# a   b   c   d   e   f
 #_Catch data: yr, seas, fleet, catch, catch_se
 #_catch_se:  standard error of log(catch)
 #_NOTE:  catch data is ignored for survey fleets
@@ -110,17 +110,17 @@
 1993	1	1	68	0.01
 1994	1	1	138	0.01
 1995	1	1	219	0.01
-1996	1	1	99.701	0.01
-1997	1	1	28.377	0.01
-1998	1	1	98.509	0.01
-1999	1	1	38.765	0.01
-2000	1	1	90.661	0.01
-2001	1	1	169.12	0.01
-2002	1	1	199.717	0.01
-2003	1	1	311.435	0.01
-2004	1	1	257.808	0.01
-2005	1	1	489.968	0.01
-2006	1	1	455.92	0.01
+1996	1	1	100.236	0.01
+1997	1	1	28.39	0.01
+1998	1	1	98.621	0.01
+1999	1	1	38.905	0.01
+2000	1	1	91.185	0.01
+2001	1	1	169.664	0.01
+2002	1	1	199.834	0.01
+2003	1	1	312.166	0.01
+2004	1	1	258.327	0.01
+2005	1	1	492.24	0.01
+2006	1	1	456.887	0.01
 2007	1	1	377.784	0.01
 2008	1	1	101.547	0.01
 2009	1	1	442.528	0.01
@@ -137,7 +137,7 @@
 2020	1	1	8.749	0.01
 2021	1	1	5.928	0.01
 2022	1	1	8.213	0.01
-2023	1	1	9.65	0.01
+2023	1	1	9.612	0.01
 1966	1	2	251	0.01
 1967	1	2	337	0.01
 1968	1	2	97	0.01
@@ -173,8 +173,8 @@
 1999	1	2	941.149	0.01
 2000	1	2	1129.259	0.01
 2001	1	2	800.653	0.01
-2002	1	2	823.452	0.01
-2003	1	2	720.54	0.01
+2002	1	2	823.52	0.01
+2003	1	2	720.543	0.01
 2004	1	2	1154.106	0.01
 2005	1	2	1054.496	0.01
 2006	1	2	778.836	0.01
@@ -194,35 +194,35 @@
 2020	1	2	94.832	0.01
 2021	1	2	162.013	0.01
 2022	1	2	179.198	0.01
-2023	1	2	262.846	0.01
-1996	1	3	1313.347	0.01
-1997	1	3	931.078	0.01
-1998	1	3	615.842	0.01
-1999	1	3	384.262	0.01
-2000	1	3	50.685	0.01
-2001	1	3	797.671	0.01
-2002	1	3	382.277	0.01
-2003	1	3	412.783	0.01
-2004	1	3	787.12	0.01
-2005	1	3	731.444	0.01
-2006	1	3	226.311	0.01
-2007	1	3	83.354	0.01
+2023	1	2	261.304	0.01
+1996	1	3	1305.415	0.01
+1997	1	3	934.263	0.01
+1998	1	3	616.646	0.01
+1999	1	3	384.539	0.01
+2000	1	3	51.028	0.01
+2001	1	3	808.172	0.01
+2002	1	3	399.101	0.01
+2003	1	3	437.632	0.01
+2004	1	3	768.025	0.01
+2005	1	3	796.089	0.01
+2006	1	3	224.627	0.01
+2007	1	3	78.869	0.01
 2008	1	3	250.509	0.01
-2009	1	3	233.387	0.01
-2010	1	3	246.214	0.01
+2009	1	3	228.556	0.01
+2010	1	3	246.146	0.01
 2011	1	3	141.827	0.01
-2012	1	3	52.16	0.01
-2013	1	3	77.745	0.01
+2012	1	3	52.155	0.01
+2013	1	3	77.744	0.01
 2014	1	3	36.574	0.01
 2015	1	3	142.093	0.01
-2016	1	3	86.905	0.01
-2017	1	3	55.533	0.01
-2018	1	3	137.521	0.01
-2019	1	3	145.017	0.01
-2020	1	3	83.775	0.01
-2021	1	3	67.797	0.01
-2022	1	3	75.965	0.01
-2023	1	3	112.975	0.01
+2016	1	3	86.656	0.01
+2017	1	3	55.521	0.01
+2018	1	3	136.551	0.01
+2019	1	3	141.163	0.01
+2020	1	3	83.672	0.01
+2021	1	3	67.44	0.01
+2022	1	3	75.896	0.01
+2023	1	3	112.972	0.01
 1972	1	4	1	0.01
 1977	1	4	9	0.01
 1978	1	4	50	0.01
@@ -253,13 +253,13 @@
 2003	1	4	3408	0.01
 2004	1	4	3517	0.01
 2005	1	4	3211	0.01
-2006	1	4	1532	0.01
-2007	1	4	2864.217	0.01
+2006	1	4	1516.968	0.01
+2007	1	4	2863.561	0.01
 2008	1	4	1236.445	0.01
-2009	1	4	3063.307	0.01
-2010	1	4	1047.496	0.01
+2009	1	4	3063.257	0.01
+2010	1	4	1047.136	0.01
 2011	1	4	458.337	0.01
-2012	1	4	602.083	0.01
+2012	1	4	602.079	0.01
 2013	1	4	210.585	0.01
 2014	1	4	105.302	0.01
 2015	1	4	80.549	0.01
@@ -268,29 +268,24 @@
 2018	1	4	0.006	0.01
 2019	1	4	0.122	0.01
 2020	1	4	0.003	0.01
-2001	1	5	94	0.01
-2002	1	5	74	0.01
-2003	1	5	172	0.01
-2004	1	5	94	0.01
-2005	1	5	154	0.01
-2006	1	5	3	0.01
-2007	1	5	54.276	0.01
-2008	1	5	87.029	0.01
-2009	1	5	38.631	0.01
-2010	1	5	33.363	0.01
-2011	1	5	31.91	0.01
-2012	1	5	38.925	0.01
-2013	1	5	47.38	0.01
-2014	1	5	27.553	0.01
-2015	1	5	26.823	0.01
-2016	1	5	5.406	0.01
-2017	1	5	6.944	0.01
-2018	1	5	1.628	0.01
-2019	1	5	17.183	0.01
-2020	1	5	19.64	0.01
-2021	1	5	8.162	0.01
-2022	1	5	5.504	0.01
-2023	1	5	8.503	0.01
+2006	1	5	369.416	0.01
+2007	1	5	396.716	0.01
+2008	1	5	340.234	0.01
+2009	1	5	291.649	0.01
+2010	1	5	249.187	0.01
+2011	1	5	229.968	0.01
+2012	1	5	193.946	0.01
+2013	1	5	174.701	0.01
+2014	1	5	155.974	0.01
+2015	1	5	142.308	0.01
+2016	1	5	206.96	0.01
+2017	1	5	153.237	0.01
+2018	1	5	158.311	0.01
+2019	1	5	183.043	0.01
+2020	1	5	165.077	0.01
+2021	1	5	135.361	0.01
+2022	1	5	155.434	0.01
+2023	1	5	155.914	0.01
 2003	1	6	14.159	0.01
 2004	1	6	11.73	0.01
 2005	1	6	15.114	0.01
@@ -501,21 +496,21 @@
 2021	1	12	594175.963	0.099
 2022	1	12	522900.532	0.09
 2023	1	12	808312.448	0.087
--9999 1 1 1 1 # terminator for survey observations 
+-9999 1 1 1 1 # terminator for survey observations
 #
 0 #_N_fleets_with_discard
 #_discard_units (1=same_as_catchunits(bio/num); 2=fraction; 3=numbers)
 #_discard_errtype:  >0 for DF of T-dist(read CV below); 0 for normal with CV; -1 for normal with se; -2 for lognormal; -3 for trunc normal with CV
-# note: only enter units and errtype for fleets with discard 
+# note: only enter units and errtype for fleets with discard
 # note: discard data is the total for an entire season, so input of month here must be to a month in that season
 #_Fleet units errtype
-# -9999 0 0 0.0 0.0 # terminator for discard data 
+# -9999 0 0 0.0 0.0 # terminator for discard data
 #
 0 #_use meanbodysize_data (0/1)
 #_COND_0 #_DF_for_meanbodysize_T-distribution_like
-# note:  type=1 for mean length; type=2 for mean body weight 
+# note:  type=1 for mean length; type=2 for mean body weight
 #_yr month fleet part type obs stderr
-#  -9999 0 0 0 0 0 0 # terminator for mean body size data 
+#  -9999 0 0 0 0 0 0 # terminator for mean body size data
 #
 # set up population length bin structure (note - irrelevant if not using size data and using empirical wtatage
 2 # length bin method: 1=use databins; 2=generate from binwidth,min,max below; 3=read vector
@@ -523,7 +518,7 @@
 1 # use length composition data (0/1)
 #_mintailcomp: upper and lower distribution for females and males separately are accumulated until exceeding this level.
 #_addtocomp:  after accumulation of tails; this value added to all bins
-#_combM+F: males and females treated as combined gender below this bin number 
+#_combM+F: males and females treated as combined gender below this bin number
 #_compressbins: accumulate upper tail by this number of bins; acts simultaneous with mintailcomp; set=0 for no forced accumulation
 #_Comp_Error:  0=multinomial, 1=dirichlet using Theta*n, 2=dirichlet using beta, 3=MV_Tweedie
 #_ParmSelect:  consecutive index for dirichlet or MV_Tweedie
@@ -626,7 +621,7 @@
 # 0 #_N_ageerror_definitions
 #_mintailcomp: upper and lower distribution for females and males separately are accumulated until exceeding this level.
 #_addtocomp:  after accumulation of tails; this value added to all bins
-#_combM+F: males and females treated as combined gender below this bin number 
+#_combM+F: males and females treated as combined gender below this bin number
 #_compressbins: accumulate upper tail by this number of bins; acts simultaneous with mintailcomp; set=0 for no forced accumulation
 #_Comp_Error:  0=multinomial, 1=dirichlet using Theta*n, 2=dirichlet using beta, 3=MV_Tweedie
 #_ParmSelect:  consecutive index for dirichlet or MV_Tweedie
@@ -653,10 +648,10 @@
 #
 # Sizefreq data. Defined by method because a fleet can use multiple methods
 0 # N sizefreq methods to read (or -1 for expanded options)
-# 
+#
 0 # do tags (0/1/2); where 2 allows entry of TG_min_recap
 #
-0 #    morphcomp data(0/1) 
+0 #    morphcomp data(0/1)
 #  Nobs, Nmorphs, mincomp
 #  yr, seas, type, partition, Nsamp, datavector_by_Nmorphs
 #
