@@ -36,37 +36,37 @@ d_4b5abcde3cd <- readRDS("data/generated/catch-4B5ABCDE3CD-summarized.rds")
 # plot_catch(d_4b5abcde3cd)
 
 
-filter(d_4b5abcde3cd, year >= 2010, year <= 2023) |>
-  filter(area != "4B") |>
-  mutate(
-    discarded_kg =
-      ifelse(
-        gear != "Hook and line",
-        discarded_kg,
-        3.07 * discarded_pcs # assuming 3.07 kg avg. per discarded dogfish based on unsorted samples
-      )
-  ) |>
-  group_by(year, gear) |>
-  summarise(landed_t = sum(landed_kg/1000), discards_t = sum(discarded_kg/1000)) |>
-  ungroup() |>
-  group_by(year) |>
-  arrange(gear) |>
-  filter(!gear %in% c("Trap", "Unknown/trawl")) |>
-  mutate(landed_t = round(landed_t, 1), discards_t = round(discards_t, 1)) |>
-  readr::write_csv("~/Downloads/catch-oct18.csv")
-  # knitr::kable(digits = 0)
+# filter(d_4b5abcde3cd, year >= 2010, year <= 2023) |>
+#   filter(area != "4B") |>
+#   mutate(
+#     discarded_kg =
+#       ifelse(
+#         gear != "Hook and line",
+#         discarded_kg,
+#         3.07 * discarded_pcs # assuming 3.07 kg avg. per discarded dogfish based on unsorted samples
+#       )
+#   ) |>
+#   group_by(year, gear) |>
+#   summarise(landed_t = sum(landed_kg/1000), discards_t = sum(discarded_kg/1000)) |>
+#   ungroup() |>
+#   group_by(year) |>
+#   arrange(gear) |>
+#   filter(!gear %in% c("Trap", "Unknown/trawl")) |>
+#   mutate(landed_t = round(landed_t, 1), discards_t = round(discards_t, 1)) |>
+#   readr::write_csv("~/Downloads/catch-oct18.csv")
+#   # knitr::kable(digits = 0)
 
 dd <- filter(d_4b5abcde3cd, gear == "Hook and line", area != "4B") |>
   ungroup() |>
   select(year, discarded_pcs) |>
-  mutate(discarded_pcs = discarded_pcs, weight_t = round(4.08233 * discarded_pcs / 1000, 3)) |>
+  mutate(discarded_pcs = discarded_pcs, weight_t = round(3.07 * discarded_pcs / 1000, 3)) |>
   filter(year > 2004, year < 2024)
 
 g1 <- ggplot(dd, aes(year, discarded_pcs/1000)) + geom_line() + scale_x_continuous() + theme_bw() + geom_point() + scale_x_continuous(breaks = 2005:2023)
 g2 <- ggplot(dd, aes(year, weight_t)) + geom_line() + scale_x_continuous() + theme_bw() + geom_point() + scale_x_continuous(breaks = 2005:2023)
 cowplot::plot_grid(g1, g2, nrow = 2)
 
-readr::write_csv(dd, "~/Downloads/discards.csv")
+# readr::write_csv(dd, "~/Downloads/discards.csv")
 
 ggplot(dd, aes(year, discarded_pcs/1000)) + geom_line()
 
@@ -87,7 +87,7 @@ d_4b5abcde3cd <- d_4b5abcde3cd |>
       ))
 
 # Trust trawl >= 1996
-# Trust longline >= 2007
+# Trust longline >= 2006
 # Take rest from last assessment
 d_4b5abcde3cd_trawl <- d_4b5abcde3cd |>
   filter(year >= 1996 & gear %in% c("Bottom trawl", "Midwater trawl", "Unknown/trawl"))
@@ -108,9 +108,9 @@ d_4b5abcde3cd_trawl$discarded_kg[d_4b5abcde3cd_trawl$gear %in% "Midwater trawl" 
 # check:
 d_4b5abcde3cd_trawl[d_4b5abcde3cd_trawl$gear %in% "Midwater trawl" & d_4b5abcde3cd_trawl$year %in% 1996:2005 & d_4b5abcde3cd_trawl$area != "4B",]
 
-# take 2006 and beforee from last assessment:
+# take 2005 and before from last assessment:
 d_4b5abcde3cd_ll <- d_4b5abcde3cd |>
-  filter(year >= 2007 & gear %in% c("Hook and line", "Trap"))
+  filter(year >= 2006 & gear %in% c("Hook and line", "Trap"))
 
 d_catch_modern <- bind_rows(d_4b5abcde3cd_trawl, d_4b5abcde3cd_ll)
 
@@ -124,6 +124,10 @@ landings_1966_ll <- readr::read_csv("data/raw/catches-longline-1966-2008.csv", c
 landings_1966_trawl <- readr::read_csv("data/raw/catches-trawl-1966-2008.csv", comment = "#")
 discards_1966_trawl <- readr::read_csv("data/raw/discards-trawl-1966-2008.csv", comment = "#")
 discards_2001_ll <- readr::read_csv("data/raw/discards-longline-2001-2006.csv", comment = "#")
+
+# 2006 ll coming from our databases now:
+discards_2001_ll <- filter(discards_2001_ll, Year <= 2005)
+landings_1966_ll <- filter(landings_1966_ll, Year <= 2005)
 
 make_NAs_zero <- function(x) {
   for (i in seq_along(names(x))) {
@@ -144,7 +148,7 @@ d_1935 <- tidyr::pivot_longer(
   d_1935, -1, names_to = "area", values_to = "landed_kg") |>
   mutate(gear = "Trawl + hook and line", landed_kg = landed_kg * 1000)
 
-# assume unknown area is outside: !? TODO
+# assume unknown area is outside:
 d_1966_ll <- landings_1966_ll |>
   transmute(year = Year, `4B` = `4B`, `5ABCDE3CD` = `Total outside` + `Unknown area`)
 d_1966_ll <- tidyr::pivot_longer(
@@ -152,7 +156,7 @@ d_1966_ll <- tidyr::pivot_longer(
   mutate(gear = "Hook and line", landed_kg = landed_kg * 1000) |>
   filter(year < 2007)
 
-# assume unknown area is outside: !? TODO
+# assume unknown area is outside:
 d_1966_tr <- landings_1966_trawl |>
   transmute(year = Year, `4B` = `4B`, `5ABCDE3CD` = `Total` + `Unknown area`)
 d_1966_tr <- tidyr::pivot_longer(
@@ -167,14 +171,17 @@ disc_1966_tr <- tidyr::pivot_longer(
   mutate(gear = "Trawl", discarded_kg = discarded_kg * 1000) |>
   filter(year < 1996)
 
-# assume unknown area is outside: !? TODO
+# assume unknown area is outside:
 disc_2001_ll <- discards_2001_ll |>
   transmute(year = Year, `4B` = `4B`, `5ABCDE3CD` = `Total` + `Unknown area`)
 disc_2001_ll <- tidyr::pivot_longer(
   disc_2001_ll, -1, names_to = "area", values_to = "discarded_kg") |>
   mutate(gear = "Hook and line", discarded_kg = discarded_kg * 1000)
 
-disc <- bind_rows(disc_1966_tr, disc_2001_ll)
+# don't use old ll discard weights... agreed to use counts from 2006 onwards
+# in model...
+# disc <- bind_rows(disc_1966_tr, disc_2001_ll)
+disc <- disc_1966_tr
 
 ggplot(disc, aes(x = year, y = discarded_kg, colour = gear, fill = gear)) +
   facet_wrap(~area, scales = "fixed") +
@@ -194,6 +201,13 @@ old_dat <- full_join(old_landings, disc)
 old_dat <- make_NAs_zero(old_dat)
 
 d <- bind_rows(d_catch_modern, old_dat)
+
+# trash 4B herein
+# only focussing on outside stock
+d <- filter(d, area != "4B")
+d <- arrange(d, gear, year)
+d$species_common_name <- NULL
+d <- filter(d, year <= 2023)
 
 catch_plot <- function(x, column) {
   gears <- sort(unique(x$gear))
@@ -248,13 +262,15 @@ ggsave("figs/reconstructed-catch.png", g, width = 6.4, height = 5.5)
 saveRDS(d, file = "data/generated/catch.rds")
 
 ## Outside only ----
-g <- d %>%
+g <- d |>
   filter(year <= 2023) |>
-  filter(area != "4B") %>%
-  reshape2::melt(id.vars = c("year", "gear", "species_common_name", "area")) %>%
+  filter(area != "4B") |>
+  select(-discarded_pcs) |>
+  reshape2::melt(id.vars = c("year", "gear", "area")) |>
   mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
          value = value/1e6) %>%
   mutate(variable = factor(variable, levels = c("Landings (kt)", "Discards (kt)"))) |>
+  filter(!is.na(value)) |>
   ggplot(aes(year, value, fill = gear)) +
   geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
   scale_x_continuous(expand = c(0, 0)) +
@@ -274,6 +290,7 @@ g1 <- d %>%
   filter(year <= 2023) |>
   filter(year >= 1980) |>
   filter(area != "4B") %>%
+  select(-discarded_pcs) |>
   ungroup() |>
   select(year, area, gear, landed_kg, discarded_kg) |>
   reshape2::melt(id.vars = c("year", "gear", "area")) %>%
@@ -304,7 +321,8 @@ d %>%
   filter(year <= 2023) |>
   filter(year >= 1978) |>
   filter(area != "4B") %>%
-  reshape2::melt(id.vars = c("year", "gear", "species_common_name", "area")) %>%
+  select(-discarded_pcs) |>
+  reshape2::melt(id.vars = c("year", "gear", "area")) %>%
   mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
     value = value/1e6) %>%
   group_by(year, gear, area) |> summarise(value = sum(value)) |>
@@ -336,7 +354,7 @@ out <- d |>
   filter(year <= 2023) |>
   filter(area != "4B") |>
   mutate(gear = ifelse(gear == "Unknown/trawl", "Bottom trawl", gear)) |>
-  select(-species_common_name, -area) |>
+  select(-area) |>
   group_by(year, gear) |>
   summarise(landed_kg = sum(landed_kg), discarded_kg = sum(discarded_kg), discarded_pcs = sum(discarded_pcs)) |>
   ungroup() |>
@@ -361,6 +379,7 @@ out |>
 g <- d %>%
   filter(area != "4B") %>%
   group_by(year, area) %>%
+  select(-discarded_pcs) |>
   summarise(p_discard = sum(discarded_kg)/sum(landed_kg + discarded_kg)) %>%
   ggplot(aes(x = year, y = p_discard)) +
   facet_wrap(~area, scales = "fixed") +
@@ -390,35 +409,35 @@ g <- d %>%
 ggsave("figs/proportion-discards-outside-gear.png", g, width = 6, height = 4)
 
 
-## Inside only ----
-g <- d %>%
-  filter(area == "4B") %>%
-  reshape2::melt(id.vars = c("year", "gear", "species_common_name", "area")) %>%
-  mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
-         value = value/1e6) %>%
-  ggplot(aes(year, value, fill = gear)) +
-  geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
-  #coord_cartesian(expand = FALSE) +
-  facet_grid(vars(variable), vars(area), scales = "free_y", switch = "y") +
-  theme_pbs() +
-  scale_fill_manual(values = cols) +
-  expand_limits(y = 0) +
-  labs(y = NULL, x = "Year", fill = "Gear") +
-  theme(legend.position = "bottom",
-        strip.placement = "outside")
-ggsave("figs/reconstructed-catch-discards-inside.png", g, width = 6, height = 6)
+# ## Inside only ----
+# g <- d %>%
+#   filter(area == "4B") %>%
+#   reshape2::melt(id.vars = c("year", "gear", "species_common_name", "area")) %>%
+#   mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
+#          value = value/1e6) %>%
+#   ggplot(aes(year, value, fill = gear)) +
+#   geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
+#   #coord_cartesian(expand = FALSE) +
+#   facet_grid(vars(variable), vars(area), scales = "free_y", switch = "y") +
+#   theme_pbs() +
+#   scale_fill_manual(values = cols) +
+#   expand_limits(y = 0) +
+#   labs(y = NULL, x = "Year", fill = "Gear") +
+#   theme(legend.position = "bottom",
+#         strip.placement = "outside")
+# ggsave("figs/reconstructed-catch-discards-inside.png", g, width = 6, height = 6)
 
-g <- d %>%
-  filter(area == "4B") %>%
-  group_by(year, area) %>%
-  summarise(p_discard = sum(discarded_kg)/sum(landed_kg + discarded_kg)) %>%
-  ggplot(aes(x = year, y = p_discard)) +
-  facet_wrap(~area, scales = "fixed") +
-  geom_line() +
-  geom_point(shape = 1) +
-  #geom_line(colour = "grey50", linewidth = 0.5) +
-  #coord_cartesian(expand = FALSE) +
-  theme_pbs() +
-  labs(x = "Year", y = "Proportion discards") +
-  geom_vline(xintercept = 1996, linetype = 2)
-ggsave("figs/proportion-discards-inside.png", g, width = 4, height = 2.5)
+# g <- d %>%
+#   filter(area == "4B") %>%
+#   group_by(year, area) %>%
+#   summarise(p_discard = sum(discarded_kg)/sum(landed_kg + discarded_kg)) %>%
+#   ggplot(aes(x = year, y = p_discard)) +
+#   facet_wrap(~area, scales = "fixed") +
+#   geom_line() +
+#   geom_point(shape = 1) +
+#   #geom_line(colour = "grey50", linewidth = 0.5) +
+#   #coord_cartesian(expand = FALSE) +
+#   theme_pbs() +
+#   labs(x = "Year", y = "Proportion discards") +
+#   geom_vline(xintercept = 1996, linetype = 2)
+# ggsave("figs/proportion-discards-inside.png", g, width = 4, height = 2.5)
