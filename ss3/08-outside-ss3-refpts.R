@@ -80,12 +80,12 @@ out_depl <- seq_along(multi_rep) |>
     mutate(scen = model_name[i])) |>
   mutate(scen = forcats::fct_inorder(scen))
 
-make_depl_plot <- function(dat, .col) {
+make_depl_plot <- function(dat, .col, lty = 1) {
   dat |>
     mutate(scen = forcats::fct_rev(scen)) |>
     ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = scen, value = scen, fill = scen)) +
     geom_ribbon(alpha = 0.3, colour = NA) +
-    geom_line() +
+    geom_line(lty = lty) +
     geom_hline(yintercept = 0.4, lty = 3, colour = "grey40") +
     geom_hline(yintercept = 0.2, lty = 2, colour = "grey40") +
     ylab("S / S<sub>0</sub>") +
@@ -98,15 +98,29 @@ make_depl_plot <- function(dat, .col) {
     scale_colour_manual(values = .col, guide = guide_legend(reverse = TRUE)) +
     scale_fill_manual(values = .col, guide = guide_legend(reverse = TRUE))
 }
-out_depl |>
+g1 <- out_depl |>
   filter(!grepl("^\\(B", scen)) |>
   make_depl_plot(.col = cols);
 ggsave("figs/ss3/refpts/depl-ref-ts.png", width = 7, height = 4)
-out_depl |> filter(grepl("^\\(B", scen) | grepl("A0", scen)) |>
+g2 <- out_depl |> filter(grepl("^\\(B", scen) | grepl("A0", scen)) |>
   make_depl_plot(.col = cols_B) +
   ggtitle("**With M set at its historical value when calculating reference points**") +
   theme(title = element_markdown())
 ggsave("figs/ss3/refpts/depl-ref-ts-B.png", width = 7, height = 4)
+
+cols_B_SAR <- c(cols[1], cols[12:13])
+names(cols_B_SAR) <- names(cols_B)
+cols_B_SAR[2] <- "#d1d169" # darker
+
+g3 <- out_depl |> filter(grepl("^\\(B", scen) | grepl("A0", scen)) |>
+  make_depl_plot(.col = cols_B_SAR, lty = 1) +
+  theme(title = element_markdown()) + labs(colour = "Scenario (B)", fill = "Scenario (B)")
+
+patchwork::wrap_plots(
+  g1 + labs(colour = "Scenario (A)", fill = "Scenario (A)"),
+  g3, ncol = 2, guides = "collect", axes = "collect"
+) + patchwork::plot_annotation(tag_levels = c("A", "B"))
+ggsave_optipng("figs/ss3/refpts/depl-ref-ts-B-SAR.png", width = 11, height = 4)
 
 x <- out_depl |> filter(year == 2023) |>
   filter(!grepl("^\\(B", scen))
@@ -164,8 +178,8 @@ out_Ftarg <- seq_along(multi_rep) |>
 ftarg_plot <- function(dat) {
   dat |>
     mutate(scen = forcats::fct_rev(scen)) |>
-    ggplot(aes(year, est_ratio, ymin = lwr_ratio, ymax = upr_ratio, colour = scen)) +
-    geom_ribbon(alpha = 0.4, colour = NA) +
+    ggplot(aes(year, est_ratio, colour = scen)) +
+    geom_ribbon(alpha = 0.4, colour = NA, mapping = aes(ymin = lwr_ratio, ymax = upr_ratio, fill = scen)) +
     geom_line() +
     geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
     ylab("F/F<sub>0.4S0</sub>") +
@@ -191,7 +205,6 @@ out_Ftarg |> filter(grepl("A0", scen) | grepl("^\\(B", scen)) |> ftarg_plot() +
   scale_colour_manual(values = cols_B, guide = guide_legend(reverse = TRUE)) +
   scale_fill_manual(values = cols_B, guide = guide_legend(reverse = TRUE))
 ggsave("figs/ss3/refpts/f-ref-ts-B.png", width = 7, height = 4)
-
 
 x <- out_Ftarg |> filter(year == 2023) |>
   filter(!grepl("^\\(B", scen))
@@ -409,5 +422,4 @@ if (FALSE) {
   ))
   setwd(here::here())
 }
-
 plan(sequential)
