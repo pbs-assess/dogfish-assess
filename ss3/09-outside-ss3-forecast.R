@@ -39,6 +39,7 @@ fit_ss3 <- function(
   system(cmd)
 }
 
+## version used at RPR meeting - base levels on total catch, figure out dead catch input
 make_f_catch <- function(dir, total, years = 10, debug_mode = FALSE) {
   ctl <- SS_readctl(paste0("ss3/", dir, "/control.ss_new"))
   file.copy(paste0("ss3/", dir, "/data_echo.ss_new"), paste0("ss3/", dir, "/data.ss_new"))
@@ -106,6 +107,42 @@ make_f_catch <- function(dir, total, years = 10, debug_mode = FALSE) {
   out
 }
 
+## updated version that uses 'dead catch' as quota levels... as it should:
+make_f_dead_catch <- function(dir, total, years = 10) {
+  ## figure out dead catch from last 5 years within the model by fleet
+  ## keep those ratios applied in forecast
+  rep <- r4ss::SS_output(
+    dir,
+    verbose = FALSE,
+    printstats = FALSE,
+    hidewarn = TRUE
+  )
+  dead_catch5 <- rep$catch |>
+    filter(Yr %in% 2019:2023) |> ## last 5
+    group_by(Fleet, Fleet_Name) |>
+    summarise(avg_dead_bio = mean(dead_bio), .groups = "drop")
+
+  out_non_surveys <- filter(dead_catch5, Fleet %in% c(1:5, 9, 10))
+  out_surveys <- filter(dead_catch5, Fleet %in% c(6, 7, 8)) |>
+    mutate(total_dead_catch = avg_dead_bio)
+
+  total_survey_catch <- sum(out_surveys$total_dead_catch)
+
+  if (total > total_survey_catch) {
+    out_non_surveys <- out_non_surveys |>
+      mutate(ratio = avg_dead_bio / sum(avg_dead_bio)) |>
+      mutate(total_dead_catch = ratio * (total - total_survey_catch))
+  } else {
+    out_non_surveys <- mutate(out_non_surveys, total_dead_catch = 0)
+  }
+
+  out <- bind_rows(out_non_surveys, out_surveys) |> arrange(Fleet) |>
+    select(-ratio, -avg_dead_bio)
+  out <- out |> mutate(year = 2024, seas = 1)
+  out <- transmute(out, year, seas, fleet = Fleet, catch_or_F = round(total_dead_catch, 5L))
+  out
+}
+
 run_projection <- function(model = "A0", catch, hessian = FALSE, do_fit = TRUE, years = 10) {
   # cat("Catches:", catch, "t\n")
   # cat("Model:", model, "\n")
@@ -117,7 +154,7 @@ run_projection <- function(model = "A0", catch, hessian = FALSE, do_fit = TRUE, 
     system(paste0("cp -r ss3/", model, "/ ", to_folder))
     system(paste0("cp ", to_folder, "control.ss_new ", to_folder, "control.ss")) # swap inits for fitted for speed
     f <- SS_readforecast(paste0("ss3/", fo, "/forecast.ss"))
-    f$ForeCatch <- make_f_catch(total = catch, dir = fo, years = years)
+    f$ForeCatch <- make_f_dead_catch(total = catch, dir = file.path("ss3", fo), years = years)
     f$Nforecastyrs <- max(f$ForeCatch$year) - min(f$ForeCatch$year) + 1
     SS_writeforecast(f, paste0("ss3/", fo), overwrite = TRUE)
     fit_ss3(fo, hessian = hessian)
