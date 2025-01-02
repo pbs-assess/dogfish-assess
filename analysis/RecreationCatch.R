@@ -140,11 +140,11 @@ tl <- d |>
 
 saveRDS(tl, "data/generated/catch_trawlsurvey.rds")
 
-#how much is caught each year in hbll and iphc in tonnes?
+#how much is caught each year in hbll and iphc in counts?
 d |>
   filter(survey_abbrev %in% c("HBLL OUT N", "HBLL OUT S", "IPHC FISS")) |>
   group_by(year, survey_abbrev) |>
-  summarize(catch_count = sum(catch_count)) |>
+  summarize(catch_count = sum(catch_count)/1000) |>
   ggplot(aes(year, catch_count, colour = survey_abbrev)) +
   geom_point() +
   geom_line()
