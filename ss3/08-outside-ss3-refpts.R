@@ -194,8 +194,10 @@ ftarg_plot <- function(dat) {
     )
 }
 
-out_Ftarg |> filter(!grepl("^\\(B", scen)) |> ftarg_plot()
-ggsave("figs/ss3/refpts/f-ref-ts-99.png", width = 7, height = 4)
+out_Ftarg |> filter(!grepl("^\\(B", scen)) |> ftarg_plot() +
+  scale_colour_manual(values = cols, guide = guide_legend(reverse = TRUE)) +
+  scale_fill_manual(values = cols, guide = guide_legend(reverse = TRUE))
+ggsave("figs/ss3/refpts/f-ref-ts.png", width = 7, height = 4)
 
 out_Ftarg |> filter(grepl("A0", scen) | grepl("^\\(B", scen)) |> ftarg_plot() +
   ggtitle("**With M set at its historical value when calculating reference points**") +
