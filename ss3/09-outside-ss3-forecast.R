@@ -175,7 +175,6 @@ nrow(torun)
 if (FALSE) {
   plan(multicore, workers = min(c(68, parallel::detectCores() / 2 - 0)))
   out <- furrr::future_pmap(torun, run_projection, hessian = TRUE, do_fit = TRUE)
-  # out <- purrr::pmap(torun, run_projection, hessian = TRUE, do_fit = FALSE)
   # run_projection(model = "A0", catch = 100, hessian = FALSE)
   plan(sequential)
   saveRDS(out, "data/generated/projections.rds")
@@ -201,7 +200,7 @@ if (FALSE) {
   saveRDS(out_rebuild, "data/generated/projections-rebuilding.rds")
 }
 
-# grab 'dead' catch in 2023 for a given model ----------------------------
+# grab 'dead' catch in 2023 for different discard assumptions ------------------
 
 get_dead_catch <- function(dir = "A0") {
   d <- r4ss::SS_readdat(paste0("ss3/", dir, "/data_echo.ss_new"), verbose = FALSE)
@@ -221,7 +220,7 @@ dc <- purrr::map_dfr(mods, get_dead_catch) |>
   filter(model %in% c("A0", "A14_lowdiscard", "A5_highdiscard"))
 dc
 
-# make plots ---------------------------------
+# make plots -------------------------------------------------------------------
 
 # PLOT_TYPE <- "forecast" # SET HERE!!
 # PLOT_TYPE <- "rebuilding" # SET HERE!!
@@ -233,7 +232,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
     tacs <- seq(0, 300, by = 100)
   } else {
     out <- readRDS("data/generated/projections.rds")
-    x <- bind_rows(out)
+    x <- bind_rows(out) |> filter(year <= 2033)
     # tacs <- c(0, 100, 200, 300, seq(400, 1200, by = 200))
     tacs <- c(seq(0, 500, by = 50))
   }
@@ -352,8 +351,8 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
 
     line_dat |>
       # SS3 SE problems!? 0 or huge... these crash below 0:
-      filter(!(catch == 400 & model_name == "(A7) SYN only")) |>
-      filter(!(catch == 400 & model_name == "(A13) Extra SD on IPHC")) |>
+      # filter(!(catch == 400 & model_name == "(A7) SYN only")) |>
+      # filter(!(catch == 400 & model_name == "(A13) Extra SD on IPHC")) |>
       mutate(model_name = factor(model_name, levels = rev(levels(lu$model_name)))) |>
       mutate(b0.2_lwr = ifelse(is.na(b0.2_lwr), 9999, b0.2_lwr)) |>
       mutate(catch = forcats::fct_rev(catch)) |>
@@ -524,6 +523,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       labs(colour = "Model", fill = "Model") +
       gfplot::theme_pbs() +
       theme(axis.title = ggtext::element_markdown())
+
     ggsave_optipng("figs/ss3/refpts/proj-F-facet-catch.png", width = 9, height = 4.5)
 
     tigure_pal <- RColorBrewer::brewer.pal(8, "Greys")[7:2]
@@ -588,38 +588,56 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
     }
 
     # get current catch:
-    dc <- r4ss::SS_readdat("ss3/A0/data.ss_new")
-    catch2023 <- dc$catch |>
-      filter(year == 2023) |>
-      pull(catch) |>
-      sum()
-    catch2023
+    # dc <- r4ss::SS_readdat("ss3/A0/data.ss_new")
+    # catch2023 <- dc$catch |>
+    #   filter(year == 2023) |>
+    #   pull(catch) |>
+    #   sum()
+    # catch2023
     # catch2022 <- dc$catch |> filter(year == 2022) |> pull(catch) |> sum()
     # catch2021 <- dc$catch |> filter(year == 2021) |> pull(catch) |> sum()
 
+    lu2 <- data.frame(model = c("A0", "A14_lowdiscard", "A5_highdiscard"), discard_name = factor(c("Base", "Low", "High"), levels = c("Low", "Base", "High")))
+    dc2 <- left_join(dc, lu2, by = join_by(model))
+    .pal <- RColorBrewer::brewer.pal(3, "RdBu")
+
     fratio_dat |>
-      filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 100)) |>
+      filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 50)) |>
       make_tigure_decision(pal = tigure_pal) +
-      geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
-      scale_x_continuous(breaks = seq(0, 1200, 400))
+      geom_vline(data = dc2, mapping = aes(xintercept = dead_catch, colour = discard_name), lty = 2) +
+      # geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
+      scale_x_continuous(breaks = seq(0, 1200, 100)) +
+      labs(colour = "2018-23 mean dead catch\\\nat discard mortality level") +
+      xlab("Dead catch") +
+      scale_colour_manual(values = c(.pal[3], "grey50", .pal[1]))
     # geom_vline(xintercept = catch2022, lty = 2, col = "grey20") +
     # geom_vline(xintercept = catch2021, lty = 2, col = "grey20")
     ggsave_optipng("figs/ss3/refpts/f-ref-pt-tigure.png", width = 10, height = 3.6)
 
     bratio_dat |>
       # filter(!grepl("B", model), catch != "1500", catch != "1400") |>
-      filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 100)) |>
+      filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 50)) |>
       make_tigure_decision(type = "LRP", fill_label = "P(S > 0.2S<sub>0</sub>)", pal = rev(tigure_pal)) +
-      geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
-      scale_x_continuous(breaks = seq(0, 1200, 400))
+      geom_vline(data = dc2, mapping = aes(xintercept = dead_catch, colour = discard_name), lty = 2) +
+      # geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
+      scale_x_continuous(breaks = seq(0, 1200, 100)) +
+      labs(colour = "2018-23 mean dead catch\\\nat discard mortality level") +
+      xlab("Dead catch") +
+      scale_colour_manual(values = c(.pal[3], "grey50", .pal[1])) +
+      guides(fill = guide_legend(order = 1))
     ggsave_optipng("figs/ss3/refpts/lrp-ref-pt-tigure.png", width = 10, height = 3.4)
 
     bratio_dat |>
       # filter(!grepl("B", model), catch != "1500", catch != "1400") |>
-      filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 1200, 100)) |>
+      filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 50)) |>
       make_tigure_decision(type = "USR", fill_label = "P(S > 0.4S<sub>0</sub>)", pal = rev(tigure_pal)) +
-      geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
-      scale_x_continuous(breaks = seq(0, 1200, 400))
+      # geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
+      scale_x_continuous(breaks = seq(0, 1200, 100)) +
+      geom_vline(data = dc2, mapping = aes(xintercept = dead_catch, colour = discard_name), lty = 2) +
+      labs(colour = "2018-23 mean dead catch\\\nat discard mortality level") +
+      xlab("Dead catch") +
+      scale_colour_manual(values = c(.pal[3], "grey50", .pal[1])) +
+      guides(fill = guide_legend(order = 1))
     ggsave_optipng("figs/ss3/refpts/usr-ref-pt-tigure.png", width = 10, height = 3.4)
 
     if (FALSE) {
