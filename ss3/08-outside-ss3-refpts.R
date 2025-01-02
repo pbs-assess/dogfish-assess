@@ -369,6 +369,24 @@ ggsave("figs/ss3/refpts/ref-catch.png", width = 4.5, height = 3.8)
 
 # Get Catch at RR in 2024 ---------------------------------------------------
 
+get_dead_catch <- function(dir = "A0") {
+  d <- r4ss::SS_readdat(paste0("ss3/", dir, "/data_echo.ss_new"), verbose = FALSE)
+  catch <- d$catch |> filter(year %in% c(2018:2023))
+  ctl <- r4ss::SS_readctl(paste0("ss3/", dir, "/control.ss_new"))
+  i <- grepl("_Mult:", row.names(ctl$MG_parms))
+  mult <- ctl$MG_parms[i,] |> select(catch_multiplier = INIT)
+  mult$fleet <- as.integer(gsub("^Catch_Mult:_", "", row.names(mult)))
+  ret <- left_join(catch, mult, by = join_by(fleet)) |>
+    mutate(dead_catch = catch / catch_multiplier) |>
+    group_by(year) |>
+    summarise(total_dead_catch = sum(dead_catch))
+  data.frame(model = dir, dead_catch = mean(ret$total_dead_catch))
+}
+dc <- purrr::map_dfr(c("A0", "A14_lowdiscard", "A5_highdiscard"), get_dead_catch)
+lu2 <- data.frame(model = c("A0", "A14_lowdiscard", "A5_highdiscard"), discard_name = factor(c("Base", "Low", "High"), levels = c("Low", "Base", "High")))
+dc2 <- left_join(dc, lu2, by = join_by(model))
+.pal <- RColorBrewer::brewer.pal(3, "RdBu")
+
 get_catch_RR2024 <- function(replist) {
   dq <- replist$derived_quants
   dd <- dplyr::filter(dq, Label == "ForeCatch_2024") |>
@@ -387,18 +405,38 @@ out_catch |>
   filter(!grepl("^\\(B", scen)) |>
   mutate(scen = forcats::fct_rev(scen)) |>
   ggplot(aes(scen, est, ymin = lwr, ymax = upr)) +
+  geom_hline(data = dc2, mapping = aes(yintercept = dead_catch, colour = discard_name), lty = 2) +
   geom_linerange() +
   geom_point(pch = 21, fill = "white", size = 2) +
   coord_flip() +
   xlab("") +
   expand_limits(y = 0) +
-  ylab("Yield (dead catch) (t) in 2024 at F<sub>0.4S0</sub>") +
+  ylab("Dead catch (t) in 2024 at F<sub>0.4S0</sub>") +
   theme(
     axis.title.x = element_markdown(),
     axis.title.y = element_markdown(),
     plot.margin = unit(c(0.1, 0.5, 0.1, 0.1), "cm")
-  )
-ggsave("figs/ss3/refpts/2024-yield-catch.png", width = 4.5, height = 3.8)
+  ) +
+  scale_colour_manual(values = c(.pal[3], "grey50", .pal[1])) +
+  labs(colour = "2018-23 mean\ndead catch\nat discard\nmortality level") +
+  theme(legend.position = "right") +
+  scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.06)))
+ggsave("figs/ss3/refpts/2024-yield-catch.png", width = 5.5, height = 3.1)
+
+sink("tables/dead-catch-F0.4S0.tex")
+temp <- out_catch |>
+  filter(!grepl("^\\(B", scen)) |>
+  select(scen, lwr, est, upr) |>
+  arrange(scen)
+temp |>
+  knitr::kable(format = "latex", longtable = TRUE, booktabs = TRUE, digits = 0, col.names = c("Scenario", "Lower 95% CI", "Estimate", "Upper 95% CI"), linesep = "")
+sink()
+
+sink("tables/dead-catch-F0.4S0.md")
+temp |>
+  knitr::kable(format = "pandoc", longtable = TRUE, booktabs = TRUE, digits = 0, col.names = c("Scenario", "Lower 95% CI", "Estimate", "Upper 95% CI"), linesep = "")
+sink()
+system("pandoc tables/dead-catch-F0.4S0.md -o tables/dead-catch-F0.4S0.docx")
 
 x <- filter(out_catch, grepl("A0", scen))
 write_tex(x |> pull(est) |> mround(0), "BaseNextYrYield", "ref-pts.tex")
