@@ -201,21 +201,6 @@ if (FALSE) {
 }
 
 # grab 'dead' catch in 2023 for different discard assumptions ------------------
-
-get_dead_catch <- function(dir = "A0") {
-  d <- r4ss::SS_readdat(paste0("ss3/", dir, "/data_echo.ss_new"), verbose = FALSE)
-  catch <- d$catch |> filter(year %in% c(2018:2023))
-  ctl <- r4ss::SS_readctl(paste0("ss3/", dir, "/control.ss_new"))
-  i <- grepl("_Mult:", row.names(ctl$MG_parms))
-  mult <- ctl$MG_parms[i,] |> select(catch_multiplier = INIT)
-  mult$fleet <- as.integer(gsub("^Catch_Mult:_", "", row.names(mult)))
-  ret <- left_join(catch, mult, by = join_by(fleet)) |>
-    mutate(dead_catch = catch / catch_multiplier) |>
-    group_by(year) |>
-    summarise(total_dead_catch = sum(dead_catch))
-  data.frame(model = dir, dead_catch = mean(ret$total_dead_catch))
-}
-
 dc <- purrr::map_dfr(mods, get_dead_catch) |>
   filter(model %in% c("A0", "A14_lowdiscard", "A5_highdiscard"))
 dc
@@ -273,7 +258,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       facet_wrap(~model_name) +
       ylab(ylab) +
       xlab("") +
-      labs(colour = "Catch (t)", fill = "Catch (t)") +
+      labs(colour = "Dead catch (t)", fill = "Dead catch (t)") +
       gfplot::theme_pbs() +
       theme(axis.title = ggtext::element_markdown())
 
@@ -376,7 +361,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       coord_flip(expand = FALSE, ylim = c(2023, 2023 + 150)) +
       gfplot::theme_pbs() +
       theme(panel.grid.major.y = element_line(colour = "grey90", linetype = 2)) +
-      labs(colour = "Catch (t)", y = "Year forecasted S/S<sub>0</sub> > 0.2") +
+      labs(colour = "Dead catch (t)", y = "Year forecasted S/S<sub>0</sub> > 0.2") +
       theme(axis.title = ggtext::element_markdown()) +
       theme(axis.title.y.left = element_blank()) +
       scale_y_continuous(breaks = seq(2023, 2023 + 150, 50), labels = c(0, 50, 100, 150)) +
@@ -486,7 +471,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       ylab("F / F<sub>0.4S0</sub>") +
       gfplot::theme_pbs() +
       theme(axis.title = ggtext::element_markdown()) +
-      labs(colour = "Catch (t)", fill = "Catch (t)") +
+      labs(colour = "Dead catch (t)", fill = "Dead catch (t)") +
       annotate(
         "rect",
         xmin = 2024, xmax = max(x$year, na.rm = TRUE),
@@ -527,7 +512,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
     ggsave_optipng("figs/ss3/refpts/proj-F-facet-catch.png", width = 9, height = 4.5)
 
     tigure_pal <- RColorBrewer::brewer.pal(8, "Greys")[7:2]
-    make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", xlab = "Catch (t)", type = c("F", "LRP", "USR"), years = c(2024, 2025, 2026, 2027, 2028), pal = tigure_pal) {
+    make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", xlab = "Dead catch (t)", type = c("F", "LRP", "USR"), years = c(2024, 2025, 2026, 2027, 2028), pal = tigure_pal) {
       type <- match.arg(type)
       dat <- dat |>
         filter(year %in% years) |>
