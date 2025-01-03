@@ -88,3 +88,29 @@ if (FALSE) {
     writeLines(f, paste0("ss3/", mods[i], "/data.ss"))
   }
 }
+
+if (FALSE) {
+  mods <- c(
+    "A1",
+    # A0 removed - it's the reference
+    "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A5_highdiscard",
+    "A6_IPHC+CPUE", "A7_SYNonly", "A8_HBLLonly", "A9_lowM", "A10_highM",
+    "A11_low_zfrac", "A12_high_zfrac", "A13_extraSD", "A14_lowdiscard",
+    "A15_100discard",
+    "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
+
+  for (i in seq_along(mods)) {
+
+    ref <- readLines(paste0("ss3/", "A0", "/data.ss"))
+    x1 <- grep("_fleet_type fishery_timing area catch_units need_catch_mult fleetname", ref)
+    x2 <- grep("Bycatch_fleet_input_goes_next", ref)
+    ref_dat <- ref[(x1 + 1):(x2 - 1)]
+
+    f <- readLines(paste0("ss3/", mods[i], "/data.ss"))
+    x1 <- grep("_fleet_type fishery_timing area catch_units need_catch_mult fleetname", ref)
+    x2 <- grep("Bycatch_fleet_input_goes_next", ref)
+    f[(x1 + 1):(x2 - 1)] <- ref_dat
+
+    writeLines(f, paste0("ss3/", mods[i], "/data.ss"))
+  }
+}

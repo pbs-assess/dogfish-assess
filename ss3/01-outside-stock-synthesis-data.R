@@ -1,5 +1,6 @@
 library(dplyr)
 library(ggplot2)
+source("ss3/99-utils.R")
 
 fleet_index <- c(
   "Bottom Trawl Landings" = 1,   # Catch series since 1935, targets the biggest fish - Use KEEPERS lengths (1977-1980, 1987, 2000)
@@ -61,7 +62,7 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
   f4 <- catch %>%
     filter(gear == "Hook and line") %>%
     select(year, landing, discard_count) %>%
-    summarise(value = sum(landing), landing = sum(landing), discard = sum(discard_count)/1000, .by = year) %>%
+    summarise(value = sum(landing), landing = sum(landing), discard = 0, .by = year) %>%
     mutate(fleet = 4)
 
   f5 <- catch %>%
@@ -139,10 +140,11 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
     ggsave("figs/ss3/catch_fleet2.png", g, height = 4, width = 8)
 
     # Panel by landing/discard
-    g <- rbind(f1, f3, f4, f9, f10) %>%
+    g <- rbind(f1, f3, f4, mutate(f5, landing = NA), f9, f10) %>%
       mutate(fleet_name = names(fleet_index)[fleet]) %>%
       mutate(fleet_name = sub(" Landings", "", fleet_name)) %>%
-      mutate(fleet_name = factor(fleet_name, levels = c("Bottom Trawl", "Midwater Trawl", "Longline", "iRec", "Salmon Bycatch"))) %>%
+      mutate(fleet_name = ifelse(fleet_name == "Longline", "Longline Landings", fleet_name)) |>
+      mutate(fleet_name = factor(fleet_name, levels = c("Bottom Trawl", "Midwater Trawl", "Longline Landings", "Longline Discards", "iRec", "Salmon Bycatch"))) %>%
       select(year, landing, discard, fleet_name) %>%
       reshape2::melt(id.vars = c("year", "fleet_name")) %>%
       mutate(variable = ifelse(variable == "landing", "Landings", "Discards")) %>%
@@ -150,12 +152,12 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
       geom_col(width = 1, linewidth = 0.05, colour = "grey40") +
       facet_wrap(vars(fleet_name), scales = "free_y") +
       gfplot::theme_pbs() +
-      #coord_trans(y = "sqrt", expand = FALSE) +
-      coord_cartesian(expand = FALSE, xlim = c(1935, 2024.5)) +
+      scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+      scale_x_continuous(limits = c(1935, 2023), breaks = seq(1940, 2020, 20)) +
       theme(legend.position = "bottom") +
       scale_fill_manual(values = c("grey80", "black")) +
       labs(x = "Year", y = "Catch", fill = NULL)
-    ggsave("figs/ss3/catch_fleet_discard_landings.png", g, height = 4, width = 8)
+    ggsave_optipng("figs/ss3/catch_fleet_discard_landings.png", g, height = 4, width = 8)
   }
 
   if (csv) {

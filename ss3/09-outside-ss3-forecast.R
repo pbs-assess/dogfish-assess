@@ -133,9 +133,9 @@ mods <- mods[keep]
 model_name <- model_name[keep]
 
 length(mods)
-(tacs <- c(0, 100, 200, 300, seq(400, 1000, by = 200)))
+# (tacs <- c(0, 100, 200, 300, seq(400, 1000, by = 200)))
 # (tacs <- c(seq(0, 1000, by = 100)))
-(tacs <- c(seq(0, 500, by = 50)))
+(tacs <- c(seq(0, 450, by = 50)))
 
 torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
@@ -188,7 +188,7 @@ if (FALSE) {
   torun <- expand.grid(model = mods, catch = tacs)
   torun <- torun |> filter(!grepl("B", model))
   nrow(torun)
-  plan(multicore, workers = min(c(65, parallel::detectCores() / 2 - 1)))
+  plan(multicore, workers = min(c(65, parallel::detectCores() / 2 - 0)))
   out_rebuild <- furrr::future_pmap(torun, run_projection, hessian = TRUE, years = 150L, tag = "projection")
   # out_rebuild <- furrr::future_pmap(filter(torun, model %in% "A0"), run_projection, hessian = F, years = 100L)
   # out_rebuild <- purrr::pmap(data.frame(model = "A0", catch = 0),
@@ -219,7 +219,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
     out <- readRDS("data/generated/projections.rds")
     x <- bind_rows(out) |> filter(year <= 2033)
     # tacs <- c(0, 100, 200, 300, seq(400, 1200, by = 200))
-    tacs <- c(seq(0, 500, by = 50))
+    tacs <- c(seq(0, 450, by = 50))
   }
 
   x <- filter(x, model %in% mods)
@@ -453,6 +453,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       mutate(model_name = factor(model_name, levels = lu$model_name))
 
     fratio_dat |>
+      filter(!grepl("B", model)) |>
       filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
       ggplot(aes(year, est / F_Btgt,
         ymin = (est - 2 * se) / F_Btgt, ymax = (est + 2 * se) / F_Btgt,
@@ -460,7 +461,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       )) +
       geom_ribbon(alpha = 0.3, colour = NA) +
       geom_line() +
-      geom_line(data = filter(fratio_dat, catch == 0)) + # dark on top
+      geom_line(data = filter(fratio_dat, catch == 0, !grepl("B", model))) + # dark on top
       scale_x_continuous(breaks = seq(1960, 2090, 20)) +
       scale_colour_viridis_d(direction = -1, option = "D", guide = guide_legend(reverse = F)) +
       scale_fill_viridis_d(direction = -1, option = "D", guide = guide_legend(reverse = F)) +
@@ -478,7 +479,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
         ymin = 0, ymax = 1e6,
         alpha = 0.1, fill = "grey55"
       )
-    ggsave_optipng("figs/ss3/refpts/proj-F-facet-model.png", width = 8.5, height = 6.5)
+    ggsave_optipng("figs/ss3/refpts/proj-F-facet-model.png", width = 8.5, height = 5.6)
 
     fratio_dat |>
       filter(catch %in% tacs[seq(1, 1e2, 2)]) |>

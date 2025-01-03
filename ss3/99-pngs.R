@@ -8,7 +8,7 @@ system(paste0(
 setwd(here::here())
 
 # if (FALSE) {
-  system('rsync -av "figs/ss3/" "../dogfish-assess-resdoc/figs/ss3"')
+  # system('rsync -av "figs/ss3/" "../dogfish-assess-resdoc/figs/ss3"')
   system('rsync -av "figs/" "../dogfish-assess-resdoc/figs"')
   system('rsync -av "values/" "../dogfish-assess-resdoc/values"')
   system('rsync -av "tables/" "../dogfish-assess-resdoc/tables"')
