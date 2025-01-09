@@ -13,8 +13,9 @@ ggsave_optipng <- function(filename, width = NA, height = NA, ...) {
 }
 
 get_dead_catch <- function(dir = "A0", years = 2018:2023) {
+  library(dplyr)
   d <- r4ss::SS_readdat(paste0("ss3/", dir, "/data_echo.ss_new"), verbose = FALSE)
-  catch <- d$catch |> filter(year %in% years)
+  catch <- d$catch |> dplyr::filter(year %in% years)
   # fleets 5,6,8,9,10 are a *counts* not weight
   # turn into weight based on 3.07 kg / dogfish:
   catch <- catch |>
