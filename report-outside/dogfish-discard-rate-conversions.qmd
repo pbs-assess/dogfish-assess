@@ -1,0 +1,87 @@
+---
+title: Illustration of how to translate dogfish TAC between different discard mortality assumptions
+format: pdf
+date: "2025-02-11"
+---
+
+This document works through how to translate dogfish TAC between different discard mortality assumptions. It is intended as a thought experiment and is not formal advice.
+
+First, we need a new term for this document: "IFMP dead catch". So, we have
+
+- "catch" (all landings, all discards dead or alive)
+- "dead catch" (all landings, all discards assumed to have died according to literature-based rates)
+- "IFMP dead catch" (all landings, all discards multiplied by the IFMP discard-mortality rate); this is the quantity in the TAC
+
+We also have 
+
+- "science discard mortality rate" a discard rate derived from the scientific literature
+- "IFMP discard mortality rate" a discard rate from the IFMP
+
+For this illustration, we assume that we want to set *IFMP dead catch* such that *dead catch* works out to the desired quantity.
+
+```{r, eval=FALSE, include=FALSE}
+#| eval: FALSE
+#| include: FALSE
+
+library(dplyr)
+library(ggplot2)
+d <- readRDS("../gfsynopsis-2023/report/data-cache-2024-05/cpue-index-dat.rds")
+dd <- filter(d, species_common_name == "SPINY DOGFISH")
+dd <- mutate(dd,
+      hours_fished =
+        as.numeric(difftime(fe_end_date, fe_start_date, units = "hours"))
+    )
+median(dd$hours_fished, na.rm = TRUE)
+mean(dd$hours_fished, na.rm = TRUE)
+quantile(dd$hours_fished, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
+quantile(dd$hours_fished, probs = c(0.1, 0.5, 0.9), na.rm = TRUE)
+
+more_than3 <- sum(dd$hours_fished > 3, na.rm = TRUE)
+all_tows <- nrow(dd)
+more_than3/all_tows
+```
+
+The IFMP has the following discard mortality assumptions:
+
+Longline:
+
+- 6% discard mortality for longline gear
+
+Trawl:
+
+- 5% mortality for the first 2 hours of a trawl tow
+- an additional 5% mortality for each subsequent hour
+
+For all trawl tows that have caught dogfish, the median tow length is 1.8 hours and the 25th and 75th quantiles are 1.1 and 2.5 hours.
+Let's keep it simple for trawl and call it 7.5% since ~50% of trawls are under 2 hours and ~50% are more. 
+Only ~14% of tows are greater than 3 hours.
+So, if a trawl event catches 1000 t and discards it all, that gets recorded as 1000 t * 0.075 = 75 t of IFMP dead dogfish against quota.
+If, instead, we use a discard mortality rate of 37% within the model for a given gear type, we're assuming that 1000 t of catch actually corresponds to 1000 t * 0.37 = 370 t of dead catch.
+
+So, if GMU wanted to achieve a maximum of 370 t dead catch, GMU would have to set IFMP dead catch (i.e., TAC) to 370 * (7.5 / 37) = 75 t to achieve the desired dead catch.
+
+In conclusion, the formula is:
+
+```
+IFMP_dead_catch = desired_dead_catch * IFMP_discard_rate / science_discard_rate
+```
+
+For longline, the assessment uses 8%, 27%, and 36% for longline and 19%, 37%, and 56% for trawl.
+
+If desired maximum dead catch was 200 t across all fleets and we wanted to allocate 50% of that to the longline fleet (a completely arbitrary value here), let's see how that 100 t would look under low, base, and high *science discard mortality rates*:
+
+IFMP dead catch for longline:
+
+```{r}
+round(100 * 6 / 8)
+round(100 * 6 / 27)
+round(100 * 6 / 36)
+```
+
+IFMP dead catch for trawl:
+
+```{r}
+round(100 * 7.5 / 19)
+round(100 * 7.5 / 37)
+round(100 * 7.5 / 56)
+```
