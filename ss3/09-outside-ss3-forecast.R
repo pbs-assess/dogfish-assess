@@ -135,7 +135,7 @@ model_name <- model_name[keep]
 length(mods)
 # (tacs <- c(0, 100, 200, 300, seq(400, 1000, by = 200)))
 # (tacs <- c(seq(0, 1000, by = 100)))
-(tacs <- c(seq(0, 450, by = 50)))
+(tacs <- c(seq(0, 450, by = 25)))
 
 torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
@@ -219,7 +219,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
     out <- readRDS("data/generated/projections.rds")
     x <- bind_rows(out) |> filter(year <= 2033)
     # tacs <- c(0, 100, 200, 300, seq(400, 1200, by = 200))
-    tacs <- c(seq(0, 450, by = 50))
+    tacs <- c(seq(0, 450, by = 25))
   }
 
   x <- filter(x, model %in% mods)
@@ -588,7 +588,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
     .pal <- RColorBrewer::brewer.pal(3, "RdBu")
 
     fratio_dat |>
-      filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 50)) |>
+      filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 25)) |>
       make_tigure_decision(pal = tigure_pal) +
       geom_vline(data = dc2, mapping = aes(xintercept = dead_catch, colour = discard_name), lty = 2) +
       # geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
@@ -602,7 +602,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
 
     bratio_dat |>
       # filter(!grepl("B", model), catch != "1500", catch != "1400") |>
-      filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 50)) |>
+      filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 25)) |>
       make_tigure_decision(type = "LRP", fill_label = "P(S > 0.2S<sub>0</sub>)", pal = rev(tigure_pal)) +
       geom_vline(data = dc2, mapping = aes(xintercept = dead_catch, colour = discard_name), lty = 2) +
       # geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
@@ -615,7 +615,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
 
     bratio_dat |>
       # filter(!grepl("B", model), catch != "1500", catch != "1400") |>
-      filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 50)) |>
+      filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 25)) |>
       make_tigure_decision(type = "USR", fill_label = "P(S > 0.4S<sub>0</sub>)", pal = rev(tigure_pal)) +
       # geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
       scale_x_continuous(breaks = seq(0, 1200, 100)) +
