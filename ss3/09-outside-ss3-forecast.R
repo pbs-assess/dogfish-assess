@@ -300,10 +300,16 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       }) |>
       filter(!grepl("^\\(B", model_name))
 
+    # for horizontal line at last year B ratio:
+    last_yr_bratio <- bratio_dat |>
+      filter(year == 2024) |>
+      group_by(model_name) |>
+      summarise(est = mean(est)) # should all be the same across catches
+
     bratio_dat |>
       # These crash!
-      mutate(se = ifelse(catch == 400 & model_name == "(A7) SYN only", 0, se)) |>
-      mutate(se = ifelse(catch == 400 & model_name == "(A13) Extra SD on IPHC" & se > 0.001, 0, se)) |>
+      # mutate(se = ifelse(catch == 400 & model_name == "(A7) SYN only", 0, se)) |>
+      # mutate(se = ifelse(catch == 400 & model_name == "(A13) Extra SD on IPHC" & se > 0.001, 0, se)) |>
       filter(!grepl("^\\(B", model_name)) |>
       make_proj_by_model() +
       coord_cartesian(expand = FALSE, ylim = c(0, 0.8)) +
@@ -315,6 +321,8 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
         ymin = 0, ymax = 1e6,
         alpha = 0.15, fill = "grey55"
       ) +
+      geom_segment(aes(y = est, yend = est), x = min(bratio_dat$year), xend = max(bratio_dat$year),
+        data = last_yr_bratio, colour = "grey30", lty = 1, lwd = 0.4, inherit.aes = FALSE) +
       xlab("Years after 2024")
     ggsave_optipng("figs/ss3/refpts/rebuild-facet-model.png", width = 8.5, height = 5.0)
 
