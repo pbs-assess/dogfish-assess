@@ -122,8 +122,6 @@ run_projection <- function(
   ret$catch <- catch
   ret$model <- model
   as_tibble(ret)
-  # })
-  # out
 }
 
 source("ss3/99-model-names.R")
@@ -133,17 +131,10 @@ mods <- mods[keep]
 model_name <- model_name[keep]
 
 length(mods)
-# (tacs <- c(0, 100, 200, 300, seq(400, 1000, by = 200)))
-# (tacs <- c(seq(0, 1000, by = 100)))
 (tacs <- c(seq(0, 450, by = 25)))
 
 torun <- expand.grid(model = mods, catch = tacs)
 nrow(torun)
-
-# .fo <- paste0(torun$model, "-forecast-", torun$catch)
-# .to_folder <- paste0("ss3/", .fo, "/")
-
-# torun <- filter(torun, )
 
 # # Debugging catches in forecast:
 # if (FALSE) {
@@ -228,7 +219,6 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
   mn <- model_name
   bratio_dat <- x |>
     filter(year > 1900, label %in% "Bratio", !is.na(year), se < 2, est < 0.999) |>
-    # filter(!grepl("B", model)) |>
     left_join(lu) |>
     mutate(model_name = factor(model_name, levels = mn)) |>
     mutate(catch = factor(catch)) |>
@@ -238,7 +228,6 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
     type <- match.arg(type)
 
     g <- dat |>
-      # filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
       ggplot(aes(year, est,
         ymin = est - 2 * se, ymax = est + 2 * se,
         colour = catch, group = paste(model_name, catch), fill = catch
@@ -278,13 +267,6 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
     bratio_dat |>
       filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
       make_proj_by_model()
-    # annotate(
-    #   "rect",
-    #   xmin = 2024+50, xmax = 2024+50+50,
-    #   ymin = 0, ymax = 1e6,
-    #   alpha = 0.1, fill = "grey55"
-    # ) +
-    # geom_vline(data = line_dat, mapping = aes(xintercept = year, colour = catch), na.rm = TRUE)
     ggsave_optipng("figs/ss3/refpts/proj-facet-model.png", width = 8.5, height = 6.5)
 
     if (FALSE) source("ss3/99-sopo-data.R")
@@ -376,11 +358,9 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
 
   make_proj_by_catch_level <- function(dat, ylab = "S / S<sub>0</sub>") {
     dat |>
-      # filter(catch %in% tacs[seq(1, 1e2, 3)]) |>
       mutate(catch = forcats::fct_rev(catch)) |>
       ggplot(aes(year, est,
         ymin = est - 2 * se, ymax = est + 2 * se,
-        # colour = catch, group = paste(model_name, catch), fill = catch)) +
         colour = model_name, group = paste(model_name, catch), fill = model_name
       )) +
       geom_ribbon(alpha = 0.3, colour = NA) +
@@ -389,7 +369,6 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       scale_x_continuous(breaks = seq(1960, 2090, 20)) +
       scale_colour_manual(values = cols) +
       scale_fill_manual(values = cols) +
-      # scale_colour_brewer(palette = "Paired") +
       annotate(
         "rect",
         xmin = 2024, xmax = max(x$year, na.rm = TRUE),
@@ -399,7 +378,6 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       coord_cartesian(expand = FALSE, ylim = c(0, 0.42)) +
       geom_hline(yintercept = 0.4, lty = 3, colour = "grey40") +
       geom_hline(yintercept = 0.2, lty = 2, colour = "grey40") +
-      # facet_wrap(~model_name) +
       facet_wrap(~catch) +
       ylab(ylab) +
       xlab("") +
@@ -421,11 +399,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       mutate(se = ifelse(catch == 400 & model_name == "(A13) Extra SD on IPHC" & se > 0.001, 0, se)) |>
       make_proj_by_catch_level() +
       coord_cartesian(expand = FALSE, ylim = c(0, 0.8)) +
-      # geom_vline(aes(xintercept = b0.2, colour = model_name), data = line_dat, lty = 1) +
-      # scale_x_continuous(breaks = seq(1950, 3000, 50))
       scale_x_continuous(breaks = seq(2023, 2023 + 150, 50), labels = c(0, 50, 100, 150))
-    # facet_grid(model_name ~ catch) +
-    # geom_line(colour = "black")
     ggsave_optipng("figs/ss3/refpts/rebuild-facet-catch.png", width = 9, height = 4.5)
   }
 
@@ -436,7 +410,6 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
 
     fratio_dat <- x |>
       filter(year > 1900, label %in% "F", !is.na(year), se < 2, est < 1e6, est >= 0) |>
-      # filter(!grepl("B", model)) |>
       left_join(lu) |>
       mutate(catch = factor(catch)) |>
       mutate(catch = forcats::fct_rev(catch))
@@ -564,13 +537,11 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
           labels = labs, guide = guide_legend(reverse = TRUE)
         ) +
         coord_cartesian(expand = FALSE) +
-        # scale_x_continuous(breaks = tacs[seq(1, 1e2, 2)]) +
         labs(fill = fill_label) +
         gfplot::theme_pbs() +
         theme(legend.title = ggtext::element_markdown(), legend.position = "bottom") +
         ylab("") +
         xlab(xlab) +
-        # theme(axis.ticks = element_blank(), legend.text = ggtext::element_markdown()) +
         theme(legend.text = ggtext::element_markdown()) +
         facet_wrap(~year, nrow = 1)
     }
@@ -593,21 +564,16 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 25)) |>
       make_tigure_decision(pal = tigure_pal) +
       geom_vline(data = dc2, mapping = aes(xintercept = dead_catch, colour = discard_name), lty = 2) +
-      # geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
       scale_x_continuous(breaks = seq(0, 1200, 100)) +
       labs(colour = "2018-23 mean dead catch\\\nat discard mortality level") +
       xlab("Dead catch") +
       scale_colour_manual(values = c(.pal[3], "grey50", .pal[1]))
-    # geom_vline(xintercept = catch2022, lty = 2, col = "grey20") +
-    # geom_vline(xintercept = catch2021, lty = 2, col = "grey20")
     ggsave_optipng("figs/ss3/refpts/f-ref-pt-tigure.png", width = 10, height = 3.6)
 
     bratio_dat |>
-      # filter(!grepl("B", model), catch != "1500", catch != "1400") |>
       filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 25)) |>
       make_tigure_decision(type = "LRP", fill_label = "P(S > 0.2S<sub>0</sub>)", pal = rev(tigure_pal)) +
       geom_vline(data = dc2, mapping = aes(xintercept = dead_catch, colour = discard_name), lty = 2) +
-      # geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
       scale_x_continuous(breaks = seq(0, 1200, 100)) +
       labs(colour = "2018-23 mean dead catch\\\nat discard mortality level") +
       xlab("Dead catch") +
@@ -616,10 +582,8 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
     ggsave_optipng("figs/ss3/refpts/lrp-ref-pt-tigure.png", width = 10, height = 3.4)
 
     bratio_dat |>
-      # filter(!grepl("B", model), catch != "1500", catch != "1400") |>
       filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 25)) |>
       make_tigure_decision(type = "USR", fill_label = "P(S > 0.4S<sub>0</sub>)", pal = rev(tigure_pal)) +
-      # geom_vline(xintercept = catch2023, lty = 2, col = "grey40") +
       scale_x_continuous(breaks = seq(0, 1200, 100)) +
       geom_vline(data = dc2, mapping = aes(xintercept = dead_catch, colour = discard_name), lty = 2) +
       labs(colour = "2018-23 mean dead catch\\\nat discard mortality level") +
@@ -638,8 +602,6 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       ))
       setwd(here::here())
     }
-
-    # clean up
   }
 }
 f <- list.files("ss3", pattern = "-forecast-", full.names = T)
