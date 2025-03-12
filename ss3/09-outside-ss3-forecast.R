@@ -628,6 +628,8 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       guides(fill = guide_legend(order = 1))
     ggsave_optipng("figs/ss3/refpts/usr-ref-pt-tigure.png", width = 10, height = 3.4)
 
+    if (FALSE) source("ss3/99-avoiding-decline.R")
+
     if (FALSE) {
       setwd("figs/ss3/refpts/")
       system(paste0(
