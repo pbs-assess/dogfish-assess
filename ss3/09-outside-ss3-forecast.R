@@ -286,6 +286,8 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
     # ) +
     # geom_vline(data = line_dat, mapping = aes(xintercept = year, colour = catch), na.rm = TRUE)
     ggsave_optipng("figs/ss3/refpts/proj-facet-model.png", width = 8.5, height = 6.5)
+
+    if (FALSE) source("ss3/99-sopo-data.R")
   } else {
     line_dat <- bratio_dat |>
       mutate(lwr = est - 1.96 * se, upr = est + se * 1.96, lwr0.95 = est - qnorm(0.95) * se) |>
