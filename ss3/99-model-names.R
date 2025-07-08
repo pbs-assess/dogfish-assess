@@ -4,15 +4,15 @@ mods <- c(
   "A2_USgrowth",
   "A3_highmat",
   "A4_USgrowth_highmat",
-  "A14_lowdiscard", 
+  "A14_lowdiscard",
   "A5_highdiscard",
   "A15_100discard",
   "A6_IPHC+CPUE",
   "A7_SYNonly",
   "A8_HBLLonly",
-  "A13_extraSD", 
+  "A13_extraSD",
   "A9_lowM",
-  "A10_highM", 
+  "A10_highM",
   "A11_low_zfrac",
   "A12_high_zfrac",
   "B1_1990inc",
@@ -44,4 +44,29 @@ model_name <- c(
   "(B3) M = 0.074, step 2005",
   "(B4) M = 0.05, inc. 1990",
   "(B5) M = 0.05, inc. 2010"
+)
+
+# French translations of model_name
+model_name_french <- c(
+  "(A1) Base avec zfrac estimé",
+  "(A0) Base",
+  "(A2) Croissance É.-U.",
+  "(A3) Croissance C.-B., maturité élevée",
+  "(A4) Croissance É.-U., maturité élevée",
+  "(A14) Faible mortalité par rejet",
+  "(A5) Forte mortalité par rejet",
+  "(A15) 100% mortalité par rejet",
+  "(A6) IPHC + CPUE",
+  "(A7) SYN seulement",
+  "(A8) HBLL seulement",
+  "(A13) Écart-type suppl. sur IPHC",
+  "(A9) Faible M",
+  "(A10) Fort M",
+  "(A11) Faible productivité",
+  "(A12) Forte productivité",
+  "(B1) M = 0,074, inc. 1990",
+  "(B2) M = 0,074, étape 2010",
+  "(B3) M = 0,074, étape 2005",
+  "(B4) M = 0,05, inc. 1990",
+  "(B5) M = 0,05, inc. 2010"
 )

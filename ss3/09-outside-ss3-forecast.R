@@ -7,6 +7,9 @@ library(future)
 
 source("ss3/99-utils.R")
 
+FRENCH <- TRUE
+if (FRENCH) options(OutDec = ",")
+
 fit_ss3 <- function(
     model_dir = "model1",
     hessian = TRUE,
@@ -124,11 +127,27 @@ run_projection <- function(
   as_tibble(ret)
 }
 
+# rep <- r4ss::SS_output(
+#   "ss3/A0/",
+#   verbose = FALSE,
+#   printstats = FALSE,
+#   hidewarn = TRUE
+# )
+# dead_catch5 <- rep$catch |>
+#   filter(Yr %in% 2019:2023) ## last 5
+#   # group_by(Fleet, Fleet_Name) |>
+#
+
 source("ss3/99-model-names.R")
 reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly", "A15_100discard", "A2_USgrowth", "A4_USgrowth_highmat")
 keep <- which(!mods %in% reject)
 mods <- mods[keep]
-model_name <- model_name[keep]
+
+if (isTRUE(FRENCH)) {
+  model_name <- model_name_french[keep]
+} else {
+  model_name <- model_name[keep]
+}
 
 length(mods)
 (tacs <- c(seq(0, 450, by = 25)))
@@ -201,6 +220,27 @@ dc
 # PLOT_TYPE <- "forecast" # SET HERE!!
 # PLOT_TYPE <- "rebuilding" # SET HERE!!
 
+# ----------------------
+# Axis/legend label definitions for French/English
+label_dead_catch <- if (isTRUE(FRENCH)) "Prises mortes (t)" else "Dead catch (t)"
+label_model <- if (isTRUE(FRENCH)) "Modèle" else "Model"
+label_years_after_2024 <- if (isTRUE(FRENCH)) "Années après 2024" else "Years after 2024"
+label_f_f0 <- if (isTRUE(FRENCH)) "F / F<sub>0,4S0</sub>" else "F / F<sub>0.4S0</sub>"
+label_s_s0 <- if (isTRUE(FRENCH)) "S / S<sub>0</sub>" else "S / S<sub>0</sub>"
+label_fill_prob_f <- if (isTRUE(FRENCH)) "P(F < F<sub>0,4S0</sub>)" else "P(F < F<sub>0.4S0</sub>)"
+label_fill_prob_lrp <- if (isTRUE(FRENCH)) "P(S > 0,2S<sub>0</sub>)" else "P(S > 0.2S<sub>0</sub>)"
+label_fill_prob_usr <- if (isTRUE(FRENCH)) "P(S > 0,4S<sub>0</sub>)" else "P(S > 0.4S<sub>0</sub>)"
+label_year_forecasted <- if (isTRUE(FRENCH)) "Année où S/S<sub>0</sub> prévu > 0,2" else "Year forecasted S/S<sub>0</sub> > 0.2"
+label_mean_dead_catch <- if (isTRUE(FRENCH)) "Prises mortes moyennes\\\n2018-23 au niveau\\\nde mortalité par rejet" else "2018-23 mean dead catch\\\nat discard mortality level"
+label_dead_catch_axis <- if (isTRUE(FRENCH)) "Prises mortes" else "Dead catch"
+label_empty <- ""
+# ----------------------
+# Figure directory logic
+figs_dir <- if (isTRUE(FRENCH)) "figs-french" else "figs"
+# Helper to build figure paths
+fig_path <- function(subpath) file.path(figs_dir, subpath)
+# ----------------------
+
 for (PLOT_TYPE in c("forecast", "rebuilding")) {
   if (PLOT_TYPE == "rebuilding") {
     out_rebuild <- readRDS("data/generated/projections-rebuilding.rds")
@@ -247,7 +287,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       facet_wrap(~model_name) +
       ylab(ylab) +
       xlab("") +
-      labs(colour = "Dead catch (t)", fill = "Dead catch (t)") +
+      labs(colour = label_dead_catch, fill = label_dead_catch) +
       gfplot::theme_pbs() +
       theme(axis.title = ggtext::element_markdown())
 
@@ -267,12 +307,17 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
     bratio_dat |>
       filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
       make_proj_by_model()
-    ggsave_optipng("figs/ss3/refpts/proj-facet-model.png", width = 8.5, height = 6.5)
+    ggsave_optipng(fig_path("ss3/refpts/proj-facet-model.png"), width = if (!FRENCH) 8.5 else 10.5, height = if (!FRENCH) 6.5 else 6.8)
 
     if (FALSE) source("ss3/99-sopo-data.R")
   } else {
     line_dat <- bratio_dat |>
-      mutate(lwr = est - 1.96 * se, upr = est + se * 1.96, lwr0.95 = est - qnorm(0.95) * se) |>
+      mutate(
+        lwr = est - 1.96 * se,
+        upr = est + se * 1.96,
+        lwr0.95 = est - qnorm(0.95) * se,
+        lwr0.75 = est - qnorm(0.75) * se
+        ) |>
       group_by(model_name, catch) |>
       group_split() |>
       purrr::map_dfr(\(xx) {
@@ -293,8 +338,14 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
         if (max(xx$lwr0.95) >= 0.2) {
           out_lwr0.95 <- xx$year[min(which(xx$lwr0.95 >= 0.2))]
         }
+        if (max(xx$lwr0.75) < 0.2) out_lwr0.75 <- NA
+        if (max(xx$lwr0.75) >= 0.2) {
+          out_lwr0.75 <- xx$year[min(which(xx$lwr0.75 >= 0.2))]
+        }
         data.frame(
-          b0.2_lwr = out_lwr, b0.2_est = out_est, b0.2_upr = out_upr, b0.2_lwr0.95 = out_lwr0.95,
+          b0.2_lwr = out_lwr, b0.2_est = out_est, b0.2_upr = out_upr,
+          b0.2_lwr0.95 = out_lwr0.95,
+          b0.2_lwr0.75 = out_lwr0.75,
           catch = xx$catch[1], model_name = xx$model_name[1]
         )
       }) |>
@@ -313,7 +364,8 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       filter(!grepl("^\\(B", model_name)) |>
       make_proj_by_model() +
       coord_cartesian(expand = FALSE, ylim = c(0, 0.8)) +
-      geom_vline(aes(xintercept = b0.2_lwr0.95, colour = catch), data = line_dat, lty = 2, na.rm = TRUE) +
+      # geom_vline(aes(xintercept = b0.2_lwr0.95, colour = catch), data = line_dat, lty = 2, na.rm = TRUE) +
+      geom_vline(aes(xintercept = b0.2_lwr0.75, colour = catch), data = line_dat, lty = 2, na.rm = TRUE) +
       scale_x_continuous(breaks = seq(2023, 2023 + 150, 50), labels = c(0, 50, 100, 150)) +
       annotate(
         "rect",
@@ -323,8 +375,8 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       ) +
       geom_segment(aes(y = est, yend = est), x = min(bratio_dat$year), xend = max(bratio_dat$year),
         data = last_yr_bratio, colour = "grey30", lty = 1, lwd = 0.4, inherit.aes = FALSE) +
-      xlab("Years after 2024")
-    ggsave_optipng("figs/ss3/refpts/rebuild-facet-model.png", width = 8.5, height = 5.0)
+      xlab(label_years_after_2024)
+    ggsave_optipng(fig_path("ss3/refpts/rebuild-facet-model.png"), width = if (!FRENCH) 8.5 else 10.5, height = if (!FRENCH) 5 else 5.4)
 
     line_dat |>
       # SS3 SE problems!? 0 or huge... these crash below 0:
@@ -334,8 +386,9 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       mutate(b0.2_lwr = ifelse(is.na(b0.2_lwr), 9999, b0.2_lwr)) |>
       mutate(catch = forcats::fct_rev(catch)) |>
       ggplot(aes(model_name, b0.2_lwr, colour = catch)) +
-      geom_point(pch = 21, position = position_dodge(width = 0.5), mapping = aes(y = b0.2_est), size = 1.1) +
-      geom_point(pch = 8, position = position_dodge(width = 0.5), mapping = aes(y = b0.2_lwr0.95), size = 0.7) +
+      geom_point(pch = 21, position = position_dodge(width = 0.5), mapping = aes(y = b0.2_est), size = 1.15) +
+      geom_point(pch = 6, position = position_dodge(width = 0.5), mapping = aes(y = b0.2_lwr0.95), size = 1) +
+      geom_point(pch = 8, position = position_dodge(width = 0.5), mapping = aes(y = b0.2_lwr0.75), size = 1) +
       geom_linerange(mapping = aes(ymin = b0.2_upr, ymax = b0.2_lwr, x = model_name), position = position_dodge(width = 0.5), alpha = 0.4) +
       scale_colour_viridis_d(option = "C", begin = 0, direction = 1, end = 0.9) +
       annotate(
@@ -353,12 +406,15 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       coord_flip(expand = FALSE, ylim = c(2023, 2023 + 150)) +
       gfplot::theme_pbs() +
       theme(panel.grid.major.y = element_line(colour = "grey90", linetype = 2)) +
-      labs(colour = "Dead catch (t)", y = "Year forecasted S/S<sub>0</sub> > 0.2") +
+      labs(
+        colour = label_dead_catch,
+        y = label_year_forecasted
+      ) +
       theme(axis.title = ggtext::element_markdown()) +
       theme(axis.title.y.left = element_blank()) +
       scale_y_continuous(breaks = seq(2023, 2023 + 150, 50), labels = c(0, 50, 100, 150)) +
       guides(colour = guide_legend(reverse = TRUE))
-    ggsave_optipng("figs/ss3/refpts/rebuild-timeframe-dots.png", width = 5, height = 4)
+    ggsave_optipng(fig_path("ss3/refpts/rebuild-timeframe-dots.png"), width = if (!FRENCH) 5 else 6, height = 4)
   }
 
   cols <- c("grey10", RColorBrewer::brewer.pal(12L, "Paired"))
@@ -389,7 +445,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       facet_wrap(~catch) +
       ylab(ylab) +
       xlab("") +
-      labs(colour = "Model", fill = "Model") +
+      labs(colour = label_model, fill = label_model) +
       gfplot::theme_pbs() +
       theme(axis.title = ggtext::element_markdown())
   }
@@ -399,7 +455,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       filter(catch %in% tacs[seq(1, 12, 2)]) |>
       filter(!grepl("B", model)) |>
       make_proj_by_catch_level()
-    ggsave_optipng("figs/ss3/refpts/proj-facet-catch.png", width = 9, height = 4.5)
+    ggsave_optipng(fig_path("ss3/refpts/proj-facet-catch.png"), width = 9, height = 4.5)
   } else {
     bratio_dat |>
       # SEs are 0 or huge!??
@@ -408,7 +464,7 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       make_proj_by_catch_level() +
       coord_cartesian(expand = FALSE, ylim = c(0, 0.8)) +
       scale_x_continuous(breaks = seq(2023, 2023 + 150, 50), labels = c(0, 50, 100, 150))
-    ggsave_optipng("figs/ss3/refpts/rebuild-facet-catch.png", width = 9, height = 4.5)
+    ggsave_optipng(fig_path("ss3/refpts/rebuild-facet-catch.png"), width = 9, height = 4.5)
   }
 
   if (PLOT_TYPE != "rebuilding") {
@@ -452,17 +508,17 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
       facet_wrap(~model_name) +
       xlab("") +
-      ylab("F / F<sub>0.4S0</sub>") +
+      ylab(label_f_f0) +
       gfplot::theme_pbs() +
       theme(axis.title = ggtext::element_markdown()) +
-      labs(colour = "Dead catch (t)", fill = "Dead catch (t)") +
+      labs(colour = label_dead_catch, fill = label_dead_catch) +
       annotate(
         "rect",
         xmin = 2024, xmax = max(x$year, na.rm = TRUE),
         ymin = 0, ymax = 1e6,
         alpha = 0.1, fill = "grey55"
       )
-    ggsave_optipng("figs/ss3/refpts/proj-F-facet-model.png", width = 8.5, height = 5.6)
+    ggsave_optipng(fig_path("ss3/refpts/proj-F-facet-model.png"), width = if (!FRENCH) 8.5 else 10.5, height = if (!FRENCH) 5.6 else 6)
 
     fratio_dat |>
       filter(catch %in% tacs[seq(1, 1e2, 2)]) |>
@@ -487,16 +543,16 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
       coord_cartesian(expand = FALSE, ylim = c(0, 10)) +
       geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
       facet_wrap(~catch) +
-      ylab("F / F<sub>0.4S0</sub>") +
+      ylab(label_f_f0) +
       xlab("") +
-      labs(colour = "Model", fill = "Model") +
+      labs(colour = label_model, fill = label_model) +
       gfplot::theme_pbs() +
       theme(axis.title = ggtext::element_markdown())
 
-    ggsave_optipng("figs/ss3/refpts/proj-F-facet-catch.png", width = 9, height = 4.5)
+    ggsave_optipng(fig_path("ss3/refpts/proj-F-facet-catch.png"), width = 9, height = 4.5)
 
     tigure_pal <- RColorBrewer::brewer.pal(8, "Greys")[7:2]
-    make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", xlab = "Dead catch (t)", type = c("F", "LRP", "USR"), years = c(2024, 2025, 2026, 2027, 2028), pal = tigure_pal) {
+    make_tigure_decision <- function(dat, fill_label = "P(F < F<sub>0.4S0</sub>)", xlab = label_dead_catch, type = c("F", "LRP", "USR"), years = c(2024, 2025, 2026, 2027, 2028), pal = tigure_pal) {
       type <- match.arg(type)
       dat <- dat |>
         filter(year %in% years) |>
@@ -530,9 +586,12 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
           mutate(frac = sum(frac_975, frac_75, frac_50, frac_25, frac_025))
       }
 
-      labs <- c("P \u2265 0.95", "0.75 \u2264 P < 0.95", "0.50 \u2264 P < 0.75", "0.25 \u2264 P < 0.50", "0.05 \u2264 P < 0.25", "P < 0.05")
-
+      # English and French labs
+      labs_en <- c("P \u2265 0.95", "0.75 \u2264 P < 0.95", "0.50 \u2264 P < 0.75", "0.25 \u2264 P < 0.50", "0.05 \u2264 P < 0.25", "P < 0.05")
+      labs_fr <- c("P \u2265 0,95", "0,75 \u2264 P < 0,95", "0,50 \u2264 P < 0,75", "0,25 \u2264 P < 0,50", "0,05 \u2264 P < 0,25", "P < 0,05")
+      labs <- if (isTRUE(FRENCH)) labs_fr else labs_en
       if (type == "F") labs <- rev(labs)
+
       dat |>
         ungroup() |>
         mutate(frac = as.factor(frac)) |>
@@ -564,46 +623,52 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
     # catch2022 <- dc$catch |> filter(year == 2022) |> pull(catch) |> sum()
     # catch2021 <- dc$catch |> filter(year == 2021) |> pull(catch) |> sum()
 
-    lu2 <- data.frame(model = c("A0", "A14_lowdiscard", "A5_highdiscard"), discard_name = factor(c("Base", "Low", "High"), levels = c("Low", "Base", "High")))
+    # Discard name labels in English and French
+    discard_names <- if (isTRUE(FRENCH)) c("Base", "Faible", "Élevée") else c("Base", "Low", "High")
+    discard_levels <- if (isTRUE(FRENCH)) c("Faible", "Base", "Élevée") else c("Low", "Base", "High")
+    lu2 <- data.frame(model = c("A0", "A14_lowdiscard", "A5_highdiscard"), discard_name = factor(discard_names, levels = discard_levels))
     dc2 <- left_join(dc, lu2, by = join_by(model))
     .pal <- RColorBrewer::brewer.pal(3, "RdBu")
+
+    # glimpse(fratio_dat)
+    # fratio_dat |> filter(year == 2024) |> mutate(est / F_Btgt)
 
     fratio_dat |>
       filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 25)) |>
       make_tigure_decision(pal = tigure_pal) +
       geom_vline(data = dc2, mapping = aes(xintercept = dead_catch, colour = discard_name), lty = 2) +
       scale_x_continuous(breaks = seq(0, 1200, 100)) +
-      labs(colour = "2018-23 mean dead catch\\\nat discard mortality level") +
-      xlab("Dead catch") +
+      labs(colour = label_mean_dead_catch) +
+      xlab(label_dead_catch_axis) +
       scale_colour_manual(values = c(.pal[3], "grey50", .pal[1]))
-    ggsave_optipng("figs/ss3/refpts/f-ref-pt-tigure.png", width = 10, height = 3.6)
+    ggsave_optipng(fig_path("ss3/refpts/f-ref-pt-tigure.png"), width = 10, height = 3.6)
 
     bratio_dat |>
       filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 25)) |>
-      make_tigure_decision(type = "LRP", fill_label = "P(S > 0.2S<sub>0</sub>)", pal = rev(tigure_pal)) +
+      make_tigure_decision(type = "LRP", fill_label = label_fill_prob_lrp, pal = rev(tigure_pal)) +
       geom_vline(data = dc2, mapping = aes(xintercept = dead_catch, colour = discard_name), lty = 2) +
       scale_x_continuous(breaks = seq(0, 1200, 100)) +
-      labs(colour = "2018-23 mean dead catch\\\nat discard mortality level") +
-      xlab("Dead catch") +
+      labs(colour = label_mean_dead_catch) +
+      xlab(label_dead_catch_axis) +
       scale_colour_manual(values = c(.pal[3], "grey50", .pal[1])) +
       guides(fill = guide_legend(order = 1))
-    ggsave_optipng("figs/ss3/refpts/lrp-ref-pt-tigure.png", width = 10, height = 3.4)
+    ggsave_optipng(fig_path("ss3/refpts/lrp-ref-pt-tigure.png"), width = 10, height = 3.4)
 
     bratio_dat |>
       filter(!grepl("B", model), catch != "1500", catch != "1400", catch %in% seq(0, 450, 25)) |>
-      make_tigure_decision(type = "USR", fill_label = "P(S > 0.4S<sub>0</sub>)", pal = rev(tigure_pal)) +
+      make_tigure_decision(type = "USR", fill_label = label_fill_prob_usr, pal = rev(tigure_pal)) +
       scale_x_continuous(breaks = seq(0, 1200, 100)) +
       geom_vline(data = dc2, mapping = aes(xintercept = dead_catch, colour = discard_name), lty = 2) +
-      labs(colour = "2018-23 mean dead catch\\\nat discard mortality level") +
-      xlab("Dead catch") +
+      labs(colour = label_mean_dead_catch) +
+      xlab(label_dead_catch_axis) +
       scale_colour_manual(values = c(.pal[3], "grey50", .pal[1])) +
       guides(fill = guide_legend(order = 1))
-    ggsave_optipng("figs/ss3/refpts/usr-ref-pt-tigure.png", width = 10, height = 3.4)
+    ggsave_optipng(fig_path("ss3/refpts/usr-ref-pt-tigure.png"), width = 10, height = 3.4)
 
     if (FALSE) source("ss3/99-avoiding-decline.R")
 
     if (FALSE) {
-      setwd("figs/ss3/refpts/")
+      setwd(figs_dir)
       system(paste0(
         "find -X . -name '*.png' -print0 | xargs -0 -n ",
         1, " -P ", 6, " /opt/homebrew/bin/optipng -strip all"
@@ -615,3 +680,5 @@ for (PLOT_TYPE in c("forecast", "rebuilding")) {
 f <- list.files("ss3", pattern = "-forecast-", full.names = T)
 f
 # x <- sapply(f, unlink, recursive = T, force = T)
+
+if (FRENCH) options(OutDec = ".")
