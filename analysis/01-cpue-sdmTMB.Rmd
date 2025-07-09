@@ -50,7 +50,29 @@ library(here)
 ggplot2::theme_set(gfplot::theme_pbs())
 dir.create(here("data"), showWarnings = FALSE)
 dir.create(here("data", "generated"), showWarnings = FALSE)
-dir.create("figs/cpue", showWarnings = FALSE)
+
+# Set French language option
+FRENCH <- FALSE
+
+# Create appropriate figure directories
+if (FRENCH) {
+  dir.create("figs-french", showWarnings = FALSE)
+  dir.create("figs-french/cpue", showWarnings = FALSE)
+  fig_dir <- "figs-french"
+} else {
+  dir.create("figs/cpue", showWarnings = FALSE)
+  fig_dir <- "figs"
+}
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
+# Helper function for figure paths
+fig_path <- function(filename) {
+  file.path(fig_dir, filename)
+}
 ```
 
 ```{r cpue-params-print}
@@ -262,8 +284,8 @@ ind_spt |>
   ) |> 
   ggplot(aes(year, est)) +
   geom_pointrange(aes(ymin = lwr, ymax = upr)) +
-  ylab("Standardized commercial trawl CPUE") + 
-  xlab("Year") +
+  ylab(tr("Standardized commercial trawl CPUE", "CPUE commerciale chalutière standardisée")) + 
+  xlab(tr("Year", "Année")) +
   coord_cartesian(
     expand = FALSE, 
     ylim = c(0, 3),
@@ -274,13 +296,17 @@ ind_spt |>
 saveRDS(ind_sp, "data/generated/geostat-sp-ind-cpue.rds")
 saveRDS(ind_spt, "data/generated/geostat-spt-ind-cpue.rds")
 
-ggsave("figs/cpue/cpue-index-spatiotemporal.png", width = 6, height = 4)
+ggsave(fig_path("cpue/cpue-index-spatiotemporal.png"), width = 6, height = 4)
+```
+
+```{r}
+if (FRENCH) options(OutDec = ",")
 ```
 
 ```{r}
 p <- predict(fit_spt, newdata = gg, re_form_iid = NA)
 source(here::here("analysis/functions/make_sdmTMB_delta_maps.R"))
-make_sdmTMB_delta_maps(p, folder = "figs/cpue")
+make_sdmTMB_delta_maps(p, folder = file.path(fig_dir, "cpue"))
 ```
 
 ```{r}
@@ -289,12 +315,12 @@ make_re_plot <- function(fit, model = 1) {
     mutate(term2 = paste0("vessel ", stringr::str_pad(as.numeric(as.factor(term)), 2, pad = "0"))) |> 
     ggplot(aes(estimate, xmin = conf.low, xmax = conf.high, y = term2)) +
     geom_pointrange() +
-    ylab("Vessel") + xlab("Random intercept value")
+    ylab(tr("Vessel", "Navire")) + xlab(tr("Random intercept value", "Valeur d'ordonnée à l'origine aléatoire"))
 }
-g1 <- make_re_plot(fit_spt, 1) + ggtitle("Encounter probability (logit link)")
-g2 <- make_re_plot(fit_spt, 2) + ggtitle("Positive density (log link)")
+g1 <- make_re_plot(fit_spt, 1) + ggtitle(tr("Encounter probability (logit link)", "Probabilité de rencontre (lien logit)"))
+g2 <- make_re_plot(fit_spt, 2) + ggtitle(tr("Positive density (log link)", "Densité positive (lien log)"))
 cowplot::plot_grid(g1, g2, ncol = 2)
-ggsave("figs/cpue/vessel-effects.png", width = 8, height = 8)
+ggsave(fig_path("cpue/vessel-effects.png"), width = 8, height = 8)
 
 make_month_plot <- function(fit, model = 1) {
   tidy(fit, conf.int = TRUE, model = model) |> 
@@ -303,13 +329,13 @@ make_month_plot <- function(fit, model = 1) {
     mutate(month = stringr::str_pad(month, 2, pad = "0")) |> 
     ggplot(aes(estimate, xmin = conf.low, xmax = conf.high, y = month)) +
     geom_pointrange() +
-    ylab("Month effect relative to January") + 
-    xlab("Coefficient value")
+    ylab(tr("Month effect relative to January", "Effet du mois par rapport à janvier")) + 
+    xlab(tr("Coefficient value", "Valeur du coefficient"))
 }
-g1 <- make_month_plot(fit_spt, 1) + ggtitle("Encounter probability (logit link)")
-g2 <- make_month_plot(fit_spt, 2) + ggtitle("Positive density (log link)")
+g1 <- make_month_plot(fit_spt, 1) + ggtitle(tr("Encounter probability (logit link)", "Probabilité de rencontre (lien logit)"))
+g2 <- make_month_plot(fit_spt, 2) + ggtitle(tr("Positive density (log link)", "Densité positive (lien log)"))
 cowplot::plot_grid(g1, g2, ncol = 2)
-ggsave("figs/cpue/month-effects.png", width = 7, height = 4)
+ggsave(fig_path("cpue/month-effects.png"), width = 7, height = 4)
 ```
 
 ```{r}
@@ -377,9 +403,9 @@ im <- get_index(mm, bias_correct = TRUE)
 id <- get_index(md, bias_correct = TRUE)
 
 bind_rows(
-  mutate(is, type = "(a) Shallow (< 100 m)"),
-  mutate(im, type = "(b) Mid (>= 100 m, < 200 m)"),
-  mutate(id, type = "(c) Deep (> 200 m)")
+  mutate(is, type = if(FRENCH) "(a) Peu profond (< 100 m)" else "(a) Shallow (< 100 m)"),
+  mutate(im, type = if(FRENCH) "(b) Moyen (>= 100 m, < 200 m)" else "(b) Mid (>= 100 m, < 200 m)"),
+  mutate(id, type = if(FRENCH) "(c) Profond (> 200 m)" else "(c) Deep (> 200 m)")
 ) |> 
   group_by(type) |> 
   mutate(geo_mean = exp(mean(log(est)))) |> 
@@ -391,10 +417,10 @@ bind_rows(
   ggplot(aes(year, ymin = lwr, ymax = upr, y = est, group = type)) + 
   geom_pointrange(position = position_dodge(width = 0.5)) +
   coord_cartesian(ylim = c(0, NA), expand = FALSE, xlim = range(is$year) + c(-0.5, 0.5)) +
-  facet_wrap(~type) + ylab("Standardized CPUE") + xlab("Year") +
+  facet_wrap(~type) + ylab(tr("Standardized CPUE", "CPUE standardisée")) + xlab(tr("Year", "Année")) +
   geom_smooth(se = FALSE, colour = "red", method = "glm", 
     method.args = list(family = Gamma(link = "log")))
-ggsave("figs/cpue/cpue-by-depth.png", width = 9.5, height = 3.5)
+ggsave(fig_path("cpue/cpue-by-depth.png"), width = 9.5, height = 3.5)
 ```
 
 # what about month of year
@@ -451,10 +477,10 @@ i2 |> ggplot(aes(year, ymin = lwr/100000, ymax = upr/100000, y = est/100000, col
   geom_ribbon(alpha = 0.2, colour = NA) +
   coord_cartesian(ylim = c(0, NA), expand = FALSE) +
   scale_fill_viridis_d() +
-  scale_colour_viridis_d() + ylab("Standardized CPUE") + xlab("Year") + 
-  labs(colour = "Month", fill = "Month") +
+  scale_colour_viridis_d() + ylab(tr("Standardized CPUE", "CPUE standardisée")) + xlab(tr("Year", "Année")) + 
+  labs(colour = tr("Month", "Mois"), fill = tr("Month", "Mois")) +
   theme(axis.text.y.left = element_blank(), axis.ticks.y.left = element_blank())
-ggsave("figs/cpue/cpue-lines-by-month-abs.png", width = 5, height = 3.8)
+ggsave(fig_path("cpue/cpue-lines-by-month-abs.png"), width = 5, height = 3.8)
 
 i2 |>
   ggplot(aes(year, ymin = lwr/100000, ymax = upr/100000, y = est/100000)) + 
@@ -466,9 +492,9 @@ i2 |>
   facet_wrap(~month) +
   geom_smooth(se = F, colour = "red", method = "glm", 
     method.args = list(family = Gamma(link = "log"))) +
-  ylab("Standardized CPUE") + xlab("Year") +
+  ylab(tr("Standardized CPUE", "CPUE standardisée")) + xlab(tr("Year", "Année")) +
   theme(axis.text.y.left = element_blank(), axis.ticks.y.left = element_blank())
-ggsave("figs/cpue/cpue-lines-by-month-facets-abs.png", width = 8, height = 6)
+ggsave(fig_path("cpue/cpue-lines-by-month-facets-abs.png"), width = 8, height = 6)
   
 i2 |> group_by(month) |> 
   mutate(geo_mean = exp(mean(log(est)))) |> 
@@ -486,8 +512,8 @@ i2 |> group_by(month) |>
   facet_wrap(~month) +
   geom_smooth(se = FALSE, colour = "red", method = "glm", 
     method.args = list(family = Gamma(link = "log"))) +
-  ylab("Standardized CPUE") + xlab("Year")
-ggsave("figs/cpue/cpue-lines-by-month-facets.png", width = 8, height = 6)
+  ylab(tr("Standardized CPUE", "CPUE standardisée")) + xlab(tr("Year", "Année"))
+ggsave(fig_path("cpue/cpue-lines-by-month-facets.png"), width = 8, height = 6)
 
 i2 |> group_by(month) |> 
   mutate(geo_mean = exp(mean(log(est)))) |> 
@@ -504,8 +530,9 @@ i2 |> group_by(month) |>
   scale_fill_viridis_d() +
   scale_colour_viridis_d() +
   geom_smooth(se = F, method = "glm", method.args = list(family = Gamma(link = "log"))) +
-  ylab("Standardized CPUE") + xlab("Year") + labs(colour = "Month", fill = "Month")
-ggsave("figs/cpue/cpue-lines-by-month.png", width = 5, height = 3.8)
+  ylab(tr("Standardized CPUE", "CPUE standardisée")) + xlab(tr("Year", "Année")) + 
+  labs(colour = tr("Month", "Mois"), fill = tr("Month", "Mois"))
+ggsave(fig_path("cpue/cpue-lines-by-month.png"), width = 5, height = 3.8)
 
 i2 |> group_by(month) |> 
   group_split() |> 
@@ -517,8 +544,9 @@ i2 |> group_by(month) |>
   }) |> 
   ggplot(aes(month, 100*(1 - exp(slope)), ymin = 100*(1 - exp(lwr)), ymax = 100*(1 - exp(upr)))) + 
   geom_pointrange() + 
-  ylab("% decline per decade") + xlab("Month")
-ggsave("figs/cpue/cpue-slopes-by-month.png", width = 5, height = 3.8)
+  ylab(tr("% decline per decade", "% de déclin par décennie")) + xlab(tr("Month", "Mois"))
+ggsave(fig_path("cpue/cpue-slopes-by-month.png"), width = 5, height = 3.8)
+if (FRENCH) options(OutDec = ".")
 ```
 
-# with SVC year?
+

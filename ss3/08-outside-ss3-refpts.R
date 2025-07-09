@@ -1,3 +1,29 @@
+# Language and label setup
+FRENCH <- TRUE
+if (FRENCH) options(OutDec = ",")
+
+# Axis/legend label definitions
+label_s_s0 <- if (FRENCH) "S / S<sub>0</sub>" else "S / S<sub>0</sub>"
+label_f_f0 <- if (FRENCH) "F/F<sub>0,4S0</sub>" else "F/F<sub>0.4S0</sub>"
+label_scenario <- if (FRENCH) "Scénario" else "Scenario"
+label_scenario_b <- if (FRENCH) "Scénario (B)" else "Scenario (B)"
+label_scenario_a <- if (FRENCH) "Scénario (A)" else "Scenario (A)"
+label_year <- if (FRENCH) "Année" else "Year"
+label_dead_catch <- if (FRENCH) "Prises mortes (t) à 0,4 S/S<sub>0</sub>" else "Dead catch (t) at 0.4 S/S<sub>0</sub>"
+label_dead_catch_2024 <- if (FRENCH) "Prises mortes (t) en 2024 à F<sub>0,4S0</sub>" else "Dead catch (t) in 2024 at F<sub>0.4S0</sub>"
+label_msy <- if (FRENCH) "RMD" else "MSY"
+label_f_spr40 <- if (FRENCH) "F à SPR 40" else "F at SPR 40"
+label_lower_95 <- if (FRENCH) "Borne inférieure 95% IC" else "Lower 95% CI"
+label_upper_95 <- if (FRENCH) "Borne supérieure 95% IC" else "Upper 95% CI"
+label_estimate <- if (FRENCH) "Estimation" else "Estimate"
+label_scenario_col <- if (FRENCH) "Scénario" else "Scenario"
+label_mean_dead_catch <- if (FRENCH) "Prises mortes moyennes\n2018-23 au niveau\nde mortalité par rejet" else "2018-23 mean dead catch\nat discard mortality level"
+label_colour_year <- if (FRENCH) "Année" else "Year"
+
+# Figure directory logic
+figs_dir <- if (FRENCH) "figs-french" else "figs"
+fig_path <- function(subpath) file.path(figs_dir, subpath)
+
 library(tidyverse)
 library(r4ss)
 library(ggtext)
@@ -25,7 +51,12 @@ reject <- c("B1_1990inc", "B3_2005step", "B4_1990inc_lowM", "A1", "A8_HBLLonly",
 
 keep <- which(!mods %in% reject)
 mods <- mods[keep]
-model_name <- model_name[keep]
+
+if (isTRUE(FRENCH)) {
+  model_name <- model_name_french[keep]
+} else {
+  model_name <- model_name[keep]
+}
 library(future)
 plan(multisession)
 multi_rep <- furrr::future_map(mods, function(x) {
@@ -88,25 +119,25 @@ make_depl_plot <- function(dat, .col, lty = 1) {
     geom_line(lty = lty) +
     geom_hline(yintercept = 0.4, lty = 3, colour = "grey40") +
     geom_hline(yintercept = 0.2, lty = 2, colour = "grey40") +
-    ylab("S / S<sub>0</sub>") +
+    ylab(label_s_s0) +
     xlab("") +
     theme(axis.title = element_markdown()) +
     coord_cartesian(xlim = c(1936, 2028), ylim = c(0, 1), expand = FALSE) +
     annotate("rect", xmin = 2024, xmax = 2028, ymin = 0, ymax = 1e6,
       alpha = 0.1,fill = "grey30") +
-    labs(colour = "Scenario", fill = "Scenario") +
+    labs(colour = label_scenario_col, fill = label_scenario_col) +
     scale_colour_manual(values = .col, guide = guide_legend(reverse = TRUE)) +
     scale_fill_manual(values = .col, guide = guide_legend(reverse = TRUE))
 }
 g1 <- out_depl |>
   filter(!grepl("^\\(B", scen)) |>
   make_depl_plot(.col = cols);
-ggsave("figs/ss3/refpts/depl-ref-ts.png", width = 7, height = 4)
+ggsave(fig_path("ss3/refpts/depl-ref-ts.png"), width = 7, height = 4)
 g2 <- out_depl |> filter(grepl("^\\(B", scen) | grepl("A0", scen)) |>
   make_depl_plot(.col = cols_B) +
-  ggtitle("**With M set at its historical value when calculating reference points**") +
+  ggtitle(if (isTRUE(FRENCH)) "**Avec M fixé à sa valeur historique lors du calcul des points de référence**" else "**With M set at its historical value when calculating reference points**") +
   theme(title = element_markdown())
-ggsave("figs/ss3/refpts/depl-ref-ts-B.png", width = 7, height = 4)
+ggsave(fig_path("ss3/refpts/depl-ref-ts-B.png"), width = 7, height = 4)
 
 cols_B_SAR <- c(cols[1], cols[12:13])
 names(cols_B_SAR) <- names(cols_B)
@@ -114,13 +145,13 @@ cols_B_SAR[2] <- "#d1d169" # darker
 
 g3 <- out_depl |> filter(grepl("^\\(B", scen) | grepl("A0", scen)) |>
   make_depl_plot(.col = cols_B_SAR, lty = 1) +
-  theme(title = element_markdown()) + labs(colour = "Scenario (B)", fill = "Scenario (B)")
+  theme(title = element_markdown()) + labs(colour = label_scenario_b, fill = label_scenario_b)
 
 patchwork::wrap_plots(
-  g1 + labs(colour = "Scenario (A)", fill = "Scenario (A)"),
+  g1 + labs(colour = label_scenario_a, fill = label_scenario_a),
   g3, ncol = 2, guides = "collect", axes = "collect"
 ) + patchwork::plot_annotation(tag_levels = c("A", "B"))
-ggsave_optipng("figs/ss3/refpts/depl-ref-ts-B-SAR.png", width = 11, height = 4)
+ggsave_optipng(fig_path("ss3/refpts/depl-ref-ts-B-SAR.png"), width = 11, height = 4)
 
 x <- out_depl |> filter(year == 2023) |>
   filter(!grepl("^\\(B", scen))
@@ -182,10 +213,10 @@ ftarg_plot <- function(dat) {
     geom_ribbon(alpha = 0.4, colour = NA, mapping = aes(ymin = lwr_ratio, ymax = upr_ratio, fill = scen)) +
     geom_line() +
     geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
-    ylab("F/F<sub>0.4S0</sub>") +
+    ylab(label_f_f0) +
     xlab("") +
     coord_cartesian(xlim = c(1936, 2023), ylim = c(0, 20), expand = FALSE) +
-    labs(colour = "Scenario", fill = "Scenario") +
+    labs(colour = label_scenario_col, fill = label_scenario_col) +
     scale_y_continuous(trans = "sqrt", breaks = c(0, 0.2, 0.5, 1, 2, 5, 10, 15, 20)) +
     # scale_colour_manual(values = cols, guide = guide_legend(reverse = TRUE)) +
     # scale_fill_manual(values = cols, guide = guide_legend(reverse = TRUE))
@@ -197,16 +228,16 @@ ftarg_plot <- function(dat) {
 out_Ftarg |> filter(!grepl("^\\(B", scen)) |> ftarg_plot() +
   scale_colour_manual(values = cols, guide = guide_legend(reverse = TRUE)) +
   scale_fill_manual(values = cols, guide = guide_legend(reverse = TRUE))
-ggsave("figs/ss3/refpts/f-ref-ts.png", width = 7, height = 4)
+ggsave(fig_path("ss3/refpts/f-ref-ts.png"), width = 7, height = 4)
 
 out_Ftarg |> filter(grepl("A0", scen) | grepl("^\\(B", scen)) |> ftarg_plot() +
-  ggtitle("**With M set at its historical value when calculating reference points**") +
+  ggtitle(if (isTRUE(FRENCH)) "**Avec M fixé à sa valeur historique lors du calcul des points de référence**" else "**With M set at its historical value when calculating reference points**") +
   theme(
     title = element_markdown()
   ) +
   scale_colour_manual(values = cols_B, guide = guide_legend(reverse = TRUE)) +
   scale_fill_manual(values = cols_B, guide = guide_legend(reverse = TRUE))
-ggsave("figs/ss3/refpts/f-ref-ts-B.png", width = 7, height = 4)
+ggsave(fig_path("ss3/refpts/f-ref-ts-B.png"), width = 7, height = 4)
 
 x <- out_Ftarg |> filter(year == 2023) |>
   filter(!grepl("^\\(B", scen))
@@ -257,18 +288,18 @@ d |>
   scale_y_continuous(trans = "sqrt", breaks = c(0, 0.2, 1, 5, 10)) +
   scale_x_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8)) +
   scale_colour_viridis_c(option = "G", direction = -1) +
-  xlab(expression(S / S[0])) +
-  ylab("F/F<sub>0.4S0</sub>") +
+  xlab(label_s_s0) +
+  ylab(label_f_f0) +
   theme(
     axis.title.y = element_markdown(),
     legend.position = "right"
   ) +
-  labs(colour = "Year") +
+  labs(colour = label_colour_year) +
   geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
   geom_vline(xintercept = 0.2, lty = 2, colour = "grey40") +
   geom_vline(xintercept = 0.4, lty = 3, colour = "grey40")
 
-ggsave("figs/ss3/refpts/kobe.png", width = 9.5, height = 7)
+ggsave(fig_path("ss3/refpts/kobe.png"), width = 9.5, height = 7)
 
 # F40 -----------------------------------------------------------------------
 
@@ -304,10 +335,10 @@ out_f40 |>
   geom_ribbon(alpha = 0.4, colour = NA) +
   geom_line() +
   geom_hline(yintercept = 1, lty = 2, colour = "grey40") +
-  ylab("F at SPR 40") +
-  xlab("Year") +
+  ylab(label_f_spr40) +
+  xlab(label_year) +
   coord_cartesian(xlim = c(1936, 2024), ylim = c(0, 4.5), expand = FALSE) +
-  labs(colour = "Scenario", fill = "Scenario") +
+  labs(colour = label_scenario_col, fill = label_scenario_col) +
   scale_y_continuous()
 
 # Catch at Fmsy -------------------------------------------------------------
@@ -333,7 +364,7 @@ out_msy |>
   geom_pointrange(position = position_dodge(width = 0.5)) +
   coord_flip() +
   xlab("") +
-  ylab("MSY")
+  ylab(label_msy)
 
 # Catch at target B ---------------------------------------------------------
 
@@ -359,18 +390,21 @@ out_catch |>
   geom_point(pch = 21, fill = "white", size = 2) +
   coord_flip() +
   xlab("") +
-  ylab("Dead catch (t) at 0.4 S/S<sub>0</sub>") +
+  ylab(label_dead_catch) +
   theme(
     axis.title.x = element_markdown(),
     axis.title.y = element_markdown(),
     plot.margin = unit(c(0.1, 0.5, 0.1, 0.1), "cm")
   )
-ggsave("figs/ss3/refpts/ref-catch.png", width = 4.5, height = 3.8)
+ggsave(fig_path("ss3/refpts/ref-catch.png"), width = 4.5, height = 3.8)
 
 # Get Catch at RR in 2024 ---------------------------------------------------
 
 dc <- purrr::map_dfr(c("A0", "A14_lowdiscard", "A5_highdiscard"), get_dead_catch)
-lu2 <- data.frame(model = c("A0", "A14_lowdiscard", "A5_highdiscard"), discard_name = factor(c("Base", "Low", "High"), levels = c("Low", "Base", "High")))
+# Discard name labels in English and French
+discard_names <- if (isTRUE(FRENCH)) c("Base", "Faible", "Élevée") else c("Base", "Low", "High")
+discard_levels <- if (isTRUE(FRENCH)) c("Faible", "Base", "Élevée") else c("Low", "Base", "High")
+lu2 <- data.frame(model = c("A0", "A14_lowdiscard", "A5_highdiscard"), discard_name = factor(discard_names, levels = discard_levels))
 dc2 <- left_join(dc, lu2, by = join_by(model))
 .pal <- RColorBrewer::brewer.pal(3, "RdBu")
 
@@ -398,17 +432,17 @@ out_catch |>
   coord_flip() +
   xlab("") +
   expand_limits(y = 0) +
-  ylab("Dead catch (t) in 2024 at F<sub>0.4S0</sub>") +
+  ylab(label_dead_catch_2024) +
   theme(
     axis.title.x = element_markdown(),
     axis.title.y = element_markdown(),
     plot.margin = unit(c(0.1, 0.5, 0.1, 0.1), "cm")
   ) +
   scale_colour_manual(values = c(.pal[3], "grey50", .pal[1])) +
-  labs(colour = "2018-23 mean\ndead catch\nat discard\nmortality level") +
+  labs(colour = label_mean_dead_catch) +
   theme(legend.position = "right") +
   scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.06)))
-ggsave("figs/ss3/refpts/2024-yield-catch.png", width = 5.5, height = 3.1)
+ggsave(fig_path("ss3/refpts/2024-yield-catch.png"), width = 5.5, height = 3.1)
 
 temp <- out_catch |>
   filter(!grepl("^\\(B", scen)) |>
@@ -448,3 +482,5 @@ if (FALSE) {
   setwd(here::here())
 }
 plan(sequential)
+
+if (FRENCH) options(OutDec = ".")

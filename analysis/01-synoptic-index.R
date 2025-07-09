@@ -4,6 +4,17 @@ library(sdmTMB)
 library(cowplot)
 theme_set(gfplot::theme_pbs())
 
+# Set French language option
+FRENCH <- TRUE
+
+# Set decimal option for French
+if (FRENCH) options(OutDec = ",")
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
 coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
   sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
 
@@ -43,15 +54,29 @@ coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", re
 
 library(rosettafish)
 source("analysis/plot_multiyear_survey_sets.R")
-dir.create("figs/synoptic", showWarnings = FALSE)
-g <- plot_multiyear_survey_sets(d, "SYN WCVI")
-ggsave("figs/synoptic/sets-wcvi.png", width = 10, height = 6, dpi = 160)
-g <- plot_multiyear_survey_sets(d, "SYN QCS")
-ggsave("figs/synoptic/sets-qcs.png", width = 10, height = 6, dpi = 160)
-g <- plot_multiyear_survey_sets(d, "SYN HS")
-ggsave("figs/synoptic/sets-hs.png", width = 10, height = 6, dpi = 160)
-g <- plot_multiyear_survey_sets(d, "SYN WCHG")
-ggsave("figs/synoptic/sets-wchg.png", width = 6, height = 7, dpi = 160)
+
+# Create appropriate figure directories
+if (FRENCH) {
+  dir.create("figs-french", showWarnings = FALSE)
+  dir.create("figs-french/synoptic", showWarnings = FALSE)
+  fig_dir <- "figs-french"
+} else {
+  dir.create("figs/synoptic", showWarnings = FALSE)
+  fig_dir <- "figs"
+}
+
+# Helper function for figure paths
+fig_path <- function(filename) {
+  file.path(fig_dir, filename)
+}
+g <- plot_multiyear_survey_sets(d, "SYN WCVI", french = FRENCH)
+ggsave(fig_path("synoptic/sets-wcvi.png"), width = 10, height = 6, dpi = 160)
+g <- plot_multiyear_survey_sets(d, "SYN QCS", french = FRENCH)
+ggsave(fig_path("synoptic/sets-qcs.png"), width = 10, height = 6, dpi = 160)
+g <- plot_multiyear_survey_sets(d, "SYN HS", french = FRENCH)
+ggsave(fig_path("synoptic/sets-hs.png"), width = 10, height = 6, dpi = 160)
+g <- plot_multiyear_survey_sets(d, "SYN WCHG", french = FRENCH)
+ggsave(fig_path("synoptic/sets-wchg.png"), width = 6, height = 7, dpi = 160)
 
 pzero <- d %>%
   summarise(p = mean(catch_weight == 0) %>% round(2) %>% format(), .by = year)
@@ -64,8 +89,9 @@ gg <- d %>%
   facet_wrap(vars(year), ncol = 4) +
   theme(panel.spacing = unit(0, "in"),
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  labs(x = expression("CPUE (g/"~m^2~")"), y = "Frequency")
-ggsave("figs/synoptic/cpue_hist.png", gg, height = 6, width = 5)
+  labs(x = expression(tr("CPUE (g/", "CPUE (g/")~m^2~tr(")", ")")), 
+       y = tr("Frequency", "Fréquence"))
+ggsave(fig_path("synoptic/cpue_hist.png"), gg, height = 6, width = 5)
 
 gg <- d %>%
   mutate(cpue = 100 * catch_weight/area_swept) %>%
@@ -78,9 +104,9 @@ gg <- d %>%
   #scale_x_continuous(trans = "log", breaks = seq(3, 7, 1) %>% exp() %>% floor()) +
   theme_bw() +
   theme(legend.position = "bottom", strip.background = element_blank()) +
-  labs(x = "Depth (m)", y = "log(CPUE + 1)") +
+  labs(x = tr("Depth (m)", "Profondeur (m)"), y = "log(CPUE + 1)") +
   ggtitle("SYN WCVI")
-ggsave("figs/synoptic/cpue_depth_year_wcvi.png", gg, height = 6, width = 6)
+ggsave(fig_path("synoptic/cpue_depth_year_wcvi.png"), gg, height = 6, width = 6)
 
 gg <- d %>%
   mutate(cpue = 100 * catch_weight/area_swept) %>%
@@ -93,9 +119,9 @@ gg <- d %>%
   #scale_x_continuous(trans = "log", breaks = seq(3, 7, 1) %>% exp() %>% floor()) +
   theme_bw() +
   theme(legend.position = "bottom", strip.background = element_blank()) +
-  labs(x = "Depth (m)", y = "log(CPUE + 1)") +
+  labs(x = tr("Depth (m)", "Profondeur (m)"), y = "log(CPUE + 1)") +
   ggtitle("SYN WCVI")
-ggsave("figs/synoptic/cpue_depth_year_wcvi.png", gg, height = 4, width = 6)
+ggsave(fig_path("synoptic/cpue_depth_year_wcvi.png"), gg, height = 4, width = 6)
 
 gg <- d %>%
   mutate(cpue = 100 * catch_weight/area_swept) %>%
@@ -105,8 +131,8 @@ gg <- d %>%
   ggplot(aes(year, md, colour = survey_abbrev)) +
   geom_point() +
   geom_line() +
-  labs(x = "Year", y = "Mean depth of positive sets", colour = "Survey")
-ggsave("figs/synoptic/cpue_mean_depth.png", gg, height = 3, width = 5)
+  labs(x = tr("Year", "Année"), y = tr("Mean depth of positive sets", "Profondeur moyenne des traits positifs"), colour = tr("Survey", "Relevé"))
+ggsave(fig_path("synoptic/cpue_mean_depth.png"), gg, height = 3, width = 5)
 
 ## Fit sdm model ----
 mesh <- make_mesh(d, c("X", "Y"), cutoff = 15)
@@ -122,9 +148,9 @@ g <- local({
     inlabru::gg(mesh_m, edge.color = "grey60") +
     geom_sf(data = coast %>% sf::st_transform(crs = 32609), inherit.aes = FALSE) +
     #geom_point(data = mesh$loc_xy %>% as.data.frame() %>% `*`(1e3), aes(X, Y), fill = "red", shape = 21, size = 1) +
-    labs(x = "Longitude", y = "Latitude")
+    labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"))
 })
-ggsave("figs/synoptic/syn_mesh.png", g, width = 5, height = 6)
+ggsave(fig_path("synoptic/syn_mesh.png"), g, width = 5, height = 6)
 
 # Call sdm
 fit <- sdmTMB(
@@ -151,9 +177,9 @@ fit <- readRDS("data/generated/synoptic-sdmTMB.rds")
 sanity(fit)
 sanity(fit_lg)
 plot_anisotropy(fit)
-ggsave("figs/synoptic/aniso.png", width = 4, height = 4)
+ggsave(fig_path("synoptic/aniso.png"), width = 4, height = 4)
 plot_anisotropy(fit_lg)
-ggsave("figs/synoptic/aniso-lg.png", width = 4, height = 4)
+ggsave(fig_path("synoptic/aniso-lg.png"), width = 4, height = 4)
 fit
 fit_lg
 fit$sd_report
@@ -177,20 +203,20 @@ qqnorm(r4, main = "Gengamma");abline(0, 1)
 set.seed(123)
 s <- simulate(fit, nsim = 300, type = "mle-mvn")
 dr1 <- dharma_residuals(s, fit, test_uniformity = F)
-ggplot(dr1, aes(expected, observed)) + geom_abline(intercept = 0, slope = 1, colour = "red") + geom_point() + xlab("Expected") + ylab("Observed")
-ggsave("figs/synoptic/qq.png", width = 5, height = 5, dpi = 180)
+ggplot(dr1, aes(expected, observed)) + geom_abline(intercept = 0, slope = 1, colour = "red") + geom_point() + xlab(tr("Expected", "Attendu")) + ylab(tr("Observed", "Observé"))
+ggsave(fig_path("synoptic/qq.png"), width = 5, height = 5, dpi = 180)
 
 set.seed(123)
 s <- simulate(fit_lg, nsim = 300, type = "mle-mvn")
 dr2 <- dharma_residuals(s, fit, test_uniformity = F)
-ggplot(dr2, aes(expected, observed)) + geom_abline(intercept = 0, slope = 1, colour = "red") + geom_point() + xlab("Expected") + ylab("Observed")
-ggsave("figs/synoptic/qq-lg.png", width = 5, height = 5, dpi = 180)
+ggplot(dr2, aes(expected, observed)) + geom_abline(intercept = 0, slope = 1, colour = "red") + geom_point() + xlab(tr("Expected", "Attendu")) + ylab(tr("Observed", "Observé"))
+ggsave(fig_path("synoptic/qq-lg.png"), width = 5, height = 5, dpi = 180)
 
 set.seed(123)
 s <- simulate(fit_dgg, nsim = 300, type = "mle-mvn")
 dr3 <- dharma_residuals(s, fit, test_uniformity = F)
-ggplot(dr3, aes(expected, observed)) + geom_abline(intercept = 0, slope = 1, colour = "red") + geom_point() + xlab("Expected") + ylab("Observed")
-ggsave("figs/synoptic/qq-gg.png", width = 5, height = 5, dpi = 180)
+ggplot(dr3, aes(expected, observed)) + geom_abline(intercept = 0, slope = 1, colour = "red") + geom_point() + xlab(tr("Expected", "Attendu")) + ylab(tr("Observed", "Observé"))
+ggsave(fig_path("synoptic/qq-gg.png"), width = 5, height = 5, dpi = 180)
 
 g <- gfplot::synoptic_grid |> dplyr::select(-survey_domain_year)
 g <- rename(g, depth_m = depth)
@@ -258,8 +284,9 @@ gg <- ggplot(grid %>% filter(year == yrs[1]), aes(longitude, latitude, fill = de
   geom_tile(width = 0.025, height = 0.025) +
   scale_fill_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750, 1250), option = "G") +
   scale_colour_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750, 1250), option = "G") +
-  labs(x = "Longitude", y = "Latitude", colour = "Depth (m)", fill = "Depth (m)")
-ggsave("figs/synoptic/prediction_grid_depth.png", gg, height = 4, width = 4, dpi = 600)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), 
+       colour = tr("Depth (m)", "Profondeur (m)"), fill = tr("Depth (m)", "Profondeur (m)"))
+ggsave(fig_path("synoptic/prediction_grid_depth.png"), gg, height = 4, width = 4, dpi = 600)
 
 # Encounter probability ----
 rb_fill2 <- scale_fill_gradient2(high = "red", low = "blue", mid = "grey90", midpoint = 0.5, labels = seq(0, 1, 0.25))
@@ -274,8 +301,10 @@ gg <- ggplot(p$data, aes(longitude, latitude, fill = plogis(est1), colour = plog
   theme(panel.spacing = unit(0, "in"),
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  labs(x = "Longitude", y = "Latitude", colour = "Encounter\nprobability", fill = "Encounter\nprobability")
-ggsave("figs/synoptic/prediction_grid_encounter.png", gg, height = 8, width = 6.2, dpi = 200)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), 
+       colour = tr("Encounter\nprobability", "Probabilité\nde rencontre"), 
+       fill = tr("Encounter\nprobability", "Probabilité\nde rencontre"))
+ggsave(fig_path("synoptic/prediction_grid_encounter.png"), gg, height = 8, width = 6.2, dpi = 200)
 
 
 # Omega ----
@@ -287,8 +316,9 @@ gg <- ggplot(p$data %>% filter(year == yrs[1]), aes(longitude, latitude, fill = 
   coord_sf(expand = FALSE) +
   geom_tile(width = 0.025, height = 0.025) +
   rb_fill + rb_col +
-  labs(x = "Longitude", y = "Latitude", colour = "Spatial effect", fill = "Spatial effect")
-ggsave("figs/synoptic/prediction_grid_omega.png", gg, height = 4, width = 4, dpi = 600)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), 
+       colour = tr("Spatial effect", "Effet spatial"), fill = tr("Spatial effect", "Effet spatial"))
+ggsave(fig_path("synoptic/prediction_grid_omega.png"), gg, height = 4, width = 4, dpi = 600)
 
 # Epsilon ----
 gg <- ggplot(p$data, aes(longitude, latitude, fill = epsilon_st2, colour = epsilon_st2)) +
@@ -300,8 +330,10 @@ gg <- ggplot(p$data, aes(longitude, latitude, fill = epsilon_st2, colour = epsil
   theme(panel.spacing = unit(0, "in"),
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  labs(x = "Longitude", y = "Latitude", colour = "Spatiotemporal\neffect", fill = "Spatiotemporal\neffect")
-ggsave("figs/synoptic/prediction_grid_eps.png", gg, height = 8, width = 6.2, dpi = 200)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), 
+       colour = tr("Spatiotemporal\neffect", "Effet\nspatio-temporel"), 
+       fill = tr("Spatiotemporal\neffect", "Effet\nspatio-temporel"))
+ggsave(fig_path("synoptic/prediction_grid_eps.png"), gg, height = 8, width = 6.2, dpi = 200)
 
 # log-density ----
 gg <- ggplot(p$data, aes(longitude, latitude, fill = est2, colour = est2)) +
@@ -316,15 +348,16 @@ gg <- ggplot(p$data, aes(longitude, latitude, fill = est2, colour = est2)) +
         axis.text.x = element_text(angle = 45, vjust = 0.5)
         # axis.text = element_blank()
     ) +
-  labs(x = "Longitude", y = "Latitude", colour = "log density", fill = "log density")
-ggsave("figs/synoptic/prediction_grid_density.png", gg, height = 8, width = 6.2, dpi = 200)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), 
+       colour = tr("log density", "log densité"), fill = tr("log density", "log densité"))
+ggsave(fig_path("synoptic/prediction_grid_density.png"), gg, height = 8, width = 6.2, dpi = 200)
 
 # Index ----
 gg <- ggplot(ind, aes(year, est)) +
   geom_pointrange(aes(ymin = lwr, ymax = upr)) +
-  labs(x = "Year", y = "Synoptic Trawl Index") +
+  labs(x = tr("Year", "Année"), y = tr("Synoptic Trawl Index", "Indice du chalut synoptique")) +
   expand_limits(y = 0)
-ggsave("figs/synoptic/syn_index.png", gg, height = 5, width = 6)
+ggsave(fig_path("synoptic/syn_index.png"), gg, height = 5, width = 6)
 
 # Marginal effect of depth ----
 m1 <- visreg_delta(fit, xvar = "depth_m", breaks = seq(0, 1300, 50), scale = "response", plot = FALSE, model = 1)
@@ -335,17 +368,17 @@ gg1 <- plot(m1, gg = TRUE,
             partial = FALSE, rug = FALSE,
             line.par = list(col = 1)) +
   coord_cartesian(xlim = c(0, 750), ylim = c(0, 1), expand = FALSE) +
-  labs(x = "Depth (m)", y = "Encounter probability")
+  labs(x = tr("Depth (m)", "Profondeur (m)"), y = tr("Encounter probability", "Probabilité de rencontre"))
 
 gg2 <- plot(m2, gg = TRUE,
             partial = FALSE, rug = FALSE,
             line.par = list(col = 1),
             points.par = list(alpha = 0.2)) +
   coord_cartesian(xlim = c(0, 750), ylim = c(0, 0.0005), expand = FALSE) +
-  labs(x = "Depth (m)", y = "CPUE")
+  labs(x = tr("Depth (m)", "Profondeur (m)"), y = "CPUE")
 
 gg3 <- cowplot::plot_grid(gg1, gg2, ncol = 1, nrow = 2, align = "hv")
-ggsave("figs/synoptic/depth_marginal.png", gg3, height = 6, width = 4)
+ggsave(fig_path("synoptic/depth_marginal.png"), gg3, height = 6, width = 4)
 
 
 # This used to work for sdmTMB
@@ -378,7 +411,7 @@ g <- ind_area %>%
   geom_col(width = 1, colour = NA) +
   gfplot::theme_pbs() +
   coord_cartesian(expand = FALSE) +
-  labs(x = "Year", y = "Proportion biomass", fill = "Survey") +
+  labs(x = tr("Year", "Année"), y = tr("Proportion biomass", "Proportion de la biomasse"), fill = tr("Survey", "Relevé")) +
   theme(legend.position = "bottom") +
   scale_fill_brewer(palette = "Set2")
 g2 <- ind_area %>%
@@ -389,11 +422,11 @@ g2 <- ind_area %>%
   geom_col(width = 1, colour = NA) +
   gfplot::theme_pbs() +
   coord_cartesian(expand = FALSE) +
-  labs(x = "Year", y = "Biomass estimate", fill = "Survey") +
+  labs(x = tr("Year", "Année"), y = tr("Biomass estimate", "Estimation de la biomasse"), fill = tr("Survey", "Relevé")) +
   theme(legend.position = "bottom") +
   scale_fill_brewer(palette = "Set2")
 gout <- ggpubr::ggarrange(g2, g, ncol = 2, legend = "bottom", common.legend = TRUE)
-ggsave("figs/synoptic/syn_index_area_biomass.png", gout, height = 3, width = 6)
+ggsave(fig_path("synoptic/syn_index_area_biomass.png"), gout, height = 3, width = 6)
 
 
 # Compare with design-based index
@@ -475,9 +508,10 @@ g <- ind_compare %>%
   facet_wrap(vars(survey_abbrev), scales = "free_y") +
   scale_shape_manual(values = c(1, 16)) +
   coord_cartesian(xlim = c(2000, 2024), expand = FALSE) +
-  labs(x = "Year", y = "Relative Biomass Index", colour = "Method", shape = "Method") +
+  labs(x = tr("Year", "Année"), y = tr("Relative Biomass Index", "Indice relatif de biomasse"), 
+       colour = tr("Method", "Méthode"), shape = tr("Method", "Méthode")) +
   scale_colour_brewer(palette = "Set2")
-ggsave("figs/synoptic/syn_index_compare_design.png", g, height = 5, width = 6)
+ggsave(fig_path("synoptic/syn_index_compare_design.png"), g, height = 5, width = 6)
 
 ## 2024:
 
@@ -522,5 +556,8 @@ ind2024 |>
   geom_pointrange() +
   coord_cartesian(ylim = c(0, NA), expand = FALSE, xlim = c(2003, 2025)) +
   scale_x_continuous(breaks = seq(2000, 2025, 2)) +
-  ylab("Biomass index") + xlab("")
-ggsave("figs/synoptic/syn_2024.png", width = 5, height = 4)
+  ylab(tr("Biomass index", "Indice de biomasse")) + xlab("")
+ggsave(fig_path("synoptic/syn_2024.png"), width = 5, height = 4)
+
+# Revert decimal option
+if (FRENCH) options(OutDec = ".")
