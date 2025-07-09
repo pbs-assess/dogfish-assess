@@ -2,7 +2,33 @@ library(dplyr)
 library(ggplot2)
 source("ss3/99-utils.R")
 
+# Set French language option
+FRENCH <- TRUE
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
+# Helper function for figure paths
+fig_path <- function(filename) {
+  if (FRENCH) {
+    # Create French directory structure
+    french_dir <- dirname(file.path("figs-french", filename))
+    dir.create(french_dir, showWarnings = FALSE, recursive = TRUE)
+    file.path("figs-french", filename)
+  } else {
+    file.path("figs", filename)
+  }
+}
+
 theme_set(gfplot::theme_pbs())
+
+# Set decimal separator for French
+if (FRENCH) {
+  old_dec <- options()$OutDec
+  options(OutDec = ",")
+}
 
 ind_hbll_out <- readRDS("data/generated/geostat-ind-hbll-out.rds")
 ind_syn_out <- readRDS("data/generated/geostat-ind-synoptic-lg.rds")
@@ -11,47 +37,47 @@ ind_syn_out_f <- readRDS("data/generated/geostat-ind-synoptic-female.rds")
 ind_syn_out_m <- readRDS("data/generated/geostat-ind-synoptic-male.rds")
 
 bind_rows(
-  mutate(ind_hbll_out, survey = "HBLL - abundance",
-         Index = "Total"),
-  mutate(ind_syn_out_f, survey = "Synoptic trawl - biomass",
-                        Index = "Female"),
-  mutate(ind_syn_out_m, survey = "Synoptic trawl - biomass",
-                        Index = "Male"),
-  mutate(ind_iphc_out, survey = "IPHC - abundance",
-         Index = "Total")
+  mutate(ind_hbll_out, survey = tr("HBLL - abundance", "HBLL - abondance"),
+         Index = tr("Total", "Total")),
+  mutate(ind_syn_out_f, survey = tr("Synoptic trawl - biomass", "Chalut synoptique - biomasse"),
+                        Index = tr("Female", "Femelle")),
+  mutate(ind_syn_out_m, survey = tr("Synoptic trawl - biomass", "Chalut synoptique - biomasse"),
+                        Index = tr("Male", "Mâle")),
+  mutate(ind_iphc_out, survey = tr("IPHC - abundance", "IPHC - abondance"),
+         Index = tr("Total", "Total"))
 ) |>
   ggplot(aes(year, est, ymin = lwr, ymax = upr, colour = Index)) +
   geom_pointrange() +
   scale_colour_manual(values = c("red",  "blue", "black")) +
   facet_wrap(~survey, scales = "free_y", ncol = 1L) +
   coord_cartesian(ylim = c(0, NA)) +
-  ylab("Relative abundance or biomass") +
-  xlab("Year") +
+  ylab(tr("Relative abundance or biomass", "Abondance ou biomasse relative")) +
+  xlab(tr("Year", "Année")) +
   gfplot::theme_pbs()
 
-ggsave("figs/outside-indexes.png", width = 5.5, height = 8.0)
+ggsave(fig_path("outside-indexes.png"), width = 5.5, height = 8.0)
 
 bind_rows(
-  mutate(ind_hbll_out, survey = "HBLL - abundance",
-         Index = "Total"),
-  mutate(ind_syn_out, survey = "Synoptic trawl - biomass"),
+  mutate(ind_hbll_out, survey = tr("HBLL - abundance", "HBLL - abondance"),
+         Index = tr("Total", "Total")),
+  mutate(ind_syn_out, survey = tr("Synoptic trawl - biomass", "Chalut synoptique - biomasse")),
   #mutate(ind_syn_out_f, survey = "Synoptic trawl - biomass",
   #                      Index = "Female"),
   #mutate(ind_syn_out_m, survey = "Synoptic trawl - biomass",
   #                      Index = "Male"),
-  mutate(ind_iphc_out, survey = "IPHC - abundance",
-         Index = "Total")
+  mutate(ind_iphc_out, survey = tr("IPHC - abundance", "IPHC - abondance"),
+         Index = tr("Total", "Total"))
 ) |>
   ggplot(aes(year, est, ymin = lwr, ymax = upr)) +
   geom_pointrange() +
   #scale_colour_manual(values = c("red",  "blue", "black")) +
   facet_wrap(~survey, scales = "free_y", ncol = 1L) +
   coord_cartesian(ylim = c(0, NA)) +
-  ylab("Relative abundance or biomass") +
-  xlab("Year") +
+  ylab(tr("Relative abundance or biomass", "Abondance ou biomasse relative")) +
+  xlab(tr("Year", "Année")) +
   gfplot::theme_pbs()
 
-ggsave("figs/outside-indexes2.png", width = 5.5, height = 8.0)
+ggsave(fig_path("outside-indexes2.png"), width = 5.5, height = 8.0)
 
 # Survey timing
 s <- readRDS("data/raw/survey-sets_2023.rds")
@@ -67,9 +93,9 @@ g <- ggplot(sumry, aes(year, month, fill = n)) +
   scale_fill_gradient2() +
   gfplot::theme_pbs() +
   theme(legend.position = "bottom") +
-  labs(x = "Year", y = "Month", fill = "Sets") +
+  labs(x = tr("Year", "Année"), y = tr("Month", "Mois"), fill = tr("Sets", "Traits")) +
   scale_y_continuous(breaks = 1:12)
-ggsave("figs/survey_timing.png", g, height = 8, width = 10)
+ggsave(fig_path("survey_timing.png"), g, height = 8, width = 10)
 
 
 
@@ -106,6 +132,15 @@ g <- ind %>%
   mutate(upr = upr / geo_mean) |>
   mutate(lwr = lwr / geo_mean) |>
   mutate(est = est / geo_mean) |>
+  # Translate fleet names for French
+  mutate(fleet = case_when(
+    fleet == "HBLL Outside" ~ tr("HBLL Outside", "HBLL Externe"),
+    fleet == "IPHC" ~ tr("IPHC", "IPHC"),
+    fleet == "Synoptic" ~ tr("Synoptic", "Synoptique"),
+    fleet == "HS MSA" ~ tr("HS MSA", "HS MSA"),
+    fleet == "Bottom Trawl CPUE" ~ tr("Bottom Trawl CPUE", "CPUE chalut de fond"),
+    TRUE ~ fleet
+  )) |>
   ggplot(aes(year, est)) +
   facet_wrap(vars(fleet), scales = "fixed", ncol = 2) +
   geom_point() +
@@ -114,12 +149,12 @@ g <- ind %>%
   gfplot::theme_pbs() +
   expand_limits(y = 0) +
   coord_cartesian(expand = FALSE, xlim = c(1980, 2025), ylim = c(0, 3.7)) +
-  labs(x = "Year", y = "Index value")
+  labs(x = tr("Year", "Année"), y = tr("Index value", "Valeur d'indice"))
 g
-ggsave("figs/indices-all.png", width = 6, height = 6, dpi = 200)
+ggsave(fig_path("indices-all.png"), width = 6, height = 6, dpi = 200)
 
 g + theme(axis.title.x = element_blank())
-ggsave_optipng("figs/indices-all-sar.png", width = 5, height = 5, dpi = 300)
+ggsave_optipng(fig_path("indices-all-sar.png"), width = 5, height = 5, dpi = 300)
 # COSEWIC ---------------------
 
 
@@ -141,14 +176,14 @@ row.names(fits) <- NULL
 fits
 
 g1 <- ggplot(fits, aes(survey, y = 1-exp(est), ymin =1- exp(lwr), ymax = 1-exp(upr))) + geom_pointrange() +
-  coord_flip() + xlab("") + ylab("Proportion decline per decade") +
+  coord_flip() + xlab("") + ylab(tr("Proportion decline per decade", "Proportion du déclin par décennie")) +
   scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1), breaks = seq(0.1, 1, 0.2))
 
 # times 5 to turn per decade into per 50 years, i.e. per generation
 g2 <- ggplot(fits, aes(survey, y = 1-exp(est*5), ymin =1- exp(lwr*5), ymax = 1-exp(upr*5))) + geom_pointrange() +
   coord_flip() + xlab("") +
   scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1), breaks = seq(0.1, 1, 0.2)) +
-  ylab("Proportion decline extrapolated\nto 50 years (one generation)") +
+  ylab(tr("Proportion decline extrapolated\nto 50 years (one generation)", "Proportion du déclin extrapolé\nà 50 ans (une génération)")) +
   geom_hline(yintercept = c(0.3, 0.5, 0.7), lty = 2, alpha = 0.3)+
   theme(axis.text.y = element_blank())
 
@@ -168,15 +203,15 @@ g3 <- left_join(fits, mults) |>
   geom_pointrange() +
   coord_flip() + xlab("") +
   scale_y_continuous(expand = expansion(mult = c(0, 0)), limits = c(0, 1), breaks = seq(0.1, 1, 0.2)) +
-  ylab("Proportion decline\nover length of time series") +
+  ylab(tr("Proportion decline\nover length of time series", "Proportion du déclin\nsur la longueur de la série temporelle")) +
   geom_hline(yintercept = c(0.3, 0.5, 0.7), lty = 2, alpha = 0.3) +
-  geom_text(mapping = aes(x = survey, y = upr - 0.02, label = paste0(yrs, " years")), hjust = 1) +
+  geom_text(mapping = aes(x = survey, y = upr - 0.02, label = paste0(yrs, tr(" years", " ans"))), hjust = 1) +
   theme(axis.text.y = element_blank())
 g3
 
 cowplot::plot_grid(g1, g2, g3, align = "h", nrow = 1, rel_widths = c(1.41, 1, 1), labels = "auto", label_x = c(0.37, .11, .11), label_fontface = "plain",
   label_y = 0.99)
-ggsave("figs/cosewic-decline-indexes.png", width = 9.5, height = 3.5)
+ggsave(fig_path("cosewic-decline-indexes.png"), width = 9.5, height = 3.5)
 
 if (FALSE) {
   system("optipng -strip all figs/cosewic-decline-indexes.png")
@@ -221,7 +256,12 @@ ind |>
   gfplot::theme_pbs() +
   scale_y_continuous(limits = c(0, NA),
     expand = expansion(mult = c(0, 0.05))) +
-  ylab("Relative biomass density") + xlab("Year") +
+  ylab(tr("Relative biomass density", "Densité de biomasse relative")) + xlab(tr("Year", "Année")) +
   geom_smooth(se = FALSE, formula = y ~ x, method = "gam",
     method.args = list(family = Gamma(link = "log")), colour = "blue")
-ggsave_optipng("figs/sablefish-index.png", width = 5.5, height = 3.3)
+ggsave_optipng(fig_path("sablefish-index.png"), width = 5.5, height = 3.3)
+
+# Reset decimal separator
+if (FRENCH) {
+  options(OutDec = old_dec)
+}

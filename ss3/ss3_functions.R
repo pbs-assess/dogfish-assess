@@ -2,6 +2,11 @@
 # Many functions were carried over from Outside Quillback analysis (single sex, 2-area model) (QH)
 # Functions not used for Outside Spiny Dogfish probably won't work (2 sex, single area, etc.)
 
+# Translation helper function
+tr2 <- function(english, french, french_enabled = FALSE) {
+  if (french_enabled) french else english
+}
+
 fleet_names <- data.frame(
   Fleet_name = c("Bottom_Trawl_Landings", "Bottom_Trawl_Discards", "MidwaterTrawl", "HookLine_Landings", "HookLine_Discards",
                  "Bottom_Trawl_CPUE", "HBLL", "HS_MSA", "IPHC", "SYN", "iRec", "Salmon_Bycatch"),
@@ -118,7 +123,7 @@ SS3_yieldcurve <- function(x, scenario = paste("Scenario", 1:length(x)),
   }
 }
 
-SS3_B <- function(x, scenario, type = c("SSB", "SSBMSY", "SSB0", "B"), posterior = FALSE, probs = c(0.025, 0.5, 0.975)) {
+SS3_B <- function(x, scenario, type = c("SSB", "SSBMSY", "SSB0", "B"), posterior = FALSE, probs = c(0.025, 0.5, 0.975), french = FALSE) {
   type <- match.arg(type)
 
   if (posterior) {
@@ -142,11 +147,11 @@ SS3_B <- function(x, scenario, type = c("SSB", "SSBMSY", "SSB0", "B"), posterior
       geom_line(linetype = 2, aes(y = upr)) +
       expand_limits(y = 0) +
       facet_wrap(vars(scen), ncol = 2) +
-      labs(x = "Year", y = switch(type,
-                                  "SSB" = "Spawning Biomass",
+      labs(x = tr2("Year", "Année", french), y = switch(type,
+                                  "SSB" = tr2("Spawning Biomass", "Biomasse reproductrice", french),
                                   "SSBMSY" = expression(B/B[MSY]),
                                   "SSB0" = expression(B/B[0]),
-                                  "B" = "Biomass")) +
+                                  "B" = tr2("Biomass", "Biomasse", french))) +
       gfplot::theme_pbs()
   } else {
     out <- Map(.SS3_B, replist = x, scenario = scenario, type = type) %>%
@@ -157,12 +162,12 @@ SS3_B <- function(x, scenario, type = c("SSB", "SSBMSY", "SSB0", "B"), posterior
       geom_line() +
       expand_limits(y = 0) +
       #facet_wrap(vars(scen), ncol = 2) +
-      labs(x = "Year", y = switch(type,
-                                  "SSB" = "Spawning Biomass",
+      labs(x = tr2("Year", "Année", french), y = switch(type,
+                                  "SSB" = tr2("Spawning Biomass", "Biomasse reproductrice", french),
                                   "SSBMSY" = expression(B/B[MSY]),
                                   "SSB0" = expression(B/B[0]),
-                                  "B" = "Biomass (Age 1+)"),
-           colour = "Model") +
+                                  "B" = tr2("Biomass (Age 1+)", "Biomasse (âge 1+)", french)),
+           colour = tr2("Model", "Modèle", french)) +
       gfplot::theme_pbs() +
       theme(legend.position = "bottom") +
       scale_linetype_manual(values = c(1, 2, 3))
@@ -170,7 +175,7 @@ SS3_B <- function(x, scenario, type = c("SSB", "SSBMSY", "SSB0", "B"), posterior
   g
 }
 
-SS3_index <- function(replist, scenario = "OM 1", hist = FALSE, figure = TRUE) {
+SS3_index <- function(replist, scenario = "OM 1", hist = FALSE, figure = TRUE, french = FALSE) {
   out <- replist$cpue %>%
     filter(Use == 1) %>%
     mutate(Area = area_to_PFMA(Area), scen = scenario,
@@ -255,14 +260,14 @@ SS3_index <- function(replist, scenario = "OM 1", hist = FALSE, figure = TRUE) {
       expand_limits(y = 0) +
       facet_grid(vars(Fleet_name), vars(scen), scales = "free_y") +
       gfplot::theme_pbs() +
-      labs(x = "Year", y = "Index")
+      labs(x = tr2("Year", "Année", french), y = tr2("Index", "Indice", french))
   } else {
     return(out)
   }
 }
 
 
-SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = FALSE, probs = c(0.025, 0.5, 0.975)) {
+SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = FALSE, probs = c(0.025, 0.5, 0.975), french = FALSE) {
 
   if(posterior) {
 
@@ -302,7 +307,7 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
         #geom_line(linetype = 3, aes(y = upr)) +
         expand_limits(y = 0) +
         facet_wrap(vars(scen), ncol = 2) +
-        labs(x = "Year", y = "Recruitment") +
+        labs(x = tr2("Year", "Année"), y = tr2("Recruitment", "Recrutement")) +
         gfplot::theme_pbs()
       return(g)
     }
@@ -319,7 +324,7 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
       coord_cartesian(ylim = c(0, 1)) +
       facet_wrap(vars(scen), ncol = 2) +
       gfplot::theme_pbs() +
-      labs(x = "Year", y = "Recruitment proportion")
+      labs(x = tr2("Year", "Année"), y = tr2("Recruitment proportion", "Proportion du recrutement"))
   } else if (dev) {
     ggplot(out, aes(Yr, dev)) +
       #expand_limits(y = 0) +
@@ -327,7 +332,7 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
       geom_line() +
       facet_wrap(vars(scen), ncol = 2) +
       gfplot::theme_pbs() +
-      labs(x = "Year", y = "Recruitment deviations")
+      labs(x = tr2("Year", "Année"), y = tr2("Recruitment deviations", "Écarts de recrutement"))
   } else {
     out %>%
       filter(Area == "Coastwide") %>%
@@ -337,7 +342,7 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
       #facet_wrap(vars(scen), ncol = 2) +
       gfplot::theme_pbs() +
       theme(legend.position = "bottom") +
-      labs(x = "Year", y = "Recruitment", colour = "Model")
+      labs(x = tr2("Year", "Année"), y = tr2("Recruitment", "Recrutement", french), colour = tr2("Model", "Modèle", french))
 
   }
 }
@@ -446,8 +451,10 @@ SS3_recruitment <- function(x, scenario, dev = FALSE, prop = FALSE, posterior = 
 }
 
 SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"), bin_width, scale_max_1 = FALSE,
-                    do_mat = TRUE) {
+                    do_mat = TRUE, french = FALSE) {
   type <- match.arg(type)
+
+  if (french) options(OutDec = ".")
   out <- Map(.SS3_sel, replist = x, scenario = sc, MoreArgs = list(type = type, fleet_name = fleet_name, bin_width = bin_width, scale_max_1 = scale_max_1)) %>%
     bind_rows() %>%
     mutate(Sex = ifelse(Sex == 1, "Female", "Male")) %>%
@@ -466,20 +473,23 @@ SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"),
   #  theme(panel.spacing = unit(0, "in"),
   #        legend.position = "bottom")
 
+  if (french) options(OutDec = ",")
   g <- ggplot(out, aes(variable, value, colour = FName)) +
     geom_line(aes(linetype = Sex)) +
     coord_cartesian(ylim = c(0, 1)) +
     facet_grid(vars(FName), vars(scen)) +
     guides(colour = "none") +
     gfplot::theme_pbs() +
-    labs(x = ifelse(type == "Lsel", "Length", "Age"), y = "Selectivity") +
+    labs(x = ifelse(type == "Lsel", tr2("Length", "Longueur", french), tr2("Age", "Âge", french)), y = tr2("Selectivity", "Sélectivité", french)) +
     theme(panel.spacing = unit(0, "in"),
           legend.position = "bottom")
 
   if (do_mat) {
 
+  if (french) options(OutDec = ".")
     mat <- Map(.SS3_mat, replist = x, scenario = sc, MoreArgs = list(type = type)) %>%
       bind_rows()
+    if (french) options(OutDec = ",")
     g <- g +
       geom_line(data = mat, colour = "black", linetype = 2)
 
@@ -498,7 +508,7 @@ SS3_sel <- function(x, sc, fleet_name = NULL, type = c("Asel2", "Asel", "Lsel"),
   return(vuln)
 }
 
-SS3_vuln <- function(x, scen) {
+SS3_vuln <- function(x, scen, french = FALSE) {
   dat <- Map(.SS3_vuln, replist = x, scenario = scen) %>%
     bind_rows() %>%
     filter(Yr >= 1937)
@@ -510,7 +520,7 @@ SS3_vuln <- function(x, scen) {
     geom_line() +
     facet_wrap(vars(scen)) +
     gfplot::theme_pbs() +
-    labs(x = "Year", y = "Vulnerable abundance", colour = "Gear", linetype = "Gear")
+    labs(x = tr2("Year", "Année", french), y = tr2("Vulnerable abundance", "Abondance vulnérable", french), colour = tr2("Gear", "Engin", french), linetype = tr2("Gear", "Engin", french))
 
   g
 }
@@ -563,7 +573,7 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
                   figure = TRUE,
                   posterior = FALSE,
                   probs = c(0.025, 0.5, 0.975),
-                  instantaneous = FALSE) {
+                  instantaneous = FALSE, french = FALSE) {
   type <- match.arg(type)
 
   if (posterior) {
@@ -597,7 +607,7 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
         expand_limits(y = 0) +
         facet_wrap(vars(scen), ncol = 2) +
         gfplot::theme_pbs() +
-        labs(x = "Year", y = ifelse(type == "FMSY", expression(F/F[MSY]), "Fishing mortality"))
+        labs(x = tr2("Year", "Année", french), y = ifelse(type == "FMSY", expression(F/F[MSY]), tr2("Fishing mortality", "Mortalité par pêche", french)))
       return(g)
     }
 
@@ -614,7 +624,7 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
           geom_line() +
           facet_wrap(vars(scen)) +
           gfplot::theme_pbs() +
-          labs(x = "Year", y = ifelse(instantaneous, "Apical fishing mortality", "Harvest rate"))
+          labs(x = tr2("Year", "Année", french), y = ifelse(instantaneous, tr2("Apical fishing mortality", "Mortalité par pêche apicale", french), tr2("Harvest rate", "Taux de récolte", french)))
         #xx <- replist[[1]]$derived_quants %>% filter(grepl("F_", Label))
 
       } else if (type == "FMSY") {
@@ -623,7 +633,7 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
           geom_line() +
           facet_wrap(vars(scen)) +
           gfplot::theme_pbs() +
-          labs(x = "Year", y = expression(F/F[MSY]))
+          labs(x = tr2("Year", "Année", french), y = expression(F/F[MSY]))
 
       } else {
 
@@ -634,7 +644,7 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
           geom_line() +
           facet_wrap(vars(scen)) +
           gfplot::theme_pbs() +
-          labs(x = "Year", y = ifelse(instantaneous, "Apical F", "Harvest rate"), colour = "Gear", linetype = "Gear")
+          labs(x = tr2("Year", "Année", french), y = ifelse(instantaneous, tr2("Apical F", "F apicale", french), tr2("Harvest rate", "Taux de récolte", french)), colour = tr2("Gear", "Engin", french), linetype = tr2("Gear", "Engin", french))
 
       }
 
@@ -644,7 +654,7 @@ SS3_F <- function(replist, scenario = "OM 1", type = c("F", "fleet", "FMSY"),
   out
 }
 
-SS3_Kobe <- function(x, scenario) {
+SS3_Kobe <- function(x, scenario, french = FALSE) {
 
   FMSY <- Map(.SS3_F, replist = x, scenario = scenario) %>%
     bind_rows() %>%
@@ -673,10 +683,10 @@ SS3_Kobe <- function(x, scenario) {
     expand_limits(x = 0, y = 0) +
     coord_cartesian(expand = FALSE) +
     scale_fill_viridis_c() +
-    labs(x = expression(B/B[MSY]), y = expression(F/F[MSY]), fill = "Year")
+    labs(x = expression(B/B[MSY]), y = expression(F/F[MSY]), fill = tr2("Year", "Année", french))
 }
 
-SS3_SR <- function(x, scenario) {
+SS3_SR <- function(x, scenario, french = FALSE) {
   srr_pars <- Map(.SS3_SR, x, scenario)
 
   ts <- lapply(srr_pars, getElement, "ts") %>%
@@ -706,7 +716,7 @@ SS3_SR <- function(x, scenario) {
     facet_wrap(vars(scen)) +
     expand_limits(y = 0, x = 0) +
     scale_fill_viridis_c(direction = -1) +
-    labs(fill = "Year", x = "Spawning biomass", y = "Recruitment")
+    labs(fill = tr2("Year", "Année", french), x = tr2("Spawning biomass", "Biomasse reproductrice", french), y = tr2("Recruitment", "Recrutement", french))
   g
 }
 
@@ -817,7 +827,7 @@ SS3_lencomp <- function(replist, scenario = "OM 1", fleet = 7, mean_length = TRU
 
 
 
-SS3_agecomp <- function(replist, scenario = "OM 1", fleet = 7, y) {
+SS3_agecomp <- function(replist, scenario = "OM 1", fleet = 7, y, french = FALSE) {
   N <- replist$natage %>%
     filter(`Beg/Mid` == "B", Era == "TIME", Yr %in% y) %>%
     select(Yr, Sex, as.character(0:70)) %>%
@@ -843,7 +853,7 @@ SS3_agecomp <- function(replist, scenario = "OM 1", fleet = 7, y) {
           panel.spacing = unit(0, "in")) +
     scale_fill_manual(values = c("grey80", "white")) +
     #xlim(xlim[[ff]]) +
-    labs(x = "Age", y = "Proportion") +
+    labs(x = tr2("Age", "Âge", french), y = tr2("Proportion", "Proportion", french)) +
     guides(colour = guide_legend(nrow = 2))
 
   g
@@ -913,7 +923,7 @@ SS3_compresid <- function(x, scenario, fleet, type = c("length", "age"),
   dat
 }
 
-SS3_N <- function(x, scenario, type = c("age", "length"), age = c(0, 15, 30, 45, 60), len = seq(10, 115, 5), sex_ratio = FALSE) {
+SS3_N <- function(x, scenario, type = c("age", "length"), age = c(0, 15, 30, 45, 60), len = seq(10, 115, 5), sex_ratio = FALSE, french = FALSE) {
   type <- match.arg(type)
 
   dat <- Map(.SS3_N, replist = x, scenario = scenario, MoreArgs = list(age = age, len = len, type = type)) %>%
@@ -929,7 +939,7 @@ SS3_N <- function(x, scenario, type = c("age", "length"), age = c(0, 15, 30, 45,
       geom_line() +
       facet_wrap(vars(scen)) +
       gfplot::theme_pbs() +
-      labs(x = "Year", y = "Proportion female", colour = ifelse(type == "age", "Age", "Length")) +
+      labs(x = tr2("Year", "Année", french), y = tr2("Proportion female", "Proportion femelle", french), colour = ifelse(type == "age", tr2("Age", "Âge", french), tr2("Length", "Longueur", french))) +
       theme(panel.spacing = unit(0, "in"))
 
     #ratio <- dat %>%
@@ -949,7 +959,7 @@ SS3_N <- function(x, scenario, type = c("age", "length"), age = c(0, 15, 30, 45,
       geom_line() +
       facet_grid(vars(scen), vars(Sex)) +
       gfplot::theme_pbs() +
-      labs(x = "Year", y = "Abundance", colour = ifelse(type == "age", "Age", "Length")) +
+      labs(x = tr2("Year", "Année", french), y = tr2("Abundance", "Abondance", french), colour = ifelse(type == "age", tr2("Age", "Âge", french), tr2("Length", "Longueur", french))) +
       theme(panel.spacing = unit(0, "in"))
 
   }
@@ -1007,7 +1017,7 @@ SS3_steep <- function(replist) {
   return(dat)
 }
 
-SS3_fecundity <- function(x, scenario, type = c("PP", "mat")) { # PP = pup production, mat
+SS3_fecundity <- function(x, scenario, type = c("PP", "mat"), french = FALSE) { # PP = pup production, mat
   type <- match.arg(type)
 
   dat <- Map(.SS3_fecundity, replist = x, scen = scenario) %>%
@@ -1016,10 +1026,10 @@ SS3_fecundity <- function(x, scenario, type = c("PP", "mat")) { # PP = pup produ
 
   if (type == "PP") {
     g <- ggplot(dat, aes(Yr, PPP)) +
-      labs(x = "Year", y = "Pups per mature female")
+      labs(x = tr2("Year", "Année", french), y = tr2("Pups per mature female", "Petits par femelle mature", french))
   } else {
     g <- ggplot(dat, aes(Yr, p_mature)) +
-      labs(x = "Year", y = "Proportion females mature")
+      labs(x = tr2("Year", "Année", french), y = tr2("Proportion females mature", "Proportion de femelles matures", french))
   }
 
   g <- g +
@@ -1078,7 +1088,7 @@ SS3_likelihoods <- function(x, scenario, by_fleet = FALSE) {
   Reduce(dplyr::left_join, res)
 }
 
-SS3_prof_like <- function(x, par, xval = c("par", "steep", "dep"), component = c("Survey", "Length_comp"), by_fleet = TRUE) {
+SS3_prof_like <- function(x, par, xval = c("par", "steep", "dep"), component = c("Survey", "Length_comp"), by_fleet = TRUE, french = FALSE) {
   xval <- match.arg(xval)
 
   if (by_fleet) {
@@ -1120,7 +1130,7 @@ SS3_prof_like <- function(x, par, xval = c("par", "steep", "dep"), component = c
       geom_line() +
       geom_point() +
       facet_wrap(vars(Component)) + #geom_line(data = like %>% filter(Component == "TOTAL"), linewidth = 1, colour = "black") +
-      labs(y = "Change in likelihood", colour = "Fleet")
+      labs(y = tr2("Change in likelihood", "Changement de vraisemblance", french), colour = tr2("Fleet", "Flotte", french))
   } else {
     g <- like %>%
       filter(Component %in% component) %>%
@@ -1128,22 +1138,22 @@ SS3_prof_like <- function(x, par, xval = c("par", "steep", "dep"), component = c
       geom_line(linetype = 2) +
       geom_point() +
       geom_line(data = like %>% filter(Component == "TOTAL"), linewidth = 1, colour = "black") +
-      labs(y = "Change in likelihood", colour = "Component")
+      labs(y = tr2("Change in likelihood", "Changement de vraisemblance", french), colour = tr2("Component", "Composante", french))
   }
   g
 }
 
 
 
-SS3_retro <- function(ret) {
+SS3_retro <- function(ret, french = FALSE) {
   g1 <- SS3_prof(ret, abs(ypeel), SpawnBio, retro_type = TRUE) +
-    labs(x = "Year", y = "Spawning output", colour = "Years peeled") +
+    labs(x = tr2("Year", "Année", french), y = tr2("Spawning output", "Production reproductrice", french), colour = tr2("Years peeled", "Années retirées", french)) +
     expand_limits(y = 0)
   g2 <- SS3_prof(ret, abs(ypeel), pred_recr, retro_type = TRUE) +
-    labs(x = "Year", y = "Recruitment", colour = "Years peeled") +
+    labs(x = tr2("Year", "Année", french), y = tr2("Recruitment", "Recrutement", french), colour = tr2("Years peeled", "Années retirées", french)) +
     expand_limits(y = 0)
   g3 <- SS3_prof(ret, abs(ypeel), dep, retro_type = TRUE) +
-    labs(x = "Year", y = "Spawning depletion", colour = "Years peeled") +
+    labs(x = tr2("Year", "Année", french), y = tr2("Spawning depletion", "Épuisement reproducteur", french), colour = tr2("Years peeled", "Années retirées", french)) +
     expand_limits(y = 0)
   g <- ggpubr::ggarrange(g1, g2, g3, ncol = 1, common.legend = TRUE, legend = "bottom")
   g
@@ -1387,7 +1397,7 @@ SS3_agestructure <- function(x, scenario, ff, vars = c("LRP", "Current", "Unfish
 }
 
 
-SS3_apicalF <- function(replist, by_fleet = TRUE) {
+SS3_apicalF <- function(replist, by_fleet = TRUE, french = FALSE) {
 
   Fatage <- replist$fatage %>%
     filter(Era == "TIME") %>%
@@ -1421,21 +1431,21 @@ SS3_apicalF <- function(replist, by_fleet = TRUE) {
       geom_line() +
       gfplot::theme_pbs() +
       facet_wrap(vars(FName), scales = "free_y") +
-      labs(x = "Year", y = "Apical F")
+      labs(x = tr2("Year", "Année", french), y = tr2("Apical F", "F apicale", french))
 
   } else {
 
     # Female F is higher than Male F
     g <- ggplot(Fapical_pop, aes(Yr, value, linetype = Sex)) +
       geom_line() +
-      labs(x = "Year", y = "Apical F", linetype = "Sex")
+      labs(x = tr2("Year", "Année", french), y = tr2("Apical F", "F apicale", french), linetype = tr2("Sex", "Sexe", french))
 
   }
 
   g
 }
 
-SS3_selannual <- function(replist, do_sel = TRUE) {
+SS3_selannual <- function(replist, do_sel = TRUE, french = FALSE) {
 
   Fatage <- replist$fatage %>%
     filter(Era == "TIME") %>%
@@ -1455,13 +1465,13 @@ SS3_selannual <- function(replist, do_sel = TRUE) {
       geom_tile(width = 1, height = 1, colour = NA) +
       scale_fill_viridis_c() +
       coord_cartesian(expand = FALSE) +
-      labs(x = "Year", y = "Age", fill = "Realized\nSelectivity")
+      labs(x = tr2("Year", "Année", french), y = tr2("Age", "Âge", french), fill = tr2("Realized\nSelectivity", "Sélectivité\nréalisée", french))
   } else {
     g <- ggplot(Fage_pop, aes(Yr, Age, fill = value)) +
       geom_tile(width = 1, height = 1, colour = NA) +
       scale_fill_viridis_c() +
       coord_cartesian(expand = FALSE) +
-      labs(x = "Year", y = "Age", fill = "Fishing\nmortality")
+      labs(x = tr2("Year", "Année", french), y = tr2("Age", "Âge", french), fill = tr2("Fishing\nmortality", "Mortalité\npar pêche", french))
   }
   g
 }

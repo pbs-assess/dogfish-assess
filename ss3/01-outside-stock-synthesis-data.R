@@ -2,6 +2,14 @@ library(dplyr)
 library(ggplot2)
 source("ss3/99-utils.R")
 
+# Set French language option
+FRENCH <- TRUE
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
 fleet_index <- c(
   "Bottom Trawl Landings" = 1,   # Catch series since 1935, targets the biggest fish - Use KEEPERS lengths (1977-1980, 1987, 2000)
   "Bottom Trawl Discards" = 2,   # Catch series since 1966, catches smaller fish - Use DISCARDS lengths (1990s to 2019, sparse)
@@ -140,6 +148,21 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
     ggsave("figs/ss3/catch_fleet2.png", g, height = 4, width = 8)
 
     # Panel by landing/discard
+    # Set decimal separator for French
+    if (FRENCH) {
+      old_dec <- options()$OutDec
+      options(OutDec = ",")
+    }
+
+    # Create appropriate figure directories
+    if (FRENCH) {
+      dir.create("figs-french", showWarnings = FALSE)
+      dir.create("figs-french/ss3", showWarnings = FALSE)
+      fig_path <- "figs-french/ss3/catch_fleet_discard_landings.png"
+    } else {
+      fig_path <- "figs/ss3/catch_fleet_discard_landings.png"
+    }
+
     g <- rbind(f1, f3, f4, mutate(f5, landing = NA), f9, f10) %>%
       mutate(fleet_name = names(fleet_index)[fleet]) %>%
       mutate(fleet_name = sub(" Landings", "", fleet_name)) %>%
@@ -147,7 +170,19 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
       mutate(fleet_name = factor(fleet_name, levels = c("Bottom Trawl", "Midwater Trawl", "Longline Landings", "Longline Discards", "iRec", "Salmon Bycatch"))) %>%
       select(year, landing, discard, fleet_name) %>%
       reshape2::melt(id.vars = c("year", "fleet_name")) %>%
-      mutate(variable = ifelse(variable == "landing", "Landings", "Discards")) %>%
+      mutate(variable = ifelse(variable == "landing",
+                               tr("Landings", "Débarquements"),
+                               tr("Discards", "Rejets"))) %>%
+      # Translate fleet names for French
+      mutate(fleet_name = case_when(
+        fleet_name == "Bottom Trawl" ~ tr("Bottom Trawl", "Chalut de fond"),
+        fleet_name == "Midwater Trawl" ~ tr("Midwater Trawl", "Chalut pélagique"),
+        fleet_name == "Longline Landings" ~ tr("Longline Landings", "Palangre débarquements"),
+        fleet_name == "Longline Discards" ~ tr("Longline Discards", "Palangre rejets"),
+        fleet_name == "iRec" ~ tr("iRec", "Récréatif"),
+        fleet_name == "Salmon Bycatch" ~ tr("Salmon Bycatch", "Prises accessoires saumon"),
+        TRUE ~ fleet_name
+      )) %>%
       ggplot(aes(year, value, fill = variable)) +
       geom_col(width = 1, linewidth = 0.05, colour = "grey40") +
       facet_wrap(vars(fleet_name), scales = "free_y") +
@@ -156,8 +191,13 @@ ss3_catch <- function(csv = TRUE, midwater_discard_rate = 0.37) {
       scale_x_continuous(limits = c(1935, 2023), breaks = seq(1940, 2020, 20)) +
       theme(legend.position = "bottom") +
       scale_fill_manual(values = c("grey80", "black")) +
-      labs(x = "Year", y = "Catch", fill = NULL)
-    ggsave_optipng("figs/ss3/catch_fleet_discard_landings.png", g, height = 4, width = 8)
+      labs(x = tr("Year", "Année"), y = tr("Catch", "Capture"), fill = NULL)
+    ggsave_optipng(fig_path, g, height = 4, width = 8)
+
+    # Reset decimal separator
+    if (FRENCH) {
+      options(OutDec = old_dec)
+    }
   }
 
   if (csv) {

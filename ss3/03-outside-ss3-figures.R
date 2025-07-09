@@ -3,8 +3,37 @@ options(ggplot2.continuous.colour = "viridis")
 scale_colour_discrete <- function(...) {
   scale_colour_brewer(..., palette = "Set2")
 }
+
+# Set French language option
+FRENCH <- TRUE
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
+# Helper function for figure paths
+fig_path <- function(filename) {
+  if (FRENCH) {
+    # Create French directory structure
+    french_dir <- dirname(file.path("figs-french", filename))
+    dir.create(french_dir, showWarnings = FALSE, recursive = TRUE)
+    file.path("figs-french", filename)
+  } else {
+    file.path("figs", filename)
+  }
+}
+
 .ggsave <- function(filename, ...) {
-  filename <- file.path(fig_dir, filename)
+  filename <- if (FRENCH) {
+    # Create French directory structure
+    french_dir <- dirname(file.path("figs-french", filename))
+    dir.create(french_dir, showWarnings = FALSE, recursive = TRUE)
+    .this_fig_dir <- gsub("figs", "figs-french", this_fig_dir)
+    file.path(.this_fig_dir, filename)
+  } else {
+    file.path(this_fig_dir, filename)
+  }
   ggplot2::ggsave(filename, ...)
 }
 theme_set(gfplot::theme_pbs())
@@ -15,6 +44,34 @@ source("ss3/ss3_functions.R")
 source("ss3/99-utils.R")
 file.remove("values/models.tex")
 
+# Set decimal separator for French
+if (FRENCH) {
+  old_dec <- options()$OutDec
+  options(OutDec = ",")
+}
+
+# Create French fleet names if needed
+if (FRENCH) {
+  stopifnot(identical(fleet_names$FName, c("Bottom Trawl\nLandings", "Bottom Trawl\nDiscards", "Midwater Trawl",
+    "Longline\nLandings", "Hook-Line\nDiscards", "Bottom Trawl CPUE",
+    "HBLL Outside", "HS MSA", "IPHC", "Synoptic", "iRec", "Salmon_Bycatch"
+  )))
+  fleet_names$FName <- c(
+    "Chalut de fond\nDébarquements",
+    "Chalut de fond\nRejets",
+    "Chalut pélagique",
+    "Palangre\nDébarquements",
+    "Ligne et hameçon\nRejets",
+    "CPUE chalut de fond",
+    "HBLL extérieur",
+    "HS MSA",
+    "IPHC",
+    "Synoptique",
+    "iRec",
+    "Prise accessoire saumon"
+  )
+}
+
 # Compare SS models
 ss_home <- here::here("ss3")
 # ss_home <- "C:/users/quang/Desktop/dogfish"
@@ -24,6 +81,15 @@ dir.create("figs/ss3/set_a_mat", showWarnings = FALSE)
 dir.create("figs/ss3/set_a_zfrac", showWarnings = FALSE)
 dir.create("figs/ss3/set_a_ind", showWarnings = FALSE)
 dir.create("figs/ss3/catch-update", showWarnings = FALSE)
+
+# Create French directories if needed
+if (FRENCH) {
+  dir.create("figs-french/ss3/set_b", showWarnings = FALSE, recursive = TRUE)
+  dir.create("figs-french/ss3/set_a_mat", showWarnings = FALSE, recursive = TRUE)
+  dir.create("figs-french/ss3/set_a_zfrac", showWarnings = FALSE, recursive = TRUE)
+  dir.create("figs-french/ss3/set_a_ind", showWarnings = FALSE, recursive = TRUE)
+  dir.create("figs-french/ss3/catch-update", showWarnings = FALSE, recursive = TRUE)
+}
 
 # Specify which set of plots to generate here
 # set_to_plot <- c("growth", "index", "M")[3]
@@ -58,8 +124,12 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
 
   if (set_to_plot == "zfrac") {
     mods <- c("A0", "A11_low_zfrac", "A12_high_zfrac")
-    model_name <- c("(A0) zfrac = 0.4, Beta = 1.0\n(base)", "(A11) zfrac = 0.2, Beta = 0.6\n(low productivity)", "(A3) zfrac = 0.6, Beta = 2\n(high productivity)")
-    fig_dir <- "figs/ss3/set_a_zfrac"
+    model_name <- c(
+      tr("(A0) zfrac = 0.4, Beta = 1.0\n(base)", "(A0) zfrac = 0,4, Beta = 1,0\n(base)"),
+      tr("(A11) zfrac = 0.2, Beta = 0.6\n(low productivity)", "(A11) zfrac = 0,2, Beta = 0,6\n(productivité faible)"),
+      tr("(A3) zfrac = 0.6, Beta = 2\n(high productivity)", "(A3) zfrac = 0,6, Beta = 2\n(productivité élevée)")
+    )
+    this_fig_dir <- "figs/ss3/set_a_zfrac"
     multi_rep <- lapply(mods, function(x) {
       r4ss::SS_output(file.path(ss_home, x),
         verbose = FALSE,
@@ -73,9 +143,17 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     # Set A models with growth and maturity scenarios
     mods <- c("A0", "A2_USgrowth", "A3_highmat", "A4_USgrowth_highmat", "A14_lowdiscard", "A5_highdiscard", "A15_100discard")
 
-    model_name <- c("(A0) BC growth\n(base)", "(A2) US growth", "(A3) BC growth,\nhigh maturity", "(A4) USgrowth,\nhigh maturity", "(A14) Low discard\nmortality", "(A5) High discard\nmortality", "(A15) 100% \ndiscard mortality")
+    model_name <- c(
+      tr("(A0) BC growth\n(base)", "(A0) Croissance C.-B.\n(base)"),
+      tr("(A2) US growth", "(A2) Croissance É.-U."),
+      tr("(A3) BC growth,\nhigh maturity", "(A3) Croissance C.-B.,\nmaturité élevée"),
+      tr("(A4) USgrowth,\nhigh maturity", "(A4) Croissance É.-U.,\nmaturité élevée"),
+      tr("(A14) Low discard\nmortality", "(A14) Faible mortalité\nde rejet"),
+      tr("(A5) High discard\nmortality", "(A5) Forte mortalité\nde rejet"),
+      tr("(A15) 100% \ndiscard mortality", "(A15) Mortalité de rejet\n100%")
+    )
 
-    fig_dir <- "figs/ss3/set_a_mat"
+    this_fig_dir <- "figs/ss3/set_a_mat"
 
     multi_rep <- lapply(mods, function(x) {
       r4ss::SS_output(file.path(ss_home, x),
@@ -94,10 +172,10 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
 
     g <- lapply(1:2, function(i) {
       replist <- multi_rep[[i]]
-      label <- ifelse(i == 1, "BC growth", "US growth")
+      label <- ifelse(i == 1, tr("BC growth", "Croissance C.-B."), tr("US growth", "Croissance É.-U."))
       replist$endgrowth %>%
         select(Sex, int_Age, Len_Beg) %>%
-        mutate(Sex = ifelse(Sex == 1, "Female", "Male")) %>%
+        mutate(Sex = ifelse(Sex == 1, tr("Female", "Femelle"), tr("Male", "Mâle"))) %>%
         mutate(Model = label)
     }) %>%
       bind_rows() %>%
@@ -105,9 +183,13 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
       geom_line() +
       facet_wrap(vars(Sex)) +
       #gfplot::theme_pbs() +
-      labs(x = "Age", y = "Length") +
+      labs(x = tr("Age", "Âge"), y = tr("Length", "Longueur")) +
       expand_limits(y = 0)
-    ggsave("figs/ss3/growth-compare.png", g, width = 6, height = 2.5)
+    if (FRENCH) {
+      ggsave("figs-french/ss3/growth-compare.png", g, width = 6, height = 2.5)
+    } else {
+      ggsave("figs/ss3/growth-compare.png", g, width = 6, height = 2.5)
+    }
 
     # Length at age distribution (add empirical samples)
     age_samps <- readr::read_csv("data/generated/length-age.csv") %>%
@@ -138,12 +220,16 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
       facet_wrap(vars(Age)) +
       gfplot::theme_pbs() +
       theme(panel.spacing = unit(0, "in")) +
-      labs(x = "Length", y = "Length-at-age probability") +
-      ggtitle("Female")
-    ggsave("figs/ss3/prob-length-at-age.png", g, height = 6, width = 8)
+      labs(x = tr("Length", "Longueur"), y = tr("Length-at-age probability", "Probabilité longueur à l'âge")) +
+      ggtitle(tr("Female", "Femelle"))
+    if (FRENCH) {
+      ggsave("figs-french/ss3/prob-length-at-age.png", g, height = 6, width = 8)
+    } else {
+      ggsave("figs/ss3/prob-length-at-age.png", g, height = 6, width = 8)
+    }
 
     # Fecundity at age/length
-    gmodel <- c("BC growth", "US growth", "BC growth", "US growth")
+    gmodel <- c(tr("BC growth", "Croissance C.-B."), tr("US growth", "Croissance É.-U."), tr("BC growth", "Croissance C.-B."), tr("US growth", "Croissance É.-U."))
     g1 <- lapply(3:4, function(x) {
       multi_rep[[x]]$endgrowth %>%
         filter(Sex == 1) %>%
@@ -156,7 +242,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
       #geom_point() +
       geom_line() +
       expand_limits(y = 0) +
-      labs(x = "Age", y = NULL, linetype = "Growth model")
+      labs(x = tr("Age", "Âge"), y = NULL, linetype = tr("Growth model", "Modèle de croissance"))
 
     g2 <- lapply(3:4, function(x) {
       multi_rep[[x]]$biology %>%
@@ -167,7 +253,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
       ggplot(aes(Len_mean, Fec)) +
       #geom_point() +
       geom_line() +
-      labs(x = "Length", y = "Fecundity")
+      labs(x = tr("Length", "Longueur"), y = tr("Fecundity", "Fécondité"))
     g <- cowplot::plot_grid(g2, g1, rel_widths = c(1, 1.25))
     .ggsave("fecundity.png", g, height = 2, width = 6)
 
@@ -203,9 +289,14 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
 
     # Set A models jackknifing indices
     mods <- c("A0", "A6_IPHC+CPUE", "A7_SYNonly", "A13_extraSD") #, "A8_HBLLonly")
-    model_name <- c("(A0) All indices (base)", "(A6) IPHC + CPUE", "(A7) SYN", "(A13) Extra SD on IPHC") # "(A8) HBLL")
+    model_name <- c(
+      tr("(A0) All indices (base)", "(A0) Tous les indices (base)"),
+      tr("(A6) IPHC + CPUE", "(A6) IPHC + CPUE"),
+      tr("(A7) SYN", "(A7) SYN"),
+      tr("(A13) Extra SD on IPHC", "(A13) ÉT supplémentaire sur IPHC")
+    )
 
-    fig_dir <- "figs/ss3/set_a_ind"
+    this_fig_dir <- "figs/ss3/set_a_ind"
 
     multi_rep <- lapply(mods, function(x) {
       r4ss::SS_output(file.path(ss_home, x),
@@ -219,11 +310,18 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
 
     # Compare low M and M change models (combination of A and B models)
     mods <- c("A0", "A9_lowM", "A10_highM", "B1_1990inc", "B2_2010step", "B3_2005step", "B4_1990inc_lowM", "B5_2010step_lowM")
-    model_name <- c("(A0) M = 0.065 (base)", "(A9) M = 0.057 (low M)", "(A10) M = 0.074 (high M)",
-      "(B1) M = 0.065, inc. 1990", "(B2) M = 0.065, step 2010",
-      "(B3) M = 0.065, step 2005", "(B4) M = 0.057, inc. 1990", "(B5) M = 0.057, inc. 2010")
+    model_name <- c(
+      tr("(A0) M = 0.065 (base)", "(A0) M = 0,065 (base)"),
+      tr("(A9) M = 0.057 (low M)", "(A9) M = 0,057 (M faible)"),
+      tr("(A10) M = 0.074 (high M)", "(A10) M = 0,074 (M élevé)"),
+      tr("(B1) M = 0.065, inc. 1990", "(B1) M = 0,065, aug. 1990"),
+      tr("(B2) M = 0.065, step 2010", "(B2) M = 0,065, étape 2010"),
+      tr("(B3) M = 0.065, step 2005", "(B3) M = 0,065, étape 2005"),
+      tr("(B4) M = 0.057, inc. 1990", "(B4) M = 0,057, aug. 1990"),
+      tr("(B5) M = 0.057, inc. 2010", "(B5) M = 0,057, aug. 2010")
+    )
 
-    fig_dir <- "figs/ss3/set_b"
+    this_fig_dir <- "figs/ss3/set_b"
 
     multi_rep <- lapply(mods, function(x) {
       r4ss::SS_output(file.path(ss_home, x),
@@ -271,7 +369,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
       # gfplot::theme_pbs() +
       expand_limits(y = 0) +
       coord_cartesian(expand = FALSE) +
-      labs(x = "Year", y = "Natural mortality", colour = "Model")
+      labs(x = tr("Year", "Année"), y = tr("Natural mortality", "Mortalité naturelle"), colour = tr("Model", "Modèle"))
     .ggsave("M_year.png", g, height = 3, width = 6)
 
   }
@@ -320,7 +418,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
   ### Custom ggplots
 
   # Plot index
-  g <- Map(SS3_index, multi_rep, model_name, figure = FALSE) %>%
+  g <- Map(SS3_index, multi_rep, model_name, MoreArgs = list(figure = FALSE, french = FRENCH)) %>%
     bind_rows() %>%
     mutate(scen = forcats::fct_inorder(scen)) |>
     mutate(scen = factor(scen, levels = model_name)) |>
@@ -332,13 +430,13 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
     facet_wrap(vars(FName), scales = "free_y") +
     gfplot::theme_pbs() +
-    labs(x = "Year", y = "Index", colour = "Model") +
+    labs(x = tr("Year", "Année"), y = tr("Index", "Indice"), colour = tr("Model", "Modèle")) +
     guides(colour = guide_legend(ncol = 2)) +
     theme(panel.spacing = unit(0, "in"), legend.position = "bottom")
   .ggsave("index_fit.png", g, height = 5, width = 6)
 
   # Plot index with one fit for SAR:
-  Map(SS3_index, multi_rep, model_name, figure = FALSE) %>%
+  Map(SS3_index, multi_rep, model_name, MoreArgs = list(figure = FALSE, french = FRENCH)) %>%
     bind_rows() %>%
     mutate(scen = forcats::fct_inorder(scen)) |>
     mutate(scen = factor(scen, levels = model_name)) |>
@@ -355,19 +453,23 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     scale_y_continuous(lim = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
     facet_wrap(vars(FName), scales = "fixed") +
     gfplot::theme_pbs() +
-    labs(x = "Year", y = "Index value", colour = "Model") +
+    labs(x = tr("Year", "Année"), y = tr("Index value", "Valeur d'indice"), colour = tr("Model", "Modèle")) +
     guides(colour = guide_legend(ncol = 2)) +
     theme(panel.spacing = unit(0, "in"), legend.position = "bottom", axis.title.x = element_blank())
-  ggsave_optipng("figs/index_fit_SAR.png", height = 4, width = 6)
+  if (FRENCH) {
+    ggsave_optipng("figs-french/index_fit_SAR.png", height = 4, width = 6)
+  } else {
+    ggsave_optipng("figs/index_fit_SAR.png", height = 4, width = 6)
+  }
 
   # Plot SR
-  g <- SS3_SR(multi_rep, model_name) +
-    labs(x = "Spawning output (pup production)")
+  g <- SS3_SR(multi_rep, model_name, french = FRENCH) +
+    labs(x = tr("Spawning output (pup production)", "Production reproductrice (production de petits)"))
   .ggsave("srr.png", g, height = 4, width = if (set_to_plot == "zfrac") 8 else 6)
 
   # Plot recruitment
-  g <- SS3_recruitment(multi_rep, model_name) +
-    labs(y = "Recruitment") +
+  g <- SS3_recruitment(multi_rep, model_name, french = FRENCH) +
+    labs(y = tr("Recruitment", "Recrutement")) +
     coord_cartesian(expand = FALSE) +
     guides(colour = guide_legend(ncol = 2))
   .ggsave("recruitment.png", g, height = 5, width = 6)
@@ -376,28 +478,29 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
   #.ggsave("recruit_dev.png", g, height = 4, width = 6)
 
   # Plot SSB
-  g <- SS3_B(multi_rep, model_name) +
+  g <- SS3_B(multi_rep, model_name, french = FRENCH) +
     guides(linetype = 'none') +
-    labs(y = "Spawning output") +
+    labs(y = tr("Spawning output", "Production reproductrice")) +
     coord_cartesian(expand = FALSE) +
     guides(colour = guide_legend(ncol = 2))
   .ggsave("spawning_est.png", g, height = 5, width = 6)
 
-  g <- SS3_B(multi_rep, model_name, type = "SSB0") +
+  g <- SS3_B(multi_rep, model_name, type = "SSB0", french = FRENCH) +
     guides(linetype = 'none') +
-    labs(y = "Spawning depletion") +
+    labs(y = tr("Spawning depletion", "Épuisement reproducteur")) +
     coord_cartesian(expand = FALSE, ylim = c(0, 1.1)) +
     guides(colour = guide_legend(ncol = 2))
   .ggsave("depletion_est.png", g, height = 5, width = 6)
 
-  g <- SS3_B(multi_rep, model_name, type = "SSBMSY") +
+  g <- SS3_B(multi_rep, model_name, type = "SSBMSY", french = FRENCH) +
     guides(linetype = 'none') +
     geom_hline(yintercept = 0.4, linetype = 2) +
     geom_hline(yintercept = 0.8, linetype = 3) +
-    coord_cartesian(expand = FALSE)
+    coord_cartesian(expand = FALSE) +
+    guides(color = guide_legend(nrow = 3))
   .ggsave("bbmsy_est.png", g, height = 4, width = 6)
 
-  g <- SS3_B(multi_rep, model_name, type = "B") +
+  g <- SS3_B(multi_rep, model_name, type = "B", french = FRENCH) +
     #labs(linetype = 'Sex') +
     theme(legend.position = "bottom") +
     facet_wrap(vars(Area)) +
@@ -415,16 +518,16 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
   #.ggsave("fecundity_hist2.png", g, height = 4, width = 6)
 
   # Selectivity at length (estimated)
-  g <- SS3_sel(multi_rep, model_name, type = "Lsel", bin_width = 5, do_mat = FALSE) +
+  g <- SS3_sel(multi_rep, model_name, type = "Lsel", bin_width = 5, do_mat = FALSE, french = FRENCH) +
     coord_cartesian(xlim = c(40, 115), ylim = c(0, 1.1))
   .ggsave("sel_len.png", g, height = 6, width = 8)
 
   # Selectivity at age (converted from size based, also show maturity ogive)
-  g <- SS3_sel(multi_rep, model_name, bin_width = 5)
+  g <- SS3_sel(multi_rep, model_name, bin_width = 5, french = FRENCH)
   .ggsave("sel_age.png", g, height = 6, width = 8)
 
   # Selectivity at age (converted from size based, also show maturity ogive)
-  g <- SS3_sel(multi_rep, model_name, bin_width = 5, scale_max_1 = TRUE)
+  g <- SS3_sel(multi_rep, model_name, bin_width = 5, scale_max_1 = TRUE, french = FRENCH)
   .ggsave("sel_age_max1.png", g, height = 6, width = 8)
 
 
@@ -439,7 +542,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     facet_grid(vars(FName), vars(scen), scales = "free_y") +
     geom_point(aes(y = Obs, colour = FName)) +
     geom_line() +
-    labs(x = "Year", y = "Mean length") +
+    labs(x = tr("Year", "Année"), y = tr("Mean length", "Longueur moyenne")) +
     # theme_bw() +
     theme(panel.spacing = unit(0, "in"),
       strip.background = element_blank(),
@@ -481,7 +584,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
           panel.spacing = unit(0, "in")) +
         scale_fill_manual(values = c("grey80", "white")) +
         coord_cartesian(xlim = c(30, 120)) +
-        labs(x = "Length", y = "Proportion", colour = "Model") +
+        labs(x = tr("Length", "Longueur"), y = tr("Proportion", "Proportion"), colour = tr("Model", "Modèle")) +
         guides(colour = guide_legend(nrow = 3), fill = "none", linetype = "none") +
         ggtitle(unique(len$FName))
       # theme_bw()
@@ -499,13 +602,13 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
     #.ggsave("len_comp_resid_A1.png", g, height = 7, width = 6)
 
     # Length comp residual - histogram
-    g <- SS3_compresid(multi_rep[[1]], model_name[1], fleet = fleet_int, figure = "histogram") +
+    g <- SS3_compresid(multi_rep[[1]], model_name[1], fleet = fleet_int, figure = "histogram", FRENCH = FRENCH) +
       ggtitle(model_name[1]) +
       theme(panel.spacing = unit(0, "in"))
     .ggsave("len_comp_hist_A1.png", g, height = 4, width = 6)
 
     # Numbers at age
-    g <- SS3_N(multi_rep[1], model_name[1], age = seq(0, 50, 10))
+    g <- SS3_N(multi_rep[1], model_name[1], age = seq(0, 50, 10), french = FRENCH)
     g2 <- g$data %>%
       mutate(variable = paste("Age", variable)) %>%
       #mutate(value = value/max(value), .by = c(variable, Sex, scen)) %>%
@@ -514,7 +617,7 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
       gfplot::theme_pbs() +
       expand_limits(y = 0) +
       facet_grid(vars(variable), vars(Sex), scales = "free_y") +
-      labs(x = "Year", y = "Estimated abundance (1000s)") +
+      labs(x = tr("Year", "Année"), y = tr("Estimated abundance (1000s)", "Abondance estimée (1000s)")) +
       ggtitle(model_name[1])
     .ggsave("N_age_A1.png", g2, height = 6, width = 5)
 
@@ -527,12 +630,16 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
       gfplot::theme_pbs() +
       scale_y_continuous(lim = c(-0.2, NA), expand = expansion(mult = c(0, 0.05))) +
       facet_grid(vars(variable), vars(Sex), scales = "free_y") +
-      labs(x = "Year", y = "Estimated abundance (1000s)") +
+      labs(x = tr("Year", "Année"), y = tr("Estimated abundance (1000s)", "Abondance estimée (1000s)")) +
       theme(axis.title.x = element_blank())
-    ggsave_optipng("figs/N_age_A1_SAR.png", g2, height = 5, width = 4.5)
+    if (FRENCH) {
+      ggsave_optipng("figs-french/N_age_A1_SAR.png", g2, height = 5, width = 4.5)
+    } else {
+      ggsave_optipng("figs/N_age_A1_SAR.png", g2, height = 5, width = 4.5)
+    }
 
     # Compare with numbers at length
-    g <- SS3_N(multi_rep[1], model_name[1], type = "length", len = seq(50, 115, 15))
+    g <- SS3_N(multi_rep[1], model_name[1], type = "length", len = seq(50, 115, 15), french = FRENCH)
     g2 <- g$data %>%
       mutate(variable = paste(variable, "cm") %>% factor(levels = paste(seq(50, 115, 15), "cm"))) %>%
       ggplot(aes(Yr, value)) +
@@ -540,20 +647,20 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
       gfplot::theme_pbs() +
       expand_limits(y = 0) +
       facet_grid(vars(variable), vars(Sex), scales = "free_y") +
-      labs(x = "Year", y = "Estimated abundance (1000s)") +
+      labs(x = tr("Year", "Année"), y = tr("Estimated abundance (1000s)", "Abondance estimée (1000s)")) +
       ggtitle(model_name[1])
     .ggsave("N_len_A1.png", g2, height = , width = 5)
 
     # Exploitation and apical F
-    g <- SS3_apicalF(multi_rep[[1]])
+    g <- SS3_apicalF(multi_rep[[1]], french = FRENCH)
     g$facet$params$ncol <- 3
     .ggsave("apicalF_fleet_A1.png", g, height = 6, width = 8)
 
-    g <- SS3_apicalF(multi_rep[[1]], FALSE)
+    g <- SS3_apicalF(multi_rep[[1]], FALSE, french = FRENCH)
     .ggsave("apicalF_sex_A1.png", g, height = 2, width = 4)
 
     # Plot annual selectivity
-    g <- SS3_selannual(multi_rep[[1]])
+    g <- SS3_selannual(multi_rep[[1]], french = FRENCH)
     .ggsave("sel_annual_A1.png", g, height = 4, width = 6)
 
   }
@@ -626,8 +733,8 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
             panel.spacing = unit(0, "in")) +
           scale_fill_manual(values = c("grey80", "white")) +
           #xlim(xlim[[ff]]) +
-          labs(x = NULL, y = NULL, colour = "Model") +
-          #labs(x = "Length", y = "Proportion", colour = "Model") +
+          labs(x = NULL, y = NULL, colour = tr("Model", "Modèle")) +
+          #labs(x = tr("Length", "Longueur"), y = tr("Proportion", "Proportion"), colour = tr("Model", "Modèle")) +
           guides(colour = guide_legend(nrow = 2))
 
         return(gout)
@@ -640,8 +747,8 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
         arrangeGrob(
           grobs = lapply(g, function(x) x + theme(legend.position = "none")),
           ncol = 1,
-          bottom = textGrob("Length"),
-          left = textGrob("Proportion", rot = 90)
+          bottom = textGrob(tr("Length", "Longueur")),
+          left = textGrob(tr("Proportion", "Proportion"), rot = 90)
         ),
         legend,
         heights = c(10, 1)
@@ -689,4 +796,9 @@ for (set_to_plot in c("growth", "index", "M", "zfrac")) {
   #.ggsave("sex_ratio_comp.png", g, height = 4.5, width = 5)
 
 
+}
+
+# Reset decimal separator
+if (FRENCH) {
+  options(OutDec = old_dec)
 }

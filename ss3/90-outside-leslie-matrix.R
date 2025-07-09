@@ -1,14 +1,47 @@
 
 library(tidyverse)
 
+# Set French language option
+FRENCH <- TRUE
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
+# Helper function for figure paths
+fig_path <- function(filename) {
+  if (FRENCH) {
+    # Create French directory structure
+    french_dir <- dirname(file.path("figs-french", filename))
+    dir.create(french_dir, showWarnings = FALSE, recursive = TRUE)
+    file.path("figs-french", filename)
+  } else {
+    file.path("figs", filename)
+  }
+}
+
+# Set decimal separator for French
+if (FRENCH) {
+  old_dec <- options()$OutDec
+  options(OutDec = ",")
+}
+
 # Calculate maximum M given fecundity schedule
 # Max M is dependent on growth as well since fecundity is a function of size, not age
 ss_home <- here::here("ss3")
 multi_rep <- readRDS(file.path(ss_home, "multi_rep_mat.rds"))
 
 # Double check with 03-outside-ss3-figures.R
-model_name <- c("(A0) BC growth\n(base)", "(A2) US growth", "(A3) BC growth,\nhigh maturity", "(A4) USgrowth,\nhigh maturity",
-                "(A14) Low discard\nmortality", "(A5) High discard\nmortality", "(A15) 100% \ndiscard mortality")
+model_name <- c(
+  tr("(A0) BC growth\n(base)", "(A0) Croissance C.-B.\n(base)"),
+  tr("(A2) US growth", "(A2) Croissance É.-U."),
+  tr("(A3) BC growth,\nhigh maturity", "(A3) Croissance C.-B.,\nmaturité élevée"),
+  tr("(A4) USgrowth,\nhigh maturity", "(A4) Croissance É.-U.,\nmaturité élevée"),
+  tr("(A14) Low discard\nmortality", "(A14) Faible mortalité\nde rejet"),
+  tr("(A5) High discard\nmortality", "(A5) Forte mortalité\nde rejet"),
+  tr("(A15) 100% \ndiscard mortality", "(A15) Mortalité de rejet\n100%")
+)
 
 Fec_age <- lapply(multi_rep, function(replist) {
   replist$endgrowth %>% filter(Sex == 1) %>% pull(`Mat*Fecund`)
@@ -97,7 +130,12 @@ s0 <- lapply(ind, function(i) {
 maxM <- sapply(s0, function(x) approx(x, Mvec, 1))
 
 # M bound figure
-growth <- c("BC growth", "US growth", "BC growth", "US growth")
+growth <- c(
+  tr("BC growth", "Croissance C.-B."),
+  tr("US growth", "Croissance É.-U."),
+  tr("BC growth", "Croissance C.-B."),
+  tr("US growth", "Croissance É.-U.")
+)
 mat <- c("Taylor & Gallucci", "Taylor & Gallucci", "McFarlane & Beamish", "McFarlane & Beamish")
 
 g <- lapply(1:length(s0), function(i) {
@@ -109,7 +147,15 @@ g <- lapply(1:length(s0), function(i) {
   geom_line() +
   geom_hline(yintercept = 1, linetype = 2, colour = "grey40") +
   #labs(x = "Natural mortality", y = "Unfished replacement line", colour = "Model") +
-  labs(x = "Natural mortality", y = "Unfished replacement line", colour = "Growth", linetype = "Maturity") +
+  labs(x = tr("Natural mortality", "Mortalité naturelle"),
+       y = tr("Unfished replacement line", "Ligne de remplacement non pêchée"),
+       colour = tr("Growth", "Croissance"),
+       linetype = tr("Maturity", "Maturité")) +
   coord_cartesian(xlim = c(0.04, 0.12), ylim = c(0, 1.25), expand = FALSE)
-ggsave("figs/ss3/M_bound_fec.png", g, height = 3, width = 5)
+ggsave(fig_path("ss3/M_bound_fec.png"), g, height = 3, width = 5)
+
+# Reset decimal separator
+if (FRENCH) {
+  options(OutDec = old_dec)
+}
 

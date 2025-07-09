@@ -4,6 +4,32 @@ library(readxl)
 library(gfplot)
 theme_set(gfplot::theme_pbs())
 
+# Set French language option
+FRENCH <- TRUE
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
+# Helper function for figure paths
+fig_path <- function(filename) {
+  if (FRENCH) {
+    # Create French directory structure
+    french_dir <- dirname(file.path("figs-french", filename))
+    dir.create(french_dir, showWarnings = FALSE, recursive = TRUE)
+    file.path("figs-french", filename)
+  } else {
+    file.path("figs", filename)
+  }
+}
+
+# Set decimal separator for French
+if (FRENCH) {
+  old_dec <- options()$OutDec
+  options(OutDec = ",")
+}
+
 #length is tail extended in cm
 
 #data from NW US survey in 2010, from Ian and Vladlena at NWFSC
@@ -64,7 +90,7 @@ dat_all <- rbind(
   dat %>%
     rename(Year = `Sample year`) %>%
     dplyr::select(Year, sex, Age, length, Area) %>%
-    mutate(type = paste("DFO -", Area)) %>% select(-Area),
+    mutate(type = paste(if (FRENCH) "MPO -" else "DFO -", Area)) %>% select(-Area),
   datnwus |>
     mutate(Year = 2010) %>%
     dplyr::select(Year, sex, Age_Exponential , length) |> rename (Age =  Age_Exponential ) |> mutate(type = "NWFSC")
@@ -72,7 +98,9 @@ dat_all <- rbind(
 
 #### Plot data (DFO + NWFSC)
 # By Area
-g <- ggplot(dat_all, aes(Age, length, colour = sex)) +
+g <- dat_all %>%
+  mutate(sex = ifelse(sex == "Female", tr("Female", "Femelle"), tr("Male", "Mâle"))) %>%
+  ggplot(aes(Age, length, colour = sex)) +
   geom_point(alpha = 0.4) +
   geom_hline(yintercept = c(80, 95), linetype = 2, colour = "grey60") +
   gfplot::theme_pbs() +
@@ -80,19 +108,21 @@ g <- ggplot(dat_all, aes(Age, length, colour = sex)) +
   expand_limits(x = 0, y = 0) +
   coord_cartesian(expand = FALSE) +
   theme(panel.spacing = unit(0, "in")) +
-  labs(x = "Age", y = "Length (cm)", colour = "Sex")
-ggsave("figs/length-age-area.png", g, height = 4, width = 6)
+  labs(x = tr("Age", "Âge"), y = tr("Length (cm)", "Longueur (cm)"), colour = tr("Sex", "Sexe"))
+ggsave(fig_path("length-age-area.png"), g, height = 4, width = 6)
 
 # By Year
-g <- ggplot(dat_all, aes(Age, length, colour = sex)) +
+g <- dat_all %>%
+  mutate(sex = ifelse(sex == "Female", tr("Female", "Femelle"), tr("Male", "Mâle"))) %>%
+  ggplot(aes(Age, length, colour = sex)) +
   geom_point(alpha = 0.4) +
   geom_hline(yintercept = c(80, 95), linetype = 2, colour = "grey60") +
   gfplot::theme_pbs() +
   facet_wrap(vars(Year)) +
   expand_limits(x = 0, y = 0) +
   coord_cartesian(expand = FALSE) +
-  labs(x = "Age", y = "Length (cm)", colour = "Sex")
-ggsave("figs/length-age-year.png", g, height = 4, width = 6)
+  labs(x = tr("Age", "Âge"), y = tr("Length (cm)", "Longueur (cm)"), colour = tr("Sex", "Sexe"))
+ggsave(fig_path("length-age-year.png"), g, height = 4, width = 6)
 
 # Samples by area and year - save for ResDoc
 dat_sumry <- dat_all %>%
@@ -114,7 +144,7 @@ calc_pred <- function(m, a = seq(0, 80, 0.25)) {
 
 # Model 1 - All DFO samples
 vb_f1 <- dat_all %>%
-  filter(sex == "Female", grepl("DFO", type)) %>%
+  filter(sex == "Female", grepl(if (FRENCH) "MPO" else "DFO", type)) %>%
   mutate(sex = 2,
          specimen_id = 1:n()) %>%
   rename(age = Age) %>%
@@ -124,7 +154,7 @@ vb_f1 <- dat_all %>%
   calc_pred()
 
 vb_m1 <- dat_all %>%
-  filter(sex == "Male", grepl("DFO", type)) %>%
+  filter(sex == "Male", grepl(if (FRENCH) "MPO" else "DFO", type)) %>%
   mutate(sex = 1,
          specimen_id = 1:n()) %>%
   rename(age = Age) %>%
@@ -139,14 +169,14 @@ g <- gfplot::plot_growth(object_f = vb_f1,
                          lab_x_gap = 0.35,
                          pt_alpha = 0.8,
                          col = c(Female = "black", Male = "black"),
-                         french = FALSE,
+                         french = FRENCH,
                          jitter = FALSE) +
   facet_wrap(vars(sex)) +
   guides(col = "none", lty = "none") +
   theme(panel.spacing = unit(0, "in")) +
   coord_cartesian(xlim = c(0, 78), ylim = c(0, 125), expand = FALSE) +
-  ggtitle("DFO samples")
-ggsave("figs/length-age-vb-dfo.png", g, height = 3, width = 6)
+  ggtitle(tr("DFO samples", "Échantillons MPO"))
+ggsave(fig_path("length-age-vb-dfo.png"), g, height = 3, width = 6)
 
 
 # Model 2 - DFO + NWFSC samples
@@ -176,14 +206,14 @@ g <- gfplot::plot_growth(object_f = vb_f2,
                          lab_x_gap = 0.35,
                          pt_alpha = 0.8,
                          col = c(Female = "black", Male = "black"),
-                         french = FALSE,
+                         french = FRENCH,
                          jitter = FALSE) +
   facet_wrap(vars(sex)) +
   guides(col = "none", lty = "none") +
   theme(panel.spacing = unit(0, "in")) +
   coord_cartesian(xlim = c(0, 78), ylim = c(0, 125), expand = FALSE) +
-  ggtitle("DFO + NWFSC samples")
-ggsave("figs/length-age-vb-dfo-nwfsc.png", g, height = 3, width = 6)
+  ggtitle(tr("DFO + NWFSC samples", "Échantillons MPO + NWFSC"))
+ggsave(fig_path("length-age-vb-dfo-nwfsc.png"), g, height = 3, width = 6)
 
 #### Plot residuals
 dat_resid <- rbind(
@@ -199,15 +229,17 @@ sd_age <- dat_resid %>%
 
 g <- sd_age %>%
   filter(age > 0) %>%
+  mutate(sex = ifelse(sex == "Female", tr("Female", "Femelle"), tr("Male", "Mâle"))) %>%
   ggplot(aes(age, value, colour = sex)) +
   geom_point() +
   geom_line() +
   coord_cartesian(xlim = c(0, 60)) +
-  labs(x = "Age", y = "Lognormal residual standard deviation", colour = "Sex")
-ggsave("figs/length-age-residual-age.png", g, height = 3, width = 6)
+  labs(x = tr("Age", "Âge"), y = tr("Lognormal residual standard deviation", "Écart-type des résidus log-normaux"), colour = tr("Sex", "Sexe"))
+ggsave(fig_path("length-age-residual-age.png"), g, height = 3, width = 6)
 
 #### Plot residual by area
 g <- dat_resid %>%
+  mutate(sex = ifelse(sex == "Female", tr("Female", "Femelle"), tr("Male", "Mâle"))) %>%
   ggplot(aes(age, resid2)) +
   geom_point(alpha = 0.4) +
   gfplot::theme_pbs() +
@@ -215,10 +247,11 @@ g <- dat_resid %>%
   geom_hline(yintercept = 0, linetype = 2) +
   theme(panel.spacing = unit(0, "in")) +
   coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
-  labs(x = "Age", y = "Residual", colour = "Sex")
-ggsave("figs/length-age-residual-area.png", g, height = 8, width = 6)
+  labs(x = tr("Age", "Âge"), y = tr("Residual", "Résiduel"), colour = tr("Sex", "Sexe"))
+ggsave(fig_path("length-age-residual-area.png"), g, height = 8, width = 6)
 
 g <- dat_resid %>%
+  mutate(sex = ifelse(sex == "Female", tr("Female", "Femelle"), tr("Male", "Mâle"))) %>%
   ggplot(aes(age, resid2)) +
   geom_jitter(alpha = 0.25) +
   gfplot::theme_pbs() +
@@ -226,10 +259,11 @@ g <- dat_resid %>%
   geom_hline(yintercept = 0, linetype = 2) +
   theme(panel.spacing = unit(0, "in")) +
   coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
-  labs(x = "Age", y = "Residual", colour = "Sex")
-ggsave("figs/length-age-residual.png", g, height = 3, width = 6)
+  labs(x = tr("Age", "Âge"), y = tr("Residual", "Résiduel"), colour = tr("Sex", "Sexe"))
+ggsave(fig_path("length-age-residual.png"), g, height = 3, width = 6)
 
 g <- dat_resid %>%
+  mutate(sex = ifelse(sex == "Female", tr("Female", "Femelle"), tr("Male", "Mâle"))) %>%
   ggplot(aes(resid2)) +
   gfplot::theme_pbs() +
   facet_wrap(vars(sex)) +
@@ -237,8 +271,8 @@ g <- dat_resid %>%
   theme(panel.spacing = unit(0, "in")) +
   geom_vline(xintercept = 0, linetype = 2) +
   coord_cartesian(xlim = c(-1.25, 1.25), expand = FALSE, ylim = c(0, 500)) +
-  labs(x = "Residual", y = "Count", colour = "Sex")
-ggsave("figs/length-age-residual-hist.png", g, height = 3, width = 6)
+  labs(x = tr("Residual", "Résiduel"), y = tr("Count", "Nombre"), colour = tr("Sex", "Sexe"))
+ggsave(fig_path("length-age-residual-hist.png"), g, height = 3, width = 6)
 
 
 # Model 3 - DFO + NWFSC samples - ex pregnant female
@@ -260,14 +294,14 @@ g <- gfplot::plot_growth(object_f = vb_f3,
                          lab_x_gap = 0.35,
                          pt_alpha = 0.8,
                          col = c(Female = "black", Male = "black"),
-                         french = FALSE,
+                         french = FRENCH,
                          jitter = FALSE) +
-  facet_wrap(vars(sex)) +
+  facet_wrap(vars(sex), labeller = labeller(sex = c("Female" = tr("Female", "Femelle"), "Male" = tr("Male", "Mâle")))) +
   guides(col = "none", lty = "none") +
   theme(panel.spacing = unit(0, "in")) +
   coord_cartesian(xlim = c(0, 78), ylim = c(0, 125), expand = FALSE) +
-  ggtitle("DFO + NWFSC + exclude large females")
-ggsave("figs/length-age-vb-dfo-nwfsc-ex-large-female.png", g, height = 3, width = 6)
+  ggtitle(tr("DFO + NWFSC + exclude large females", "MPO + NWFSC + exclure les grandes femelles"))
+ggsave(fig_path("length-age-vb-dfo-nwfsc-ex-large-female.png"), g, height = 3, width = 6)
 
 
 
@@ -301,18 +335,24 @@ g <- gfplot::plot_growth(object_f = vb_f4,
                          lab_x_gap = 0.35,
                          pt_alpha = 0.8,
                          col = c(Female = "black", Male = "black"),
-                         french = FALSE,
+                         french = FRENCH,
                          jitter = TRUE) +
-  facet_wrap(vars(sex)) +
+  facet_wrap(vars(sex), labeller = labeller(sex = c("Female" = tr("Female", "Femelle"), "Male" = tr("Male", "Mâle")))) +
   guides(col = "none", lty = "none") +
   theme(panel.spacing = unit(0, "in")) +
   coord_cartesian(xlim = c(0, 78), ylim = c(0, 125), expand = FALSE) +
-  ggtitle("DFO + NWFSC + exclude large females + exclude 4B")
-ggsave("figs/length-age-vb-dfo-nwfsc-ex-large-female-ex4B.png", g, height = 3, width = 6)
+  ggtitle(tr("DFO + NWFSC + exclude large females + exclude 4B", "MPO + NWFSC + exclure les grandes femelles + exclure 4B"))
+ggsave(fig_path("length-age-vb-dfo-nwfsc-ex-large-female-ex4B.png"), g, height = 3, width = 6)
 
 #### Plot comparison
 name <- paste0("(", 1:4, ")") %>%
   paste(c("DFO samples", "DFO + NWFSC", "DFO + NWFSC + exclude large female", "DFO + NWFSC + exclude large female + ex4B"))
+
+if (FRENCH) {
+  name <- paste0("(", 1:4, ")") %>%
+    paste(c("Échantillons MPO", "MPO + NWFSC", "MPO + NWFSC + exclure les grandes femelles", "MPO + NWFSC + exclure les grandes femelles + exclure 4B"))
+}
+
 female <- lapply(1:4, function(i) {
   get(paste0("vb_f", i)) %>%
     getElement("predictions") %>%
@@ -327,16 +367,18 @@ male <- lapply(c(1, 2, 4), function(i) {
   bind_rows()
 
 g <- rbind(female, male) %>%
+  mutate(sex = ifelse(sex == "Female", tr("Female", "Femelle"), tr("Male", "Mâle"))) %>%
   ggplot(aes(age, length)) +
-  geom_point(data = dat_all, aes(Age, length), shape = 21, colour = "grey70", alpha = 0.8) +
+  geom_point(data = dat_all %>% mutate(sex = ifelse(sex == "Female", tr("Female", "Femelle"), tr("Male", "Mâle"))),
+             aes(Age, length), shape = 21, colour = "grey70", alpha = 0.8) +
   geom_line(aes(linetype = fit, colour = fit), linewidth = 1) +
   facet_wrap(vars(sex)) +
   gfplot::theme_pbs() +
   theme(legend.position = "bottom", panel.spacing = unit(0, "in")) +
   coord_cartesian(xlim = c(0, 78), ylim = c(0, 125), expand = FALSE) +
-  labs(x = "Age (years)", y = "Length (cm)", linetype = "Model", colour = "Model") +
+  labs(x = tr("Age (years)", "Âge (années)"), y = tr("Length (cm)", "Longueur (cm)"), linetype = tr("Model", "Modèle"), colour = tr("Model", "Modèle")) +
   guides(linetype = guide_legend(ncol = 2))
-ggsave("figs/length-age-comparison.png", g, height = 3.5, width = 6)
+ggsave(fig_path("length-age-comparison.png"), g, height = 3.5, width = 6)
 
 # Report growth parameters for Res Doc
 female_par <- lapply(1:4, function(i) {
@@ -383,13 +425,15 @@ us_pars <- data.frame(Age = 0:80) %>%
 
 g <- dat_all %>%
   filter(!grepl("DFO", type)) %>%
+  mutate(sex = ifelse(sex == "Female", tr("Female", "Femelle"), tr("Male", "Mâle"))) %>%
   ggplot(aes(Age, length)) +
   geom_point(alpha = 0.25) +
   facet_wrap(vars(sex)) +
   coord_cartesian(ylim = c(0, 125)) +
-  geom_line(data = us_pars) +
-  ggtitle("US growth curve and samples")
-ggsave("figs/us_growth.png", g, height = 3, width = 6)
+  geom_line(data = us_pars %>% mutate(sex = ifelse(sex == "Female", tr("Female", "Femelle"), tr("Male", "Mâle")))) +
+  ggtitle(tr("US growth curve and samples", "Courbe de croissance et échantillons américains")) +
+  labs(x = tr("Age", "Âge"), y = tr("Length", "Longueur"))
+ggsave(fig_path("us_growth.png"), g, height = 3, width = 6)
 
 
 
@@ -411,15 +455,28 @@ dfo_pars <- rbind(vb_f2$predictions %>%
   mutate(type = "DFO")
 
 g <- dat_all %>%
-  mutate(isDFO = ifelse(grepl("DFO", type), "DFO", "NWFSC")) %>%
+  mutate(isDFO = ifelse(grepl("DFO", type), tr("DFO", "MPO"), tr("NWFSC", "NWFSC"))) %>%
+  mutate(sex = ifelse(sex == "Female", tr("Female", "Femelle"), tr("Male", "Mâle"))) %>%
   #filter(grepl("DFO", type)) %>%
   ggplot(aes(Age, length)) +
   geom_point(alpha = 0.4, aes(colour = isDFO)) +
   facet_wrap(vars(sex)) +
   coord_cartesian(ylim = c(0, 125)) +
-  geom_line(data = rbind(dfo_pars, us_pars), aes(linetype = type)) +
-  labs(colour = "Sample origin", linetype = "Growth curve")
-ggsave("figs/us_growth_dfo_samples.png", g, height = 3, width = 6)
+  geom_line(data = rbind(dfo_pars, us_pars) %>% 
+    mutate(sex = ifelse(sex == "Female", tr("Female", "Femelle"), tr("Male", "Mâle"))) %>%
+    mutate(type = case_when(
+      type == "DFO" ~ tr("DFO", "MPO"),
+      type == "US" ~ tr("US", "É.-U."),
+      TRUE ~ type
+    )), aes(linetype = type)) +
+  labs(colour = tr("Sample origin", "Origine des échantillons"), linetype = tr("Growth curve", "Courbe de croissance"),
+       x = tr("Age", "Âge"), y = tr("Length", "Longueur"))
+ggsave(fig_path("us_growth_dfo_samples.png"), g, height = 3, width = 6)
+
+# Reset decimal separator
+if (FRENCH) {
+  options(OutDec = old_dec)
+}
 
 
 

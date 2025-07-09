@@ -303,13 +303,13 @@ ggsave(fig_path("cpue/cpue-index-spatiotemporal.png"), width = 6, height = 4)
 ```{r}
 p <- predict(fit_spt, newdata = gg, re_form_iid = NA)
 source(here::here("analysis/functions/make_sdmTMB_delta_maps.R"))
-make_sdmTMB_delta_maps(p, folder = file.path(fig_dir, "cpue"))
+make_sdmTMB_delta_maps(p, folder = file.path(fig_dir, "cpue"), french = FRENCH)
 ```
 
 ```{r}
 make_re_plot <- function(fit, model = 1) {
   tidy(fit, "ran_vals", conf.int = TRUE, model = model) |> 
-    mutate(term2 = paste0("vessel ", stringr::str_pad(as.numeric(as.factor(term)), 2, pad = "0"))) |> 
+    mutate(term2 = paste0("vessel ", stringr::str_pad(as.numeric(as.factor(level_ids)), 2, pad = "0"))) |> 
     ggplot(aes(estimate, xmin = conf.low, xmax = conf.high, y = term2)) +
     geom_pointrange() +
     ylab(tr("Vessel", "Navire")) + xlab(tr("Random intercept value", "Valeur d'ordonnée à l'origine aléatoire"))
