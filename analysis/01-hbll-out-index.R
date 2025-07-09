@@ -4,6 +4,17 @@ library(sdmTMB)
 library(rnaturalearth)
 theme_set(gfplot::theme_pbs())
 
+# Set French language option
+FRENCH <- TRUE
+
+# Set decimal option for French
+if (FRENCH) options(OutDec = ",")
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
 # built in data/raw/pull-raw-data.R
 s <- readRDS("data/raw/survey-sets.rds")
 d <- dplyr::filter(s, grepl("HBLL OUT", survey_abbrev))
@@ -93,6 +104,21 @@ stopifnot(sum(is.na(d$offset)) == 0L)
 coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
   sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
 
+# Create appropriate figure directories
+if (FRENCH) {
+  dir.create("figs-french", showWarnings = FALSE)
+  dir.create("figs-french/hbll_out", showWarnings = FALSE)
+  fig_dir <- "figs-french"
+} else {
+  dir.create("figs/hbll_out", showWarnings = FALSE, recursive = TRUE)
+  fig_dir <- "figs"
+}
+
+# Helper function for figure paths
+fig_path <- function(filename) {
+  file.path(fig_dir, filename)
+}
+
 gg <- ggplot(d, aes(longitude, latitude, fill = Pit, colour = Pit)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
@@ -103,11 +129,13 @@ gg <- ggplot(d, aes(longitude, latitude, fill = Pit, colour = Pit)) +
   theme(panel.spacing = unit(0, "in"),
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  labs(x = "Longitude", y = "Latitude", fill = "Proportion baited hooks", colour = "Proportion baited hooks")
-ggsave("figs/hbll_out/baited_hooks.png", gg, height = 9, width = 7, dpi = 150)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), 
+       fill = tr("Proportion baited hooks", "Proportion d'hameçons appâtés"), 
+       colour = tr("Proportion baited hooks", "Proportion d'hameçons appâtés"))
+ggsave(fig_path("hbll_out/baited_hooks.png"), gg, height = 9, width = 7, dpi = 150)
 
 source("analysis/plot_multiyear_survey_sets.R")
-plot_multiyear_survey_sets(d, "HBLL OUT N", "density_ppkm2")
+plot_multiyear_survey_sets(d, "HBLL OUT N", "density_ppkm2", french = FRENCH)
 
 gg <- ggplot(d, aes(longitude, latitude, fill = catch_count/exp(offset), colour = catch_count/exp(offset), size = catch_count/exp(offset))) +
   geom_sf(data = coast, inherit.aes = FALSE) +
@@ -121,9 +149,9 @@ gg <- ggplot(d, aes(longitude, latitude, fill = catch_count/exp(offset), colour 
   scale_size_area() +
   # scale_colour_viridis_c(trans = "log", breaks = c(0.007, 0.05, 0.368, 2.72)) +
   # scale_fill_viridis_c(trans = "log", breaks = c(0.007, 0.05, 0.368, 2.72)) +
-  labs(x = "Longitude", y = "Latitude", fill = "CPUE", colour = "CPUE") +
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), fill = "CPUE", colour = "CPUE") +
   labs(colour = "CPUE", size = "CPUE")
-ggsave("figs/hbll_out/cpue.png", gg, height = 9, width = 7.5, dpi = 200)
+ggsave(fig_path("hbll_out/cpue.png"), gg, height = 9, width = 7.5, dpi = 200)
 
 gg <- d %>%
   mutate(cpue = catch_count/exp(offset)) %>%
@@ -132,19 +160,19 @@ gg <- d %>%
   geom_histogram(binwidth = 0.025, linewidth = 0.1, colour = 1, fill = "grey80") +
   facet_wrap(vars(year)) +
   #theme(panel.spacing = unit(0, "in")) +
-  labs(x = "CPUE", y = "Frequency") +
+  labs(x = "CPUE", y = tr("Frequency", "Fréquence")) +
   coord_cartesian(xlim = c(-0.0125, 0.35), expand = FALSE)
-ggsave("figs/hbll_out/cpue_hist.png", gg, height = 6, width = 6)
+ggsave(fig_path("hbll_out/cpue_hist.png"), gg, height = 6, width = 6)
 
 gg <- d %>%
   mutate(cpue = catch_count/exp(offset)) %>%
   ggplot(aes(depth_m, log(cpue + 1))) +
   geom_point(alpha = 0.5) +
   facet_wrap(vars(year)) +
-  labs(x = "Depth (m)", y = "log(CPUE + 1)") +
+  labs(x = tr("Depth (m)", "Profondeur (m)"), y = "log(CPUE + 1)") +
   theme(panel.spacing = unit(0, "in")) +
   coord_cartesian(xlim = c(0, 300))
-ggsave("figs/hbll_out/cpue_depth_time.png", gg, height = 5, width = 6)
+ggsave(fig_path("hbll_out/cpue_depth_time.png"), gg, height = 5, width = 6)
 
 
 ## Design-based index ----
@@ -178,9 +206,9 @@ g <- index_design %>%
   geom_line(linewidth = 0.1) +
   theme(panel.spacing = unit(0, "in"), legend.position = "bottom") +
   expand_limits(y = 0) +
-  labs(x = "Year", y = "Index of abundance", linetype = "Survey", shape = "Survey") +
+  labs(x = tr("Year", "Année"), y = tr("Index of abundance", "Indice d'abondance"), linetype = tr("Survey", "Relevé"), shape = tr("Survey", "Relevé")) +
   scale_shape_manual(values = c(16, 1))
-ggsave("figs/hbll_out/hbll_index_design.png", g, height = 4, width = 5)
+ggsave(fig_path("hbll_out/hbll_index_design.png"), g, height = 4, width = 5)
 
 
 ## Fit sdm model ----
@@ -197,9 +225,9 @@ g <- local({
     inlabru::gg(mesh_m, edge.color = "grey60") +
     geom_sf(data = coast %>% sf::st_transform(crs = 32609), inherit.aes = FALSE) +
     #geom_point(data = mesh$loc_xy %>% as.data.frame() %>% `*`(1e3), aes(X, Y), fill = "red", shape = 21, size = 1) +
-    labs(x = "Longitude", y = "Latitude")
+    labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"))
 })
-ggsave("figs/hbll_out/hbll_out_mesh.png", g, width = 5, height = 6)
+ggsave(fig_path("hbll_out/hbll_out_mesh.png"), g, width = 5, height = 6)
 
 range(d$julian)
 d |> filter(year == 2006) |> summarize(mean = mean(julian))
@@ -246,15 +274,20 @@ AIC(fit_nb2)
 plot_anisotropy(fit_nb2)
 plot_anisotropy(fit_nb2_julian)
 plot_anisotropy(fit_nb2_nohk)
-ggsave("figs/hbll_out/aniso.png", width = 4, height = 4)
+ggsave(fig_path("hbll_out/aniso.png"), width = 4, height = 4)
 
 fit_nb2
 fit_nb2$sd_report
 
 set.seed(12345)
 r <- residuals(fit_nb2_nohk)
-png("figs/hbll_out/qq.png", width = 5, height = 5, units = "in", res = 200)
-qqnorm(r, main = "");abline(0, 1)
+png(fig_path("hbll_out/qq.png"), width = 5, height = 5, units = "in", res = 200)
+if (FRENCH) {
+  qqnorm(r, main = "", asp = 1, xlab = "Quantiles théoriques", ylab = "Quantiles échantillons")
+} else {
+  qqnorm(r, main = "", asp = 1, xlab = "Theoretical quantiles", ylab = "Sample quantiels")
+}
+abline(0, 1)
 dev.off()
 
 # Censored Poisson -----
@@ -405,10 +438,10 @@ gg <- group_by(indexes, type) |>
   geom_pointrange(aes(ymin = lwr, ymax = upr), alpha = 1, position = position_dodge(width = 0.7), pch = 21, fill = NA) +
   ylim(0, NA) +
   coord_cartesian(expand = F) +
-  labs(colour = "Model", fill = "Model", y = "Scaled index", x = "Year") +
+  labs(colour = tr("Model", "Modèle"), fill = tr("Model", "Modèle"), y = tr("Scaled index", "Indice standardisé"), x = tr("Year", "Année")) +
   scale_colour_brewer(palette = "Dark2") +
   theme(legend.position.inside = c(0.7, 0.8))
-ggsave("figs/hbll_out/index_model_comparison.png", width = 7, height = 4)
+ggsave(fig_path("hbll_out/index_model_comparison.png"), width = 7, height = 4)
 
 ggplot() +
   geom_pointrange(data = indexes, aes(year, est, ymin = lwr, ymax = upr, colour = type, group = type)) +
@@ -438,8 +471,8 @@ gg <- ggplot(g, aes(longitude, latitude, fill = depth_m, colour = depth_m)) +
   geom_tile(width = 0.025, height = 0.025) +
   scale_fill_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750), option = "G") +
   scale_colour_viridis_c(trans = "sqrt", direction = -1, breaks = c(50, 250, 750), option = "G") +
-  labs(x = "Longitude", y = "Latitude", colour = "Depth (m)", fill = "Depth (m)")
-ggsave("figs/hbll_out/prediction_grid_depth.png", gg, height = 4, width = 4, dpi = 200)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), colour = tr("Depth (m)", "Profondeur (m)"), fill = tr("Depth (m)", "Profondeur (m)"))
+ggsave(fig_path("hbll_out/prediction_grid_depth.png"), gg, height = 4, width = 4, dpi = 200)
 
 # Omega ----
 rb_fill <- scale_fill_gradient2(high = "red", low = "blue", mid = "grey90")
@@ -450,8 +483,8 @@ gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = omega_s, colour = 
   coord_sf(expand = FALSE) +
   geom_tile(width = 0.025, height = 0.025) +
   rb_fill + rb_col +
-  labs(x = "Longitude", y = "Latitude", colour = "Spatial effect", fill = "Spatial effect")
-ggsave("figs/hbll_out/prediction_grid_omega.png", gg, height = 4, width = 4, dpi = 200)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), colour = tr("Spatial effect", "Effet spatial"), fill = tr("Spatial effect", "Effet spatial"))
+ggsave(fig_path("hbll_out/prediction_grid_omega.png"), gg, height = 4, width = 4, dpi = 200)
 
 # Epsilon ----
 gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = epsilon_st, colour = epsilon_st)) +
@@ -463,8 +496,8 @@ gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = epsilon_st, colour
   theme(panel.spacing = unit(0, "in"),
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  labs(x = "Longitude", y = "Latitude", colour = "Spatiotemporal\neffect", fill = "Spatiotemporal\neffect")
-ggsave("figs/hbll_out/prediction_grid_eps.png", gg, height = 9, width = 7, dpi = 200)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), colour = tr("Spatiotemporal\neffect", "Effet\nspatio-temporel"), fill = tr("Spatiotemporal\neffect", "Effet\nspatio-temporel"))
+ggsave(fig_path("hbll_out/prediction_grid_eps.png"), gg, height = 9, width = 7, dpi = 200)
 
 # log-density ----
 gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = est, colour = est)) +
@@ -477,17 +510,17 @@ gg <- ggplot(p_nb2_nohk$data, aes(longitude, latitude, fill = est, colour = est)
   theme(panel.spacing = unit(0, "in"),
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  labs(x = "Longitude", y = "Latitude", colour = "log density", fill = "log density")
-ggsave("figs/hbll_out/prediction_grid_density.png", gg, height = 9, width = 7, dpi = 200)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), colour = tr("log density", "log densité"), fill = tr("log density", "log densité"))
+ggsave(fig_path("hbll_out/prediction_grid_density.png"), gg, height = 9, width = 7, dpi = 200)
 
 # Index ----
 gg <- ggplot(ind_nohk, aes(year, est)) +
   geom_point() +
   geom_linerange(aes(ymin = lwr, ymax = upr)) +
-  labs(x = "Year", y = "HBLL Index") +
+  labs(x = tr("Year", "Année"), y = tr("HBLL Index", "Indice HBLL")) +
   expand_limits(y = 0) +
   coord_cartesian(expand = FALSE, xlim = range(ind_nohk$year) + c(-0.5, 0.5))
-ggsave("figs/hbll_out/hbll_index.png", gg, height = 3, width = 4)
+ggsave(fig_path("hbll_out/hbll_index.png"), gg, height = 3, width = 4)
 
 # Marginal effect of depth ----
 marginal_depth <- visreg::visreg(fit_nb2_nohk, xvar = "depth_m", breaks = seq(0, 270, 10),
@@ -498,8 +531,8 @@ gg <- plot(marginal_depth, gg = TRUE,
            line.par = list(col = 1),
            points.par = list(alpha = 0.2)) +
   coord_cartesian(xlim = c(0, 300), expand = FALSE) +
-  labs(x = "Depth (m)", y = "log(CPUE)")
-ggsave("figs/hbll_out/depth_marginal.png", gg, height = 4, width = 5)
+  labs(x = tr("Depth (m)", "Profondeur (m)"), y = "log(CPUE)")
+ggsave(fig_path("hbll_out/depth_marginal.png"), gg, height = 4, width = 5)
 
 
 # Predict on grid south of 51 degrees latitude (WCVI)
@@ -520,5 +553,5 @@ g <- ggplot(ind, aes(year, est)) +
   geom_point() +
   #facet_wrap(vars(name), ncol = 1) +
   expand_limits(y = 0) +
-  labs(x = "Year", y = "Index")
-ggsave("figs/compare_wcvi_index.png", g, height = 5, width = 4)
+  labs(x = tr("Year", "Année"), y = tr("Index", "Indice"))
+ggsave(fig_path("compare_wcvi_index.png"), g, height = 5, width = 4)

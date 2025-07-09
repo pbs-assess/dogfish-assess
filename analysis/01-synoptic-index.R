@@ -89,7 +89,7 @@ gg <- d %>%
   facet_wrap(vars(year), ncol = 4) +
   theme(panel.spacing = unit(0, "in"),
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  labs(x = expression(tr("CPUE (g/", "CPUE (g/")~m^2~tr(")", ")")), 
+  labs(x = expression("CPUE (g/"~m^2~")"), 
        y = tr("Frequency", "Fréquence"))
 ggsave(fig_path("synoptic/cpue_hist.png"), gg, height = 6, width = 5)
 

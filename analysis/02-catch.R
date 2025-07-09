@@ -5,7 +5,31 @@ library(readxl)
 source("analysis/utils.R")
 source("ss3/99-utils.R")
 library(here)
-dir.create("figs", showWarnings = FALSE)
+
+# Set French language option
+FRENCH <- TRUE
+
+# Set decimal option for French
+if (FRENCH) options(OutDec = ",")
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
+# Create appropriate figure directories
+if (FRENCH) {
+  dir.create("figs-french", showWarnings = FALSE)
+  fig_dir <- "figs-french"
+} else {
+  dir.create("figs", showWarnings = FALSE)
+  fig_dir <- "figs"
+}
+
+# Helper function for figure paths
+fig_path <- function(filename) {
+  file.path(fig_dir, filename)
+}
 
 # modern catches ------------------------------------------------------
 
@@ -209,11 +233,25 @@ d <- arrange(d, gear, year)
 d$species_common_name <- NULL
 d <- filter(d, year <= 2023)
 
-catch_plot <- function(x, column) {
+english_gear <- c("Bottom trawl", "Hook and line", "Midwater trawl", "Trap", 
+  "Trawl", "Trawl + hook and line", "Unknown/trawl")
+
+french_gear <- c("Chalut de fond", "Palangre", "Chalut pélagique", "Casier", 
+  "Chalut", "Chalut + palangre", "Inconnu/chalut")
+
+if (FRENCH) {
+  gear_mapping <- setNames(french_gear, english_gear)
+  # Translate values
+  d$gear <- gear_mapping[as.character(d$gear)]
+  # Set factor levels in the same order as the original English levels, but in French
+  d$gear <- factor(d$gear, levels = gear_mapping[levels(d$gear)])
+}
+
+catch_plot <- function(x, column) {  
   gears <- sort(unique(x$gear))
   cols <- RColorBrewer::brewer.pal(n = length(gears), name = "Dark2")
   names(cols) <- gears
-  ggplot(d, aes(x = year, y = {{ column }},  fill = gear)) +
+  ggplot(x, aes(x = year, y = {{ column }},  fill = gear)) +
     facet_wrap(~area, scales = "fixed") +
     geom_col(colour = "grey50", linewidth = 0.5) +
     coord_cartesian(expand = FALSE) +
@@ -234,12 +272,12 @@ names(cols) <- gears
 #ggsave("figs/reconstructed-catch.png", g, width = 8, height = 8)
 
 ## Both Inside and Outside ----
-land <- catch_plot(d, landed_kg/1e6) + labs(x = "Year", y = "Landings (kt)")
-discard <- catch_plot(d, discarded_kg/1000) + labs(x = "Year", y = "Discards (kt)")
-catch <- catch_plot(d, landed_kg/1000 + discarded_kg/1000) + labs(x = "Year", y = "Catch (t)")
+land <- catch_plot(d, landed_kg/1e6) + labs(x = tr("Year", "Année"), y = tr("Landings (kt)", "Débarquements (kt)"))
+discard <- catch_plot(d, discarded_kg/1000) + labs(x = tr("Year", "Année"), y = tr("Discards (kt)", "Rejets (kt)"))
+catch <- catch_plot(d, landed_kg/1000 + discarded_kg/1000) + labs(x = tr("Year", "Année"), y = tr("Catch (t)", "Capture (t)"))
 
 g <- cowplot::plot_grid(plotlist = list(land, discard, catch), ncol = 1L)
-ggsave("figs/reconstructed-catch-discards.png", g, width = 8, height = 6)
+ggsave(fig_path("reconstructed-catch-discards.png"), g, width = 8, height = 6)
 
 # Proportion discards
 p_discard <- catch_plot(d, landed_kg/1000 + discarded_kg/1000) + labs(x = "Year", y = "Catch (t)")
@@ -250,14 +288,14 @@ g <- d %>% group_by(year, area) %>%
   facet_wrap(~area, scales = "fixed") +
   geom_line() +
   theme_pbs() +
-  labs(x = "Year", y = "Proportion discards")
-ggsave("figs/proportion-discards.png", g, width = 5, height = 2.5)
+  labs(x = tr("Year", "Année"), y = tr("Proportion discards", "Proportion de rejets"))
+ggsave(fig_path("proportion-discards.png"), g, width = 5, height = 2.5)
 
 g <- catch + facet_wrap(~area, ncol = 1) +
-  ylab("Reconstructed catch (t)") +
-  labs(fill = "Gear") + xlab("") +
+  ylab(tr("Reconstructed catch (t)", "Capture reconstituée (t)")) +
+  labs(fill = tr("Gear", "Engin")) + xlab("") +
   ggtitle("")
-ggsave("figs/reconstructed-catch.png", g, width = 6.4, height = 5.5)
+ggsave(fig_path("reconstructed-catch.png"), g, width = 6.4, height = 5.5)
 
 saveRDS(d, file = "data/generated/catch.rds")
 
@@ -267,9 +305,9 @@ g <- d |>
   filter(area != "4B") |>
   select(-discarded_pcs) |>
   reshape2::melt(id.vars = c("year", "gear", "area")) |>
-  mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
+  mutate(variable = ifelse(variable == "landed_kg", tr("Landings (kt)", "Débarquements (kt)"), tr("Discards (kt)", "Rejets (kt)")),
          value = value/1e6) %>%
-  mutate(variable = factor(variable, levels = c("Landings (kt)", "Discards (kt)"))) |>
+  mutate(variable = factor(variable, levels = c(tr("Landings (kt)", "Débarquements (kt)"), tr("Discards (kt)", "Rejets (kt)")))) |>
   filter(!is.na(value)) |>
   ggplot(aes(year, value, fill = gear)) +
   geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
@@ -279,12 +317,12 @@ g <- d |>
   theme_pbs() +
   scale_fill_manual(values = cols) +
   # expand_limits(y = 0) +
-  labs(y = NULL, x = "Year", fill = "Gear") +
+  labs(y = NULL, x = tr("Year", "Année"), fill = tr("Gear", "Engin")) +
   theme(legend.position = "bottom",
         strip.placement = "outside") +
   guides(fill=guide_legend(nrow=2,byrow=TRUE))
 g
-ggsave("figs/reconstructed-catch-discards-outside.png", g, width = 5, height = 5)
+ggsave(fig_path("reconstructed-catch-discards-outside.png"), g, width = 5, height = 5)
 
 g1 <- d %>%
   filter(year <= 2023) |>
@@ -294,9 +332,9 @@ g1 <- d %>%
   ungroup() |>
   select(year, area, gear, landed_kg, discarded_kg) |>
   reshape2::melt(id.vars = c("year", "gear", "area")) %>%
-  mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
+  mutate(variable = ifelse(variable == "landed_kg", tr("Landings (kt)", "Débarquements (kt)"), tr("Discards (kt)", "Rejets (kt)")),
     value = value/1e6) %>%
-  mutate(variable = factor(variable, levels = c("Landings (kt)", "Discards (kt)"))) |>
+  mutate(variable = factor(variable, levels = c(tr("Landings (kt)", "Débarquements (kt)"), tr("Discards (kt)", "Rejets (kt)")))) |>
   mutate(area = paste0(area, " (zoomed to 1980-2023)")) |>
   ggplot(aes(year, value, fill = gear)) +
   geom_col(colour = "grey50", linewidth = 0.5, width = 1) +
@@ -307,15 +345,15 @@ g1 <- d %>%
   scale_fill_manual(values = cols) +
   coord_cartesian(xlim = c(1980, 2023)) +
   # expand_limits(y = 0) +
-  labs(y = NULL, x = "Year", fill = "Gear") +
+  labs(y = NULL, x = tr("Year", "Année"), fill = tr("Gear", "Engin")) +
   theme(legend.position = "bottom",
     strip.placement = "outside") +
   guides(fill=guide_legend(nrow=2,byrow=TRUE))
 g1
-ggsave_optipng("figs/reconstructed-catch-discards-outside-zoom.png", width = 5, height = 5)
+ggsave_optipng(fig_path("reconstructed-catch-discards-outside-zoom.png"), width = 5, height = 5)
 
 gg <- patchwork::wrap_plots(list(g + theme(axis.title.x = element_blank()), g1 + guides(fill = "none") + theme(axis.title.x = element_blank())), widths = c(1.7, 1))
-ggsave_optipng("figs/reconstructed-catch-discards-outside-sar.png", width = 8, height = 5)
+ggsave_optipng(fig_path("reconstructed-catch-discards-outside-sar.png"), width = 8, height = 5)
 
 d %>%
   filter(year <= 2023) |>
@@ -323,7 +361,7 @@ d %>%
   filter(area != "4B") %>%
   select(-discarded_pcs) |>
   reshape2::melt(id.vars = c("year", "gear", "area")) %>%
-  mutate(variable = ifelse(variable == "landed_kg", "Landings (kt)", "Discards (kt)"),
+  mutate(variable = ifelse(variable == "landed_kg", tr("Landings (kt)", "Débarquements (kt)"), tr("Discards (kt)", "Rejets (kt)")),
     value = value/1e6) %>%
   group_by(year, gear, area) |> summarise(value = sum(value)) |>
   mutate(area = paste0(area, " (zoomed in to 1980-2023)")) |>
@@ -336,7 +374,7 @@ d %>%
   scale_fill_manual(values = cols) +
   coord_cartesian(xlim = c(1978, 2023), ylim = c(0, 6)) +
   # expand_limits(y = 0) +
-  labs(y = NULL, x = "Year", fill = "Gear") +
+  labs(y = NULL, x = tr("Year", "Année"), fill = tr("Gear", "Engin")) +
   theme(legend.position = "bottom",
     strip.placement = "outside") +
   guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
@@ -344,9 +382,9 @@ d %>%
   #   "rect", xmin = 1978, xmax = 2023,
   #   ymin = 4.5, ymax = 9.333, alpha = 0.15, fill = "black"
   # ) +
-  ylab("Catch (kt) (discards + landings)")
+  ylab(tr("Catch (kt) (discards + landings)", "Capture (kt) (rejets + débarquements)"))
 source("ss3/99-utils.R")
-ggsave_optipng("figs/reconstructed-catch-discards-outside-zoom-high-risk-band.png", width = 5, height = 4)
+ggsave_optipng(fig_path("reconstructed-catch-discards-outside-zoom-high-risk-band.png"), width = 5, height = 4)
 
 # table to share:
 out <- d |>
@@ -388,9 +426,9 @@ g <- d %>%
   #geom_line(colour = "grey50", linewidth = 0.5) +
   #coord_cartesian(expand = FALSE) +
   theme_pbs() +
-  labs(x = "Year", y = "Proportion discards") +
+  labs(x = tr("Year", "Année"), y = tr("Proportion discards", "Proportion de rejets")) +
   geom_vline(xintercept = 1996, linetype = 2)
-ggsave("figs/proportion-discards-outside.png", g, width = 4, height = 2.5)
+ggsave(fig_path("proportion-discards-outside.png"), g, width = 4, height = 2.5)
 
 g <- d %>%
   filter(area != "4B") %>%
@@ -404,9 +442,9 @@ g <- d %>%
   #geom_line(colour = "grey50", linewidth = 0.5) +
   #coord_cartesian(expand = FALSE) +
   theme_pbs() +
-  labs(x = "Year", y = "Proportion discards") +
+  labs(x = tr("Year", "Année"), y = tr("Proportion discards", "Proportion de rejets")) +
   geom_vline(xintercept = 1996, linetype = 2)
-ggsave("figs/proportion-discards-outside-gear.png", g, width = 6, height = 4)
+ggsave(fig_path("proportion-discards-outside-gear.png"), g, width = 6, height = 4)
 
 
 # ## Inside only ----
@@ -441,3 +479,5 @@ ggsave("figs/proportion-discards-outside-gear.png", g, width = 6, height = 4)
 #   labs(x = "Year", y = "Proportion discards") +
 #   geom_vline(xintercept = 1996, linetype = 2)
 # ggsave("figs/proportion-discards-inside.png", g, width = 4, height = 2.5)
+
+if (FRENCH) options(OutDec = ".")

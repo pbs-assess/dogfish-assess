@@ -9,7 +9,7 @@ library(gfdata)
 library(here)
 
 # Set French language option
-FRENCH <- FALSE
+FRENCH <- TRUE
 
 # Set decimal option for French
 if (FRENCH) options(OutDec = ",")
@@ -387,7 +387,12 @@ fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 set.seed(123)
 r <- residuals(fit_iphc_nb2, type = "mle-mvn")
 png(fig_path("iphc/qq.png"), width = 5, height = 5, res = 200, units = "in")
-qqnorm(r, main = "", asp = 1);abline(0, 1)
+if (FRENCH) {
+  qqnorm(r, main = "", asp = 1, xlab = "Quantiles théoriques", ylab = "Quantiles échantillons")
+} else {
+  qqnorm(r, main = "", asp = 1, xlab = "Theoretical quantiles", ylab = "Sample quantiels")
+}
+abline(0, 1)
 dev.off()
 
 set.seed(1)
@@ -451,7 +456,8 @@ ggplot(g, aes(UTM_lon, UTM_lat, colour = depth_m_log)) +
   coord_fixed() +
   scale_colour_viridis_c(trans = "sqrt", direction = -1)
 
-years <- seq(1998, 2022,1)
+# years <- seq(1998, 2022,1)
+years <- unique(fit_iphc_nb2$data$year)
 grid <- sdmTMB::replicate_df(g, "year", years)
 
 # p_rw <- predict(fit_rw, newdata = grid, return_tmb_object = TRUE)
