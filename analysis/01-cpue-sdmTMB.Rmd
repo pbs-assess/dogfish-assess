@@ -52,7 +52,7 @@ dir.create(here("data"), showWarnings = FALSE)
 dir.create(here("data", "generated"), showWarnings = FALSE)
 
 # Set French language option
-FRENCH <- FALSE
+FRENCH <- TRUE
 
 # Create appropriate figure directories
 if (FRENCH) {
@@ -276,6 +276,7 @@ bind_rows(
 
 # on its own:
 
+if (FRENCH) options(OutDec = ",")
 ind_spt |>
   mutate(
     upr = upr / exp(mean(log(est))),
@@ -297,10 +298,6 @@ saveRDS(ind_sp, "data/generated/geostat-sp-ind-cpue.rds")
 saveRDS(ind_spt, "data/generated/geostat-spt-ind-cpue.rds")
 
 ggsave(fig_path("cpue/cpue-index-spatiotemporal.png"), width = 6, height = 4)
-```
-
-```{r}
-if (FRENCH) options(OutDec = ",")
 ```
 
 ```{r}

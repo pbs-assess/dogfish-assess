@@ -8,6 +8,17 @@ library(gfiphc)
 library(gfdata)
 library(here)
 
+# Set French language option
+FRENCH <- FALSE
+
+# Set decimal option for French
+if (FRENCH) options(OutDec = ",")
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
 # note 2020 fishing was completed in July and August, whereas it is usually May to August.
 # also 2021 and 2022 have reduced WCVI sampling.
 
@@ -277,7 +288,20 @@ saveRDS(d, "data/generated/IPHC_coastdata_nosog_gfdata_hk.rds")
 coast <- rnaturalearth::ne_countries(scale = 10, continent = "north america", returnclass = "sf") %>%
   sf::st_crop(xmin = -134, xmax = -125, ymin = 48, ymax = 55)
 
-dir.create("figs/iphc", showWarnings = FALSE, recursive = TRUE)
+# Create appropriate figure directories
+if (FRENCH) {
+  dir.create("figs-french", showWarnings = FALSE)
+  dir.create("figs-french/iphc", showWarnings = FALSE)
+  fig_dir <- "figs-french"
+} else {
+  dir.create("figs/iphc", showWarnings = FALSE, recursive = TRUE)
+  fig_dir <- "figs"
+}
+
+# Helper function for figure paths
+fig_path <- function(filename) {
+  file.path(fig_dir, filename)
+}
 
 theme_set(gfplot::theme_pbs())
 gg <- ggplot(d, aes(longitude, latitude, fill = bait/hooksobserved, colour = bait/hooksobserved)) +
@@ -290,8 +314,10 @@ gg <- ggplot(d, aes(longitude, latitude, fill = bait/hooksobserved, colour = bai
   theme(panel.spacing = unit(0, "in"),
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  labs(x = "Longitude", y = "Latitude", fill = "Proportion baited hooks", colour = "Proportion baited hooks")
-ggsave("figs/iphc/baited_hooks.png", gg, height = 9, width = 7, dpi = 200)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), 
+       fill = tr("Proportion baited hooks", "Proportion d'hameçons appâtés"), 
+       colour = tr("Proportion baited hooks", "Proportion d'hameçons appâtés"))
+ggsave(fig_path("iphc/baited_hooks.png"), gg, height = 9, width = 7, dpi = 200)
 
 d$numobs <- ifelse(is.na(d$N_it) == TRUE, d$N_it20, d$N_it)
 
@@ -304,8 +330,9 @@ gg <- ggplot(d, aes(longitude, latitude, fill = numobs/exp(offset), colour = num
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   scale_colour_viridis_c(trans = "log", breaks = c(0.006, 0.050, 0.37)) +
   scale_fill_viridis_c(trans = "log", breaks = c(0.006, 0.050, 0.37)) +
-  labs(x = "Longitude", y = "Latitude", fill = "CPUE", colour = "CPUE")
-ggsave("figs/iphc/cpue.png", gg, height = 9, width = 7, dpi = 190)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), 
+       fill = "CPUE", colour = "CPUE")
+ggsave(fig_path("iphc/cpue.png"), gg, height = 9, width = 7, dpi = 190)
 
 gg <- d %>%
   mutate(cpue = numobs/exp(offset)) %>%
@@ -314,9 +341,9 @@ gg <- d %>%
   facet_wrap(vars(year), ncol = 5) +
   theme(#panel.spacing = unit(0, "in"),
         strip.background = element_blank()) +
-  labs(x = "CPUE", y = "Frequency") +
+  labs(x = "CPUE", y = tr("Frequency", "Fréquence")) +
   coord_cartesian(xlim = c(-0.125, 3), expand = FALSE)
-ggsave("figs/iphc/cpue_hist.png", gg, height = 5, width = 6)
+ggsave(fig_path("iphc/cpue_hist.png"), gg, height = 5, width = 6)
 
 ## Fit sdm model ----
 mesh <- make_mesh(d, c("UTM_lon", "UTM_lat"), cutoff = 15)
@@ -332,9 +359,9 @@ g <- local({
     inlabru::gg(mesh_m, edge.color = "grey60") +
     geom_sf(data = coast %>% sf::st_transform(crs = 32609), inherit.aes = FALSE) +
     #geom_point(data = mesh$loc_xy %>% as.data.frame() %>% `*`(1e3), aes(X, Y), fill = "red", shape = 21, size = 1) +
-    labs(x = "Longitude", y = "Latitude")
+    labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"))
 })
-ggsave("figs/iphc/iphc_mesh.png", g, width = 5, height = 6)
+ggsave(fig_path("iphc/iphc_mesh.png"), g, width = 5, height = 6)
 
 # Call sdm
 d <- readRDS("data/generated/IPHC_coastdata_nosog_gfdata_hk.rds")
@@ -359,7 +386,7 @@ fit_iphc_nb2 <- readRDS("data/generated/iphc-nb2-sdmTMB_gfdata.rds")
 
 set.seed(123)
 r <- residuals(fit_iphc_nb2, type = "mle-mvn")
-png("figs/iphc/qq.png", width = 5, height = 5, res = 200, units = "in")
+png(fig_path("iphc/qq.png"), width = 5, height = 5, res = 200, units = "in")
 qqnorm(r, main = "", asp = 1);abline(0, 1)
 dev.off()
 
@@ -395,7 +422,7 @@ fit_iphc_nb2
 fit_iphc_nb2$sd_report
 sanity(fit_iphc_nb2)
 plot_anisotropy(fit_iphc_nb2)
-ggsave("figs/iphc/aniso.png", width = 4, height = 4)
+ggsave(fig_path("iphc/aniso.png"), width = 4, height = 4)
 tidy(fit_iphc_nb2, conf.int = TRUE)
 tidy(fit_iphc_nb2, effects = "ran_pars", conf.int = TRUE)
 
@@ -538,8 +565,9 @@ gg <- grid %>% filter(year == 1998) %>%
   geom_point(shape = 21) +
   scale_fill_viridis_c(trans = "sqrt", option = "G", direction = -1) +
   scale_colour_viridis_c(trans = "sqrt", option = "G", direction = -1) +
-  labs(x = "Longitude", y = "Latitude", colour = "Depth (m)", fill = "Depth (m)")
-ggsave("figs/iphc/prediction_grid_depth.png", gg, height = 4, width = 4, dpi = 200)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), 
+       colour = tr("Depth (m)", "Profondeur (m)"), fill = tr("Depth (m)", "Profondeur (m)"))
+ggsave(fig_path("iphc/prediction_grid_depth.png"), gg, height = 4, width = 4, dpi = 200)
 
 # Omega ----
 rb_fill <- scale_fill_gradient2(high = "red", low = "blue", mid = "grey90")
@@ -550,8 +578,9 @@ gg <- ggplot(p$data, aes(longitude, latitude, fill = omega_s, colour = omega_s))
   coord_sf(expand = FALSE) +
   geom_point(shape = 21) +
   rb_fill + rb_col +
-  labs(x = "Longitude", y = "Latitude", colour = "Spatial effect", fill = "Spatial effect")
-ggsave("figs/iphc/prediction_grid_omega.png", gg, height = 4, width = 4, dpi = 200)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), 
+       colour = tr("Spatial effect", "Effet spatial"), fill = tr("Spatial effect", "Effet spatial"))
+ggsave(fig_path("iphc/prediction_grid_omega.png"), gg, height = 4, width = 4, dpi = 200)
 
 # Epsilon ----
 gg <- ggplot(p$data, aes(longitude, latitude, fill = epsilon_st, colour = epsilon_st)) +
@@ -563,8 +592,10 @@ gg <- ggplot(p$data, aes(longitude, latitude, fill = epsilon_st, colour = epsilo
   theme(panel.spacing = unit(0, "in"),
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  labs(x = "Longitude", y = "Latitude", colour = "Spatiotemporal\neffect", fill = "Spatiotemporal\neffect")
-ggsave("figs/iphc/prediction_grid_eps.png", gg, height = 9, width = 6, dpi = 200)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), 
+       colour = tr("Spatiotemporal\neffect", "Effet\nspatio-temporel"), 
+       fill = tr("Spatiotemporal\neffect", "Effet\nspatio-temporel"))
+ggsave(fig_path("iphc/prediction_grid_eps.png"), gg, height = 9, width = 6, dpi = 200)
 
 # log-density ----
 gg <- ggplot(p$data, aes(longitude, latitude, fill = est, colour = est)) +
@@ -577,17 +608,18 @@ gg <- ggplot(p$data, aes(longitude, latitude, fill = est, colour = est)) +
   theme(panel.spacing = unit(0, "in"),
         legend.position = 'bottom',
         axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  labs(x = "Longitude", y = "Latitude", colour = "log density", fill = "log density")
-ggsave("figs/iphc/prediction_grid_density.png", gg, height = 9, width = 6, dpi = 200)
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), 
+       colour = tr("log density", "log densité"), fill = tr("log density", "log densité"))
+ggsave(fig_path("iphc/prediction_grid_density.png"), gg, height = 9, width = 6, dpi = 200)
 
 # Index ----
 # Compare geo-spatial index with nominal index (bootstrapped mean) ----
 gg <- ggplot(ind, aes(year, est)) +
   geom_point() +
   geom_linerange(aes(ymin = lwr, ymax = upr)) +
-  labs(x = "Year", y = "IPHC Index") +
+  labs(x = tr("Year", "Année"), y = tr("IPHC Index", "Indice IPHC")) +
   expand_limits(y = 0)
-ggsave("figs/iphc/iphc_index.png", gg, height = 3, width = 4)
+ggsave(fig_path("iphc/iphc_index.png"), gg, height = 3, width = 4)
 
 do_boot <- function(x, nsim = 250) {
   boot_fn <- function(d, i) {
@@ -614,7 +646,7 @@ index_boot_Nit20 <- d %>%
   do_boot()
 
 index_compare <- rbind(
-  ind %>% select(year, est, lwr, upr) %>% mutate(type = "Geospatial model"),
+  ind %>% select(year, est, lwr, upr) %>% mutate(type = tr("Geospatial model", "Modèle géospatial")),
   index_boot_Nit %>%
     #mutate(lwr = exp(log(index) - 1.96 * sqrt(log(1 + sd^2))),
     #       upr = exp(log(index) + 1.96 * sqrt(log(1 + sd^2)))) %>%
@@ -622,7 +654,7 @@ index_compare <- rbind(
            upr = index + 1.96 * sd) %>%
     select(year, index, lwr, upr) %>%
     rename(est = index) %>%
-    mutate(type = "Bootstrapped mean - all hooks"),
+    mutate(type = tr("Bootstrapped mean - all hooks", "Moyenne bootstrap - tous les hameçons")),
   index_boot_Nit20 %>%
     #mutate(lwr = exp(log(index) - 1.96 * sqrt(log(1 + sd^2))),
     #       upr = exp(log(index) + 1.96 * sqrt(log(1 + sd^2)))) %>%
@@ -630,7 +662,7 @@ index_compare <- rbind(
            upr = index + 1.96 * sd) %>%
     select(year, index, lwr, upr) %>%
     rename(est = index) %>%
-    mutate(type = "Bootstrapped mean - 20 hooks")
+    mutate(type = tr("Bootstrapped mean - 20 hooks", "Moyenne bootstrap - 20 hameçons"))
 )
 
 gg <- index_compare %>%
@@ -641,8 +673,8 @@ gg <- index_compare %>%
   facet_wrap(vars(type), ncol = 2, scales = "free_y") +
   gfplot::theme_pbs() +
   expand_limits(y = 0) +
-  labs(x = "Year", y = "Index of abundance")
-ggsave("figs/iphc/iphc_index_compare.png", gg, height = 5, width = 6)
+  labs(x = tr("Year", "Année"), y = tr("Index of abundance", "Indice d'abondance"))
+ggsave(fig_path("iphc/iphc_index_compare.png"), gg, height = 5, width = 6)
 
 
 # Marginal effect of depth ----
@@ -655,8 +687,8 @@ gg <- plot(marginal_depth, gg = TRUE,
            line.par = list(col = 1),
            points.par = list(alpha = 0.2)) +
   coord_cartesian(xlim = c(0, 500), expand = FALSE) +
-  labs(x = "Depth (m)", y = "log(CPUE)")
-ggsave("figs/iphc/depth_marginal.png", gg, height = 4, width = 5)
+  labs(x = tr("Depth (m)", "Profondeur (m)"), y = "log(CPUE)")
+ggsave(fig_path("iphc/depth_marginal.png"), gg, height = 4, width = 5)
 
 
 # Generate IPHC index on HBLL grid - is decline in HBLL a function of habitat?
@@ -668,19 +700,19 @@ hbll <- sdmTMB::replicate_df(gfplot::hbll_grid$grid, "year", unique(fit_iphc_nb2
 g <- rbind(
   gfplot::hbll_grid$grid %>% rename(longitude = X, latitude = Y) %>%
     select(longitude, latitude) %>%
-    mutate(name = "HBLL grid"),
+    mutate(name = tr("HBLL grid", "Grille HBLL")),
   d %>%
     select(longitude, latitude) %>%
-    mutate(name = "IPHC sets")
+    mutate(name = tr("IPHC sets", "Traits IPHC"))
 ) %>%
   ggplot(aes(longitude, latitude, colour = name)) +
   geom_sf(data = coast, inherit.aes = FALSE) +
   coord_sf(expand = FALSE) +
   geom_point(shape = 1) +
-  labs(x = "Longitude", y = "Latitude", colour = NULL) +
+  labs(x = tr("Longitude", "Longitude"), y = tr("Latitude", "Latitude"), colour = NULL) +
   theme(legend.position = "bottom") +
   scale_colour_manual(values = c(1, 2))
-ggsave("figs/iphc/iphc_hbll_grid.png", g, width = 5, height = 5)
+ggsave(fig_path("iphc/iphc_hbll_grid.png"), g, width = 5, height = 5)
 
 p <- predict(fit_iphc_nb2, newdata = hbll, return_tmb_object = TRUE)
 ind <- get_index(p, bias_correct = TRUE)
@@ -690,8 +722,8 @@ g <- ggplot(ind, aes(year, est)) +
   geom_linerange(aes(ymin = lwr, ymax = upr)) +
   geom_point() +
   expand_limits(y = 0) +
-  labs(x = "Year", y = "IPHC index on HBLL grid")
-ggsave("figs/iphc/iphc_index_on_hbll.png", g, height = 3, width = 4)
+  labs(x = tr("Year", "Année"), y = tr("IPHC index on HBLL grid", "Indice IPHC sur grille HBLL"))
+ggsave(fig_path("iphc/iphc_index_on_hbll.png"), g, height = 3, width = 4)
 
 hbll_wcvi <- filter(hbll, Y <= 51)
 p <- predict(fit_iphc_nb2, newdata = hbll_wcvi, return_tmb_object = TRUE)
@@ -731,3 +763,6 @@ readr::write_csv(ind, file = "data/generated/iphc_index_on_hbll_south51.csv")
 #   summarize(geometry = sf::st_union(geometry)) %>%
 #   sf::st_convex_hull()
 # plot(hulls)
+
+# Revert decimal option
+if (FRENCH) options(OutDec = ".")
