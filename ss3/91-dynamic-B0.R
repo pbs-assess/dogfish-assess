@@ -1,3 +1,25 @@
+# Set French language option
+FRENCH <- TRUE
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
+# Create appropriate figure directories
+if (FRENCH) {
+  dir.create("figs-french", showWarnings = FALSE)
+  fig_dir <- "figs-french"
+} else {
+  dir.create("figs", showWarnings = FALSE, recursive = TRUE)
+  fig_dir <- "figs"
+}
+
+# Helper function for figure paths
+fig_path <- function(filename) {
+  file.path(fig_dir, filename)
+}
+
 library(r4ss)
 library(ggplot2)
 library(dplyr)
@@ -37,7 +59,7 @@ zero_out_catch_A0 <- function(yrs, return_B = TRUE) {
       filter(Era == "TIME", `Beg/Mid` == "B") %>%
       select(Yr, Sex, as.character(age)) %>%
       reshape2::melt(id.vars = c("Yr", "Sex")) %>%
-      mutate(Sex = ifelse(Sex == 1, "Female", "Male"))
+      mutate(Sex = ifelse(Sex == 1, tr("Female", "Femelle"), tr("Male", "Mâle")))
     return(out)
   }
 }
@@ -84,7 +106,7 @@ zero_out_catch_A3 <- function(yrs, return_B = TRUE) {
       filter(Era == "TIME", `Beg/Mid` == "B") %>%
       select(Yr, Sex, as.character(age)) %>%
       reshape2::melt(id.vars = c("Yr", "Sex")) %>%
-      mutate(Sex = ifelse(Sex == 1, "Female", "Male"))
+      mutate(Sex = ifelse(Sex == 1, tr("Female", "Femelle"), tr("Male", "Mâle")))
     return(out)
   }
 }
@@ -111,11 +133,11 @@ make_ts_plot <- function(dat) {
     annotate("rect", xmax = 1950, xmin = 1930, ymin = 0, ymax = 1, fill = "grey95") +
     geom_line() +
     theme(axis.title.x = element_blank()) +
-    ylab("Depletion (S/S<sub>0</sub>)") +
+    ylab(tr("Depletion (S/S<sub>0</sub>)", "Épuisement (S/S<sub>0</sub>)")) +
     theme(axis.title.y = ggtext::element_markdown(), legend.position.inside = c(0.8, 0.8), legend.position = "inside") +
     coord_cartesian(xlim = c(min(dat$year), 2023), ylim = c(0, 1), expand = FALSE) +
     scale_x_continuous(breaks = seq(1940, 2030, 10)) +
-    labs(colour = "Scenario")
+    labs(colour = tr("Scenario", "Scénario"))
 }
 
 # g0 <- make_ts_plot(dat_A3) + ggtitle("A3 (McFarlane and Beamish 1987 maturity ogive)")
@@ -126,12 +148,12 @@ g2 <- make_ts_plot(dat_A3) + ggtitle(("A3 (McFarlane and Beamish 1987 maturity o
 patchwork::wrap_plots(g1, g2, nrow = 2)
 
 source("ss3/99-utils.R")
-ggsave_optipng("figs/dynamic-B0.png", width = 5, height = 5.5)
+ggsave_optipng(fig_path("dynamic-B0.png"), width = 5, height = 5.5)
 
 g1
-ggsave_optipng("figs/dynamic-B0-A0.png", width = 5, height = 3.25)
+ggsave_optipng(fig_path("dynamic-B0-A0.png"), width = 5, height = 3.25)
 g2
-ggsave_optipng("figs/dynamic-B0-A3.png", width = 5, height = 3.25)
+ggsave_optipng(fig_path("dynamic-B0-A3.png"), width = 5, height = 3.25)
 
 dat_A0_dyn_N <- zero_out_catch_A0(1950:2030, return_B = F) |> mutate(type = "A0 no catch after 1950")
 dat_A0_N <- zero_out_catch_A0(0:1, return_B = F) |> mutate(type = "A0")
@@ -139,36 +161,50 @@ dat_A0_N <- zero_out_catch_A0(0:1, return_B = F) |> mutate(type = "A0")
 
 dat <- bind_rows(dat_A0_dyn_N, dat_A0_N)
 
+# Set decimal option for French
+if (FRENCH) {
+  old_dec <- options()$OutDec
+  options(OutDec = ",")
+}
+
 dat |>
-  filter(Sex == "Female") |>
+  filter(Sex %in% c("Female", "Femelle")) |>
   ggplot(aes(Yr, variable, size = value, colour = value)) +
   geom_point(pch = 21) +
   geom_point(pch = 19, alpha = 0.07) +
   geom_abline(intercept = seq(-500, 0, 1), slope = 0.1, colour = "grey60", lty = 2) +
   theme(axis.title.x = element_blank()) +
-  ylab("Age") +
+  ylab(tr("Age", "Âge")) +
   facet_wrap(~type) +
   scale_size_area(max_size = 12) +
   scale_colour_viridis_c() +
   guides(colour = "none", size = "none") +
   coord_cartesian(expand = FALSE, xlim = range(dat$Yr), ylim = c(0.8, 6.2)) +
   scale_x_continuous(breaks = seq(1940, 2020, 10))
-ggsave_optipng("figs/dynamic-bubble-A0.png", width = 9, height = 3.5)
+ggsave_optipng(fig_path("dynamic-bubble-A0.png"), width = 9, height = 3.5)
 
+if (FRENCH) {
+  options(OutDec = old_dec)
+}
 
 # A3 with lines??
 dat_A3_dyn_N <- zero_out_catch_A3(1950:2030, return_B = F) |> mutate(type = "A3 no catch after 1950")
 dat_A3_N <- zero_out_catch_A3(0:1, return_B = F) |> mutate(type = "A3")
 dat_A3 <- bind_rows(dat_A3_dyn_N, dat_A3_N)
 
+if (FRENCH) {
+  old_dec <- options()$OutDec
+  options(OutDec = ",")
+}
+
 dat_A3 |>
-  filter(Sex == "Female") |>
+  filter(Sex %in% c("Female", "Femelle")) |>
   ggplot(aes(Yr, variable, size = value, colour = value)) +
   geom_point(pch = 21) +
   geom_point(pch = 19, alpha = 0.07) +
   geom_abline(intercept = seq(-500, 0, 1), slope = 0.1, colour = "grey60", lty = 2) +
   theme(axis.title.x = element_blank()) +
-  ylab("Age") +
+  ylab(tr("Age", "Âge")) +
   facet_wrap(~type) +
   scale_size_area(max_size = 12) +
   scale_colour_viridis_c() +
@@ -176,4 +212,9 @@ dat_A3 |>
   coord_cartesian(expand = FALSE, xlim = range(dat$Yr), ylim = c(0.8, 6.2)) +
   scale_x_continuous(breaks = seq(1940, 2020, 10))
 
-ggsave_optipng("figs/dynamic-bubble-A3.png", width = 9, height = 3.5)
+ggsave_optipng(fig_path("dynamic-bubble-A3.png"), width = 9, height = 3.5)
+
+# Reset decimal separator
+if (FRENCH) {
+  options(OutDec = old_dec)
+}

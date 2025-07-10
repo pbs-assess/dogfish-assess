@@ -1,3 +1,17 @@
+# Set French language option
+FRENCH <- TRUE
+
+# Set decimal option for French
+if (FRENCH) {
+  old_dec <- options()$OutDec
+  options(OutDec = ",")
+}
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
 library(snowfall)
 library(dplyr)
 library(ggplot2)
@@ -39,15 +53,28 @@ scale_colour_discrete <- function(...) {
   scale_colour_viridis_d(option = "D")
 }
 
-dir.create("figs/ss3/retro/", showWarnings = F)
+# Create appropriate figure directories
+if (FRENCH) {
+  dir.create("figs-french", showWarnings = FALSE)
+  dir.create("figs-french/ss3/retro", showWarnings = FALSE, recursive = TRUE)
+  fig_dir <- "figs-french"
+} else {
+  dir.create("figs/ss3/retro/", showWarnings = FALSE, recursive = TRUE)
+  fig_dir <- "figs"
+}
+
+# Helper function for figure paths
+fig_path <- function(filename) {
+  file.path(fig_dir, filename)
+}
 
 for (i in 1:length(model_dir)) {
   ret <- r4ss::SSgetoutput(
     dirvec = file.path(ss_home, model_dir[i], "retrospectives", paste0("retro", ypeel))
   )
-  g <- SS3_retro(ret)
+  g <- SS3_retro(ret, french = FRENCH)
   code <- substr(model_dir[i], 1, 2)
-  ggsave(paste0("figs/ss3/retro/ret_", code, ".png"), height = 8, width = 5)
+  ggsave(fig_path(paste0("ss3/retro/ret_", code, ".png")), height = 8, width = 5)
 }
 
 if (FALSE) {
@@ -57,4 +84,9 @@ if (FALSE) {
     1, " -P ", 6, " /opt/homebrew/bin/optipng -strip all"
   ))
   setwd(here::here())
+}
+
+# Reset decimal separator
+if (FRENCH) {
+  options(OutDec = old_dec)
 }

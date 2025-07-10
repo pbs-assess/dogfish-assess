@@ -14,6 +14,27 @@ fleet_names <- data.frame(
             "Bottom Trawl CPUE", "HBLL Outside", "HS MSA", "IPHC", "Synoptic", "iRec", "Salmon_Bycatch")
 )
 
+if (FRENCH) {
+  fleet_names <- data.frame(
+    Fleet_name = c("Bottom_Trawl_Landings", "Bottom_Trawl_Discards", "MidwaterTrawl", "HookLine_Landings", "HookLine_Discards",
+      "Bottom_Trawl_CPUE", "HBLL", "HS_MSA", "IPHC", "SYN", "iRec", "Salmon_Bycatch"),
+    FName =
+  c(
+    "Chalut de fond\nDébarquements",
+    "Chalut de fond\nRejets",
+    "Chalut pélagique",
+    "Palangre\nDébarquements",
+    "Ligne et hameçon\nRejets",
+    "CPUE chalut de fond",
+    "HBLL extérieur",
+    "HS MSA",
+    "IPHC",
+    "Synoptique",
+    "iRec",
+    "Prise accessoire saumon"
+  ))
+}
+
 area_to_PFMA <- function(Area) ifelse(Area == 1, "North - 5BCDE", "South - 5A3CD")
 
 .SS3_yieldcurve <- function(replist, scenario = "OM 1") {
@@ -42,7 +63,7 @@ SS3_yieldcurve <- function(x, scenario = paste("Scenario", 1:length(x)),
 
   if(xvar == "F") {
     g <- ggplot(yc, aes(F, Yield, group = Sim)) +
-      xlab(en2fr("Harvest rate", french))
+      xlab(tr2("Harvest rate", "Taux d’exploitation"))
   } else if(xvar == "SB") {
     g <- ggplot(yc, aes(SB, Yield, group = Sim)) +
       xlab(en2fr("Spawning output", french))
@@ -1041,7 +1062,7 @@ SS3_fecundity <- function(x, scenario, type = c("PP", "mat"), french = FALSE) { 
 }
 
 
-SS3_prof <- function(x, val, variable, retro_type = FALSE) {
+SS3_prof <- function(x, val, variable, retro_type = FALSE, french = FALSE) {
 
   dat <- lapply(1:length(x), function(i) {
     mutate(x[[i]]$recruit, value = val[i]) %>%
@@ -1091,6 +1112,7 @@ SS3_likelihoods <- function(x, scenario, by_fleet = FALSE) {
 SS3_prof_like <- function(x, par, xval = c("par", "steep", "dep"), component = c("Survey", "Length_comp"), by_fleet = TRUE, french = FALSE) {
   xval <- match.arg(xval)
 
+  if (french) options(OutDec = ".")
   if (by_fleet) {
     like <- SS3_likelihoods(x, par, by_fleet = by_fleet) %>%
       rename(Fleet = variable, Component = Label) %>%
@@ -1123,6 +1145,7 @@ SS3_prof_like <- function(x, par, xval = c("par", "steep", "dep"), component = c
       mutate(variable = dep)
   }
 
+  if (french) options(OutDec = ",")
   if (by_fleet) {
     g <- like %>%
       filter(Component %in% component) %>%

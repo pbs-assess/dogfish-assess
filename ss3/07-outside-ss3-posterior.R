@@ -1,14 +1,37 @@
 dir.create("figs/mcmc", showWarnings = FALSE)
 
-FRENCH <- FALSE
+FRENCH <- TRUE
+
+# Translation helper function
+tr <- function(english, french) {
+  if (FRENCH) french else english
+}
+
 library(rosettafish)
 library(GGally)
 library(dplyr)
 
-if (FRENCH) options(OutDec = ",")
+if (FRENCH) {
+  old_dec <- options()$OutDec
+  options(OutDec = ",")
+}
+
+# Create appropriate figure directories
+if (FRENCH) {
+  dir.create("figs-french", showWarnings = FALSE)
+  dir.create("figs-french/mcmc", showWarnings = FALSE)
+  fig_dir <- "figs-french"
+} else {
+  dir.create("figs/mcmc", showWarnings = FALSE)
+  fig_dir <- "figs"
+}
 
 .ggsave <- function(filename, ...) {
-  if (FRENCH) filename <- file.path("fr", filename)
+  if (FRENCH) {
+    filename <- file.path(fig_dir, filename)
+  } else {
+    filename <- file.path(fig_dir, filename)
+  }
   ggplot2::ggsave(filename, ...)
 }
 
@@ -116,7 +139,7 @@ for (i in 1:length(SS_dir)) {
           strip.text = element_text(size = 6),
           axis.text.x = element_text(angle = 45, hjust = 1),
           legend.position = "bottom")
-  .ggsave(paste0("figs/mcmc/prior_dens_", SS_dir[i], ".png"), g, height = 10, width = 7)
+  .ggsave(paste0("mcmc/prior_dens_", SS_dir[i], ".png"), g, height = 10, width = 7)
 
   # Trace plots
   g_worm <- samps_est %>%
@@ -127,10 +150,10 @@ for (i in 1:length(SS_dir)) {
     gfplot::theme_pbs() +
     facet_wrap(vars(ss_name), scales = "free_y") +
     theme(legend.position = "bottom") +
-    labs(x = ifelse(FRENCH, "Itération MCCM", "MCMC iteration"),
-         y = en2fr("Value", FRENCH),
-         colour = ifelse(FRENCH, "Chaîne", "Chain"))
-  .ggsave(paste0("figs/mcmc/posterior_wormplot_", SS_dir[i], ".png"), g_worm, height = ifelse(i == 1, 2.5, 4.5), width = 6)
+    labs(x = tr("MCMC iteration", "Itération MCCM"),
+         y = tr("Value", "Valeur"),
+         colour = tr("Chain", "Chaîne"))
+  .ggsave(paste0("mcmc/posterior_wormplot_", SS_dir[i], ".png"), g_worm, height = ifelse(i == 1, 2.5, 4.5), width = 6)
 
   g_post <- samps_est %>%
     filter(ss_name %in% par_plot) %>%
@@ -144,8 +167,8 @@ for (i in 1:length(SS_dir)) {
                    linewidth = 0.1) +
     #geom_line(data = prior_dens, aes(y = dens/max(dens))) +
     facet_wrap(vars(ss_name), scales = "free") +
-    labs(x = en2fr("Value", FRENCH), y = en2fr("Density", FRENCH))
-  .ggsave(paste0("figs/mcmc/posterior_density_", SS_dir[i], ".png"), g_post, height = ifelse(i == 1, 2.5, 4.5), width = 6)
+    labs(x = tr("Value", "Valeur"), y = tr("Density", "Densité"))
+  .ggsave(paste0("mcmc/posterior_density_", SS_dir[i], ".png"), g_post, height = ifelse(i == 1, 2.5, 4.5), width = 6)
 
   # Selectivity
   samps_sel <- samps_est %>%
@@ -164,10 +187,10 @@ for (i in 1:length(SS_dir)) {
           strip.text = element_text(size = 6),
           axis.text.x = element_text(angle = 45, hjust = 1),
           legend.position = "bottom") +
-    labs(x = ifelse(FRENCH, "Itération MCCM", "MCMC iteration"),
-         y = en2fr("Value", FRENCH),
-         colour = ifelse(FRENCH, "Chaîne", "Chain"))
-  .ggsave(paste0("figs/mcmc/posterior_wormplot_sel_", SS_dir[i], ".png"), g_worm, height = 8, width = 8)
+    labs(x = tr("MCMC iteration", "Itération MCCM"),
+         y = tr("Value", "Valeur"),
+         colour = tr("Chain", "Chaîne"))
+  .ggsave(paste0("mcmc/posterior_wormplot_sel_", SS_dir[i], ".png"), g_worm, height = 8, width = 8)
 
   g_post <- samps_sel %>%
     ggplot(aes(value)) +
@@ -182,8 +205,8 @@ for (i in 1:length(SS_dir)) {
           legend.position = "bottom") +
     facet_wrap(vars(ss_name),
                ncol = 4, scales = "free") +
-    labs(x = en2fr("Value", FRENCH), y = en2fr("Density", FRENCH))
-  .ggsave(paste0("figs/mcmc/posterior_density_sel_", SS_dir[i], ".png"), g_post, height = 10, width = 6)
+    labs(x = tr("Value", "Valeur"), y = tr("Density", "Densité"))
+  .ggsave(paste0("mcmc/posterior_density_sel_", SS_dir[i], ".png"), g_post, height = 10, width = 6)
 
   # Pair plots
   #library(GGally)
@@ -275,7 +298,7 @@ df <- lapply(SS_dir, function(i) {
             upr = quantile(value, 0.975),
             .by = c(Year, model, variable)) %>%
   filter(variable != "SSB0") %>%
-  mutate(label = ifelse(variable == "SSB", "Spawning~~output", "S/S[0]"))
+  mutate(label = if (!FRENCH) ifelse(variable == "SSB", "Spawning~~output", "S/S[0]") else ifelse(variable == "SSB", "Production~~de~~recrues", "S/S[0]"))
 
 g <- ggplot(df, aes(Year)) +
   geom_line(aes(y = median)) +
@@ -289,8 +312,8 @@ g <- ggplot(df, aes(Year)) +
              scales = "free_y",
              switch = "y") +
   theme(strip.placement = "outside") +
-  labs(x = "Year", y = NULL)
-.ggsave("figs/mcmc/posterior_ts.png", g, height = 4, width = 6)
+  labs(x = tr("Year", "Année"), y = NULL)
+.ggsave("mcmc/posterior_ts.png", g, height = 4, width = 6)
 
 
 # Posterior correlations
@@ -323,4 +346,9 @@ if (FALSE) {
     1, " -P ", 6, " /opt/homebrew/bin/optipng -strip all"
   ))
   setwd(here::here())
+}
+
+# Reset decimal separator
+if (FRENCH) {
+  options(OutDec = old_dec)
 }
